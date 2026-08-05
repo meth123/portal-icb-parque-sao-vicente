@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 const errorMessages: Record<string, string> = {
   campos: "Preencha o e-mail e a senha.",
   credenciais: "E-mail ou senha inválidos.",
+  perfil: "Seu perfil ainda não está disponível. Procure um administrador.",
 };
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
