@@ -7,10 +7,14 @@ function getSafeDestination(value: string | null) {
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
+  const flowId = request.nextUrl.searchParams.get("sb_flow_id");
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(
+      code,
+      flowId ? { flowId } : undefined,
+    );
 
     if (!error) {
       const destination = request.nextUrl.clone();
