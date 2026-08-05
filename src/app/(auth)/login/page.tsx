@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { login } from "./actions";
 
 export const metadata: Metadata = {
   title: "Login | Portal ICB Parque São Vicente",
@@ -9,7 +10,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function LoginPage() {
+const errorMessages: Record<string, string> = {
+  campos: "Preencha o e-mail e a senha.",
+  credenciais: "E-mail ou senha inválidos.",
+};
+
+export default async function LoginPage({ searchParams }: PageProps<"/login">) {
+  const { erro } = await searchParams;
+  const errorCode = typeof erro === "string" ? erro : "";
+  const errorMessage = errorMessages[errorCode];
+
   return (
     <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
       <div className="text-center">
@@ -20,11 +30,20 @@ export default function LoginPage() {
           Entrar no portal
         </h1>
         <p className="mt-3 text-base leading-7 text-zinc-700">
-          O acesso individual será disponibilizado em uma próxima fase.
+          Use sua conta individual para acessar a área interna.
         </p>
       </div>
 
-      <form className="mt-8 space-y-5" aria-describedby="login-status">
+      {errorMessage ? (
+        <p
+          role="alert"
+          className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm font-medium text-red-800"
+        >
+          {errorMessage}
+        </p>
+      ) : null}
+
+      <form action={login} className="mt-8 space-y-5">
         <div>
           <label
             htmlFor="email"
@@ -37,9 +56,9 @@ export default function LoginPage() {
             name="email"
             type="email"
             autoComplete="email"
-            disabled
+            required
             placeholder="seuemail@exemplo.com"
-            className="min-h-12 w-full rounded-xl border border-zinc-300 bg-zinc-100 px-4 text-base text-zinc-700 placeholder:text-zinc-500 disabled:cursor-not-allowed"
+            className="min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-base text-zinc-900 placeholder:text-zinc-500 focus:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-300"
           />
         </div>
 
@@ -55,27 +74,22 @@ export default function LoginPage() {
             name="password"
             type="password"
             autoComplete="current-password"
-            disabled
+            required
             placeholder="Sua senha"
-            className="min-h-12 w-full rounded-xl border border-zinc-300 bg-zinc-100 px-4 text-base text-zinc-700 placeholder:text-zinc-500 disabled:cursor-not-allowed"
+            className="min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-base text-zinc-900 placeholder:text-zinc-500 focus:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-300"
           />
         </div>
 
         <button
           type="submit"
-          disabled
-          className="min-h-12 w-full cursor-not-allowed rounded-xl bg-zinc-300 px-5 text-base font-semibold text-zinc-600"
+          className="min-h-12 w-full rounded-xl bg-zinc-950 px-5 text-base font-semibold text-white transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
         >
           Entrar
         </button>
       </form>
 
-      <p
-        id="login-status"
-        role="status"
-        className="mt-5 rounded-xl bg-zinc-100 px-4 py-3 text-center text-sm leading-6 text-zinc-700"
-      >
-        Login ainda não ativado. Nenhum dado será enviado nesta página.
+      <p className="mt-5 text-center text-sm leading-6 text-zinc-600">
+        O acesso é exclusivo para contas autorizadas.
       </p>
     </div>
   );
