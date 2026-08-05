@@ -25,6 +25,9 @@ build/
 # Vercel
 .vercel/
 
+# Private local Supabase configuration and database migrations
+/supabase/
+
 # Logs
 *.log
 npm-debug.log*
