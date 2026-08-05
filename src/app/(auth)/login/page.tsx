@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { login } from "./actions";
 
 export const metadata: Metadata = {
@@ -14,12 +15,19 @@ const errorMessages: Record<string, string> = {
   campos: "Preencha o e-mail e a senha.",
   credenciais: "E-mail ou senha inválidos.",
   perfil: "Seu perfil ainda não está disponível. Procure um administrador.",
+  link: "O link de recuperação é inválido ou expirou. Solicite um novo link.",
+};
+
+const statusMessages: Record<string, string> = {
+  "senha-atualizada": "Senha atualizada. Entre com sua nova senha.",
 };
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
-  const { erro } = await searchParams;
+  const { erro, status } = await searchParams;
   const errorCode = typeof erro === "string" ? erro : "";
+  const statusCode = typeof status === "string" ? status : "";
   const errorMessage = errorMessages[errorCode];
+  const statusMessage = statusMessages[statusCode];
 
   return (
     <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
@@ -44,6 +52,15 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         </p>
       ) : null}
 
+      {statusMessage ? (
+        <p
+          role="status"
+          className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-sm font-medium text-emerald-800"
+        >
+          {statusMessage}
+        </p>
+      ) : null}
+
       <form action={login} className="mt-8 space-y-5">
         <div>
           <label
@@ -61,6 +78,14 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             placeholder="seuemail@exemplo.com"
             className="min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-base text-zinc-900 placeholder:text-zinc-500 focus:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-300"
           />
+          <div className="mt-3 text-right">
+            <Link
+              href="/recuperar-senha"
+              className="rounded-md text-sm font-medium text-zinc-700 underline-offset-4 hover:text-zinc-950 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
+            >
+              Esqueci minha senha
+            </Link>
+          </div>
         </div>
 
         <div>

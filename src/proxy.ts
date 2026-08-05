@@ -6,5 +6,11 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/login", "/portal/:path*"],
+  matcher: [
+    "/login",
+    "/recuperar-senha",
+    "/atualizar-senha",
+    "/auth/confirm",
+    "/portal/:path*",
+  ],
 };

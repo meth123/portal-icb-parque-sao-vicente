@@ -51,3 +51,16 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     isActive: profile.is_active,
   };
 });
+
+export function canAccessAdministration(user: CurrentUser) {
+  return user.isActive && user.globalRole === "administrator";
+}
+
+export function canAccessPastoralDashboard(user: CurrentUser) {
+  return (
+    user.isActive &&
+    (user.globalRole === "administrator" ||
+      user.globalRole === "pastor" ||
+      user.isSupervisor)
+  );
+}

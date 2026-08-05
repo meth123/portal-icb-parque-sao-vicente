@@ -1,7 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth/current-user";
+import {
+  canAccessAdministration,
+  canAccessPastoralDashboard,
+  getCurrentUser,
+} from "@/lib/auth/current-user";
 import { logout } from "./actions";
 
 export default async function PortalPage() {
@@ -82,14 +86,25 @@ export default async function PortalPage() {
           </div>
         </dl>
 
-        {user.globalRole === "administrator" ? (
-          <Link
-            href="/portal/admin"
-            className="mt-6 flex min-h-12 w-full items-center justify-center rounded-xl bg-zinc-950 px-5 text-base font-semibold text-white transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
-          >
-            Testar acesso administrativo
-          </Link>
-        ) : null}
+        <div className="mt-6 space-y-3">
+          {canAccessPastoralDashboard(user) ? (
+            <Link
+              href="/portal/supervisao"
+              className="flex min-h-12 w-full items-center justify-center rounded-xl bg-zinc-950 px-5 text-base font-semibold text-white transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
+            >
+              Testar acesso pastoral
+            </Link>
+          ) : null}
+
+          {canAccessAdministration(user) ? (
+            <Link
+              href="/portal/admin"
+              className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
+            >
+              Testar acesso administrativo
+            </Link>
+          ) : null}
+        </div>
 
         <form action={logout} className="mt-4">
           <button
