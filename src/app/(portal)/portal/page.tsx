@@ -87,10 +87,17 @@ export default async function PortalPage() {
         </dl>
 
         <div className="mt-6 space-y-3">
+          <Link
+            href="/portal/organizacao"
+            className="flex min-h-12 w-full items-center justify-center rounded-xl bg-zinc-950 px-5 text-base font-semibold text-white transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
+          >
+            Ver estrutura organizacional
+          </Link>
+
           {canAccessPastoralDashboard(user) ? (
             <Link
               href="/portal/supervisao"
-              className="flex min-h-12 w-full items-center justify-center rounded-xl bg-zinc-950 px-5 text-base font-semibold text-white transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
+              className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
             >
               Testar acesso pastoral
             </Link>
