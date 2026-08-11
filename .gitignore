@@ -11,6 +11,8 @@ node_modules/
 
 # Next.js
 .next/
+.next-stale-*/
+tmp/
 out/
 build/
 

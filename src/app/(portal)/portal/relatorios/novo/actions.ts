@@ -21,6 +21,7 @@ type GuestEntry = {
 
 type EvangelismEntry = {
   leadershipId: string;
+  leadershipIds: string[];
   didEvangelize: boolean;
   evangelismOn: string;
   durationText: string;
@@ -133,7 +134,7 @@ function normalizeEvangelism(value: unknown[]) {
   }
 
   const normalized: EvangelismEntry[] = [];
-  const usedLeadershipIds = new Set<string>();
+  const negativeLeadershipIds = new Set<string>();
 
   for (const item of value) {
     if (!item || typeof item !== "object") {
@@ -147,6 +148,10 @@ function normalizeEvangelism(value: unknown[]) {
     const didEvangelize =
       "didEvangelize" in item && typeof item.didEvangelize === "boolean"
         ? item.didEvangelize
+        : null;
+    const rawLeadershipIds =
+      "leadershipIds" in item && Array.isArray(item.leadershipIds)
+        ? item.leadershipIds
         : null;
     const evangelismOn =
       "evangelismOn" in item && typeof item.evangelismOn === "string"
@@ -167,7 +172,6 @@ function normalizeEvangelism(value: unknown[]) {
 
     if (
       !uuidPattern.test(leadershipId) ||
-      usedLeadershipIds.has(leadershipId) ||
       didEvangelize === null ||
       comments.length < 1 ||
       comments.length > 4000 ||
@@ -182,25 +186,51 @@ function normalizeEvangelism(value: unknown[]) {
       return null;
     }
 
-    if (
-      didEvangelize &&
-      (!isValidDate(evangelismOn) ||
+    let leadershipIds: string[] = [];
+
+    if (didEvangelize) {
+      if (
+        rawLeadershipIds === null ||
+        rawLeadershipIds.length < 1 ||
+        rawLeadershipIds.length > 100 ||
+        rawLeadershipIds.some(
+          (id) => typeof id !== "string" || !uuidPattern.test(id),
+        ) ||
+        !isValidDate(evangelismOn) ||
         durationText.length < 1 ||
-        durationText.length > 60)
-    ) {
-      return null;
+        durationText.length > 60
+      ) {
+        return null;
+      }
+
+      leadershipIds = [...new Set(rawLeadershipIds as string[])];
+
+      if (
+        leadershipIds.length !== rawLeadershipIds.length ||
+        !leadershipIds.includes(leadershipId)
+      ) {
+        return null;
+      }
     }
 
     if (
       !didEvangelize &&
-      (evangelismOn !== "" || durationText !== "" || participants.length > 0)
+      (evangelismOn !== "" ||
+        durationText !== "" ||
+        participants.length > 0 ||
+        (rawLeadershipIds !== null && rawLeadershipIds.length > 0) ||
+        negativeLeadershipIds.has(leadershipId))
     ) {
       return null;
     }
 
-    usedLeadershipIds.add(leadershipId);
+    if (!didEvangelize) {
+      negativeLeadershipIds.add(leadershipId);
+    }
+
     normalized.push({
       leadershipId,
+      leadershipIds,
       didEvangelize,
       evangelismOn: didEvangelize ? evangelismOn : "",
       durationText: didEvangelize ? durationText : "",
@@ -223,6 +253,10 @@ export async function submitCellReport(
   }
 
   const cellId = readString(formData, "cellId");
+  const correctionSourceVersionId = readString(
+    formData,
+    "correctionSourceVersionId",
+  );
   const meetingOn = readString(formData, "meetingOn");
   const meetingFormat = readString(formData, "meetingFormat");
   const leaderPresence = readString(formData, "leaderWasPresent");
@@ -240,6 +274,13 @@ export async function submitCellReport(
 
   if (!uuidPattern.test(cellId)) {
     return { message: "A célula informada é inválida." };
+  }
+
+  if (
+    correctionSourceVersionId &&
+    !uuidPattern.test(correctionSourceVersionId)
+  ) {
+    return { message: "A origem da correção é inválida." };
   }
 
   if (!isValidDate(meetingOn)) {
@@ -331,6 +372,13 @@ export async function submitCellReport(
       "Os registros de evangelismo",
       "Cada pessoa da liderança",
       "O evangelismo contém",
+      "A liderança principal",
+      "Um participante vinculado",
+      "Uma pessoa da liderança",
+      "Existe mais de um status",
+      "Quem participou",
+      "Toda a liderança",
+      "O status Não evangelizou",
       "Não informe",
     ];
     const safeMessage = safeMessagePrefixes.some((prefix) =>
@@ -348,5 +396,9 @@ export async function submitCellReport(
 
   revalidatePath("/portal");
   revalidatePath("/portal/relatorios");
-  redirect("/portal?status=ficha-enviada");
+  revalidatePath(`/portal/relatorios/${data}`);
+  const correctionQuery = correctionSourceVersionId
+    ? `&correcao=${encodeURIComponent(correctionSourceVersionId)}`
+    : "";
+  redirect(`/portal/relatorios/${data}?status=enviada${correctionQuery}`);
 }
