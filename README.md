@@ -11,6 +11,8 @@ Tecnologias principais: Next.js, React, TypeScript, Tailwind CSS, Supabase/Postg
 - Fase 0 — preparação e estrutura inicial: concluída.
 - Fase 1 — base do Next.js e layout: concluída.
 - Fase 2 — autenticação e autorização: concluída.
-- Fase 3 — estrutura de dados institucionais: em andamento.
+- Fase 3 — células, vínculos e isolamento de dados: concluída.
+- Fase 4 — biblioteca privada de documentos e PDFs: concluída.
+- Fase 5 — Ficha de Organização e relatórios das células: em andamento.
 
 > Projeto experimental em desenvolvimento. O escopo e a arquitetura evoluem de forma incremental.

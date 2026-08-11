@@ -6,9 +6,17 @@ import {
   canAccessPastoralDashboard,
   getCurrentUser,
 } from "@/lib/auth/current-user";
+import { getCellReportDraftKey } from "@/lib/cell-report-draft";
+import { canAccessDocumentLibrary } from "@/lib/data/document-library";
+import { getCellReportFormContext } from "@/lib/data/cell-reports";
 import { logout } from "./actions";
+import { ClearCellReportDraft } from "./clear-cell-report-draft";
 
-export default async function PortalPage() {
+type PortalPageProps = {
+  searchParams: Promise<{ status?: string | string[] }>;
+};
+
+export default async function PortalPage({ searchParams }: PortalPageProps) {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -46,6 +54,15 @@ export default async function PortalPage() {
     );
   }
 
+  const [hasDocumentLibraryAccess, reportContext, resolvedSearchParams] =
+    await Promise.all([
+      canAccessDocumentLibrary(),
+      getCellReportFormContext(),
+      searchParams,
+    ]);
+  const reportWasSubmitted =
+    resolvedSearchParams.status === "ficha-enviada";
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-zinc-100 px-4 py-10 sm:px-6">
       <section className="w-full max-w-lg rounded-3xl border border-zinc-200 bg-white p-6 text-center shadow-sm sm:p-10">
@@ -69,6 +86,22 @@ export default async function PortalPage() {
           etapas.
         </p>
 
+        {reportWasSubmitted ? (
+          <>
+            {reportContext ? (
+              <ClearCellReportDraft
+                draftKey={getCellReportDraftKey(user.id, reportContext.cellId)}
+              />
+            ) : null}
+            <p
+              role="status"
+              className="mt-6 rounded-xl border border-green-200 bg-green-50 px-4 py-4 text-green-900"
+            >
+              Ficha de Organização enviada com sucesso.
+            </p>
+          </>
+        ) : null}
+
         <dl className="mt-6 rounded-2xl bg-zinc-100 px-5 py-4 text-left text-sm text-zinc-700">
           {user.email ? (
             <div className="flex flex-col gap-1 py-2 sm:flex-row sm:justify-between sm:gap-4">
@@ -87,9 +120,27 @@ export default async function PortalPage() {
         </dl>
 
         <div className="mt-6 space-y-3">
+          {reportContext ? (
+            <Link
+              href="/portal/relatorios/novo"
+              className="flex min-h-12 w-full items-center justify-center rounded-xl bg-zinc-950 px-5 text-base font-semibold text-white transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
+            >
+              Preencher Ficha de Organização
+            </Link>
+          ) : null}
+
+          {hasDocumentLibraryAccess ? (
+            <Link
+              href="/portal/documentos"
+              className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
+            >
+              Biblioteca de documentos
+            </Link>
+          ) : null}
+
           <Link
             href="/portal/organizacao"
-            className="flex min-h-12 w-full items-center justify-center rounded-xl bg-zinc-950 px-5 text-base font-semibold text-white transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
+            className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
           >
             Ver estrutura organizacional
           </Link>
