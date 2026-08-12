@@ -24,7 +24,10 @@ export default async function CellDetailsPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ mes?: string | string[] }>;
+  searchParams: Promise<{
+    mes?: string | string[];
+    historico?: string | string[];
+  }>;
 }) {
   const user = await getCurrentUser();
 
@@ -39,9 +42,11 @@ export default async function CellDetailsPage({
   const [{ id }, query] = await Promise.all([params, searchParams]);
   const requestedMonth =
     typeof query.mes === "string" ? query.mes : undefined;
+  const requestedHistoryMonths =
+    typeof query.historico === "string" ? query.historico : undefined;
   const [cell, dashboard] = await Promise.all([
     getCellDetails(id),
-    getCellDashboard(id, requestedMonth),
+    getCellDashboard(id, requestedMonth, requestedHistoryMonths),
   ]);
 
   if (!cell || !dashboard) {
@@ -53,10 +58,26 @@ export default async function CellDetailsPage({
     1,
     ...dashboard.history.map((item) => item.metrics.averageAttendance),
   );
+  const highestFirstTimeTotal = Math.max(
+    1,
+    ...dashboard.history.map((item) => item.metrics.firstTimeGuests),
+  );
   const metricCards = [
     { label: "Fichas", value: metrics.reports, note: "enviadas" },
-    { label: "Membros", value: metrics.members, note: "presenças" },
-    { label: "Convidados", value: metrics.guests, note: "registrados" },
+    {
+      label: "Média de membros",
+      value: metrics.averageMembers.toLocaleString("pt-BR", {
+        maximumFractionDigits: 1,
+      }),
+      note: "por reunião",
+    },
+    {
+      label: "Média de convidados",
+      value: metrics.averageGuests.toLocaleString("pt-BR", {
+        maximumFractionDigits: 1,
+      }),
+      note: "por reunião",
+    },
     { label: "1ª vez", value: metrics.firstTimeGuests, note: "registrados" },
     {
       label: "Média de presentes",
@@ -106,8 +127,8 @@ export default async function CellDetailsPage({
                 </h2>
               </div>
 
-              <form className="flex w-full items-end gap-2 sm:w-auto">
-                <div className="min-w-0 flex-1 sm:w-48">
+              <form className="grid w-full grid-cols-2 items-end gap-2 sm:w-auto sm:grid-cols-[12rem_9rem_auto]">
+                <div className="min-w-0">
                   <label
                     htmlFor="dashboard-month"
                     className="mb-1 block text-sm font-medium text-zinc-700"
@@ -122,9 +143,28 @@ export default async function CellDetailsPage({
                     className="min-h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
                   />
                 </div>
+
+                <div className="min-w-0">
+                  <label
+                    htmlFor="dashboard-history"
+                    className="mb-1 block text-sm font-medium text-zinc-700"
+                  >
+                    Histórico
+                  </label>
+                  <select
+                    id="dashboard-history"
+                    name="historico"
+                    defaultValue={String(dashboard.historyMonths)}
+                    className="min-h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
+                  >
+                    <option value="3">3 meses</option>
+                    <option value="6">6 meses</option>
+                    <option value="12">12 meses</option>
+                  </select>
+                </div>
                 <button
                   type="submit"
-                  className="min-h-11 shrink-0 rounded-xl bg-zinc-950 px-4 text-sm font-semibold text-white hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
+                  className="col-span-2 min-h-11 shrink-0 rounded-xl bg-zinc-950 px-4 text-sm font-semibold text-white hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 sm:col-span-1"
                 >
                   Ver
                 </button>
@@ -189,7 +229,7 @@ export default async function CellDetailsPage({
 
           <section className="mt-6 rounded-2xl border border-zinc-200 p-4 sm:p-6">
             <h2 className="text-xl font-semibold text-zinc-950">
-              Presença nos últimos 6 meses
+              Presença nos últimos {dashboard.historyMonths} meses
             </h2>
             <p className="mt-1 text-sm text-zinc-600">
               Média de presentes por Ficha.
@@ -225,6 +265,48 @@ export default async function CellDetailsPage({
                       aria-label={`${item.monthLabel}: média de ${formattedAverage} presentes por Ficha`}
                     >
                       {formattedAverage}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+
+          <section className="mt-6 rounded-2xl border border-zinc-200 p-4 sm:p-6">
+            <h2 className="text-xl font-semibold text-zinc-950">
+              Primeira vez nos últimos {dashboard.historyMonths} meses
+            </h2>
+            <p className="mt-1 text-sm text-zinc-600">
+              Convidados que chegaram pela primeira vez na célula.
+            </p>
+
+            <ul className="mt-5 space-y-4">
+              {dashboard.history.map((item) => {
+                const total = item.metrics.firstTimeGuests;
+                const barWidth = (total / highestFirstTimeTotal) * 100;
+
+                return (
+                  <li
+                    key={item.month}
+                    className="grid grid-cols-[minmax(6.5rem,auto)_1fr_auto] items-center gap-3"
+                  >
+                    <span className="text-sm font-medium text-zinc-700">
+                      {item.monthLabel}
+                    </span>
+                    <span
+                      className="h-3 overflow-hidden rounded-full bg-zinc-100"
+                      aria-hidden="true"
+                    >
+                      <span
+                        className="block h-full rounded-full bg-zinc-900"
+                        style={{ width: `${barWidth}%` }}
+                      />
+                    </span>
+                    <span
+                      className="min-w-7 text-right text-sm font-semibold text-zinc-950"
+                      aria-label={`${item.monthLabel}: ${total} convidados pela primeira vez`}
+                    >
+                      {total}
                     </span>
                   </li>
                 );

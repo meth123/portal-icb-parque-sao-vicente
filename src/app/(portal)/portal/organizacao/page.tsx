@@ -37,8 +37,7 @@ export default async function OrganizationPage() {
     redirect("/portal");
   }
 
-  const { networks, cellTypes, cities, neighborhoods, cells, hasError } =
-    overview;
+  const { cities, neighborhoods, cells, hasError } = overview;
 
   return (
     <main className="min-h-screen bg-zinc-100 px-4 py-10 sm:px-6">
@@ -51,8 +50,7 @@ export default async function OrganizationPage() {
             Estrutura organizacional
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-7 text-zinc-700">
-            Esta página provisória confirma a leitura protegida das Redes,
-            tipos de célula, cidades, bairros e células cadastrados no Supabase.
+            Consulte as localidades e as células cadastradas no sistema.
           </p>
 
           {hasError ? (
@@ -64,49 +62,7 @@ export default async function OrganizationPage() {
               políticas de acesso.
             </p>
           ) : (
-            <div className="mt-8 grid gap-6 lg:grid-cols-2">
-              <section className="rounded-2xl border border-zinc-200 p-5 sm:p-6">
-                <h2 className="text-xl font-semibold text-zinc-950">Redes</h2>
-                <div className="mt-4 space-y-4">
-                  {networks.map((network) => {
-                    const types = cellTypes.filter(
-                      (cellType) => cellType.networkId === network.id,
-                    );
-
-                    return (
-                      <article
-                        key={network.id}
-                        className="rounded-xl bg-zinc-100 p-4"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <p className="font-semibold text-zinc-950">
-                              {network.code} — {network.name}
-                            </p>
-                            <p className="mt-1 text-sm text-zinc-600">
-                              {types.length} tipos cadastrados
-                            </p>
-                          </div>
-                          <StatusLabel isActive={network.isActive} />
-                        </div>
-
-                        <ul className="mt-3 flex flex-wrap gap-2">
-                          {types.map((cellType) => (
-                            <li
-                              key={cellType.id}
-                              className="rounded-full border border-zinc-300 bg-white px-3 py-1 text-sm text-zinc-800"
-                            >
-                              {cellType.name}
-                              {!cellType.isActive ? " — inativo" : ""}
-                            </li>
-                          ))}
-                        </ul>
-                      </article>
-                    );
-                  })}
-                </div>
-              </section>
-
+            <div className="mt-8 space-y-6">
               <section className="rounded-2xl border border-zinc-200 p-5 sm:p-6">
                 <h2 className="text-xl font-semibold text-zinc-950">
                   Localidades
@@ -157,7 +113,7 @@ export default async function OrganizationPage() {
                 </div>
               </section>
 
-              <section className="rounded-2xl border border-zinc-200 p-5 sm:p-6 lg:col-span-2">
+              <section className="rounded-2xl border border-zinc-200 p-5 sm:p-6">
                 <div className="flex flex-wrap items-baseline justify-between gap-3">
                   <h2 className="text-xl font-semibold text-zinc-950">
                     Células

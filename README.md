@@ -15,6 +15,6 @@ Tecnologias principais: Next.js, React, TypeScript, Tailwind CSS, Supabase/Postg
 - Fase 4 — biblioteca privada de documentos e PDFs: concluída.
 - Fase 5 — Ficha de Organização e Relatório de Evangelismo: concluída.
 - Fase 6 — painel da própria célula: concluída.
-- Fase 7 — painel pastoral e supervisão: próxima etapa.
+- Fase 7 — painel pastoral e supervisão: em andamento.
 
 > Projeto experimental em desenvolvimento. O escopo e a arquitetura evoluem de forma incremental.

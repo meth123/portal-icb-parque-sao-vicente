@@ -1,10 +1,11 @@
 import "server-only";
 
 import {
-  calculateCellDashboardMetrics,
   calculateEvangelismHistory,
   calculateMonthlyEvangelismParticipation,
+  calculatePastoralDashboardMetrics,
   calculatePersonalEvangelismSummary,
+  normalizePastoralHistoryMonths,
 } from "@/lib/cell-dashboard";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import {
@@ -43,12 +44,19 @@ type RawCurrentLeadership = {
   role: "leader" | "vice_leader";
 };
 
-export async function getCellDashboard(cellId: string, requestedMonth?: string) {
+export async function getCellDashboard(
+  cellId: string,
+  requestedMonth?: string,
+  requestedHistoryMonths?: string,
+) {
   const month = normalizeMonth(requestedMonth);
   const range = getMonthRange(month);
-  const historyMonths = getMonthSequence(month, 6);
+  const historyMonthsCount = normalizePastoralHistoryMonths(
+    requestedHistoryMonths,
+  );
+  const historyMonths = getMonthSequence(month, historyMonthsCount);
   const historyRange = getMonthRange(historyMonths[0]);
-  const emptyMetrics = calculateCellDashboardMetrics([]);
+  const emptyMetrics = calculatePastoralDashboardMetrics([]);
   const emptyHistory = historyMonths.map((historyMonth) => ({
     month: historyMonth,
     monthLabel: formatMonthLabel(`${historyMonth}-01`).replace(" de ", " "),
@@ -73,7 +81,7 @@ export async function getCellDashboard(cellId: string, requestedMonth?: string) 
       .eq("cell_id", cellId)
       .gte("meeting_on", historyRange.startsOn)
       .lt("meeting_on", range.endsBefore)
-      .limit(100),
+      .limit(200),
     supabase
       .from("cell_leaderships")
       .select("id, role")
@@ -90,6 +98,7 @@ export async function getCellDashboard(cellId: string, requestedMonth?: string) 
     return {
       month,
       monthLabel: formatMonthLabel(range.startsOn),
+      historyMonths: historyMonthsCount,
       metrics: emptyMetrics,
       history: emptyHistory,
       evangelismHistory: [],
@@ -109,6 +118,7 @@ export async function getCellDashboard(cellId: string, requestedMonth?: string) 
     return {
       month,
       monthLabel: formatMonthLabel(range.startsOn),
+      historyMonths: historyMonthsCount,
       metrics: emptyMetrics,
       history: emptyHistory,
       evangelismHistory: [],
@@ -143,6 +153,7 @@ export async function getCellDashboard(cellId: string, requestedMonth?: string) 
     return {
       month,
       monthLabel: formatMonthLabel(range.startsOn),
+      historyMonths: historyMonthsCount,
       metrics: emptyMetrics,
       history: emptyHistory,
       evangelismHistory: [],
@@ -169,7 +180,7 @@ export async function getCellDashboard(cellId: string, requestedMonth?: string) 
     return {
       month: historyMonth,
       monthLabel: formatMonthLabel(`${historyMonth}-01`).replace(" de ", " "),
-      metrics: calculateCellDashboardMetrics(monthlyReports),
+      metrics: calculatePastoralDashboardMetrics(monthlyReports),
     };
   });
   const selectedMonth = history.find((item) => item.month === month);
@@ -191,6 +202,7 @@ export async function getCellDashboard(cellId: string, requestedMonth?: string) 
     return {
       month,
       monthLabel: formatMonthLabel(range.startsOn),
+      historyMonths: historyMonthsCount,
       metrics: selectedMonth?.metrics ?? emptyMetrics,
       history,
       evangelismHistory: [],
@@ -221,6 +233,7 @@ export async function getCellDashboard(cellId: string, requestedMonth?: string) 
     return {
       month,
       monthLabel: formatMonthLabel(range.startsOn),
+      historyMonths: historyMonthsCount,
       metrics: selectedMonth?.metrics ?? emptyMetrics,
       history,
       evangelismHistory: [],
@@ -279,6 +292,7 @@ export async function getCellDashboard(cellId: string, requestedMonth?: string) 
   return {
     month,
     monthLabel: formatMonthLabel(range.startsOn),
+    historyMonths: historyMonthsCount,
     metrics: selectedMonth?.metrics ?? emptyMetrics,
     history,
     evangelismHistory,

@@ -31,6 +31,78 @@ export function calculateCellDashboardMetrics(
   };
 }
 
+export function calculatePastoralDashboardMetrics(
+  reports: CellDashboardMetricSource[],
+) {
+  const metrics = calculateCellDashboardMetrics(reports);
+
+  return {
+    ...metrics,
+    averageMembers:
+      metrics.reports === 0
+        ? 0
+        : Math.round((metrics.members / metrics.reports) * 10) / 10,
+    averageGuests:
+      metrics.reports === 0
+        ? 0
+        : Math.round((metrics.guests / metrics.reports) * 10) / 10,
+  };
+}
+
+export type PastoralCellSummarySource = {
+  id: string;
+  name: string;
+  networkName: string;
+  cellTypeName: string;
+};
+
+export type PastoralCellReportSource = CellDashboardMetricSource & {
+  cellId: string;
+};
+
+export function calculatePastoralCellSummaries(
+  cells: PastoralCellSummarySource[],
+  reports: PastoralCellReportSource[],
+) {
+  return cells.map((cell) => ({
+    ...cell,
+    metrics: calculatePastoralDashboardMetrics(
+      reports.filter((report) => report.cellId === cell.id),
+    ),
+  }));
+}
+
+export type PastoralMonthlyReport = CellDashboardMetricSource & {
+  meetingOn: string;
+};
+
+export type PastoralHistoryMonths = 3 | 6 | 12;
+
+export function normalizePastoralHistoryMonths(
+  value: string | undefined,
+): PastoralHistoryMonths {
+  if (value === "3" || value === "12") {
+    return Number(value) as PastoralHistoryMonths;
+  }
+
+  return 6;
+}
+
+export function calculatePastoralFirstTimeHistory(
+  months: string[],
+  reports: PastoralMonthlyReport[],
+) {
+  return months.map((month) => ({
+    month,
+    firstTimeGuests: reports
+      .filter((report) => report.meetingOn.slice(0, 7) === month)
+      .reduce(
+        (total, report) => total + report.firstTimeGuestsCount,
+        0,
+      ),
+  }));
+}
+
 export type EvangelismHistoryVersion = {
   versionId: string;
   meetingOn: string;
@@ -85,6 +157,16 @@ export type WeeklyLeadershipStatus = {
   leadershipId: string;
 };
 
+export type PastoralEvangelismHistoryEntry = WeeklyLeadershipStatus & {
+  id: string;
+  meetingOn: string;
+};
+
+export type PastoralEvangelismHistoryParticipant = {
+  entryId: string;
+  leadershipId: string;
+};
+
 export function calculateMonthlyEvangelismParticipation(
   statuses: WeeklyLeadershipStatus[],
   positiveParticipantIds: string[],
@@ -103,6 +185,33 @@ export function calculateMonthlyEvangelismParticipation(
     percentage:
       accompanied === 0 ? null : Math.round((evangelized / accompanied) * 100),
   };
+}
+
+export function calculatePastoralEvangelismHistory(
+  months: string[],
+  entries: PastoralEvangelismHistoryEntry[],
+  participants: PastoralEvangelismHistoryParticipant[],
+) {
+  return months.map((month) => {
+    const monthlyEntries = entries.filter(
+      (entry) => entry.meetingOn.slice(0, 7) === month,
+    );
+    const monthlyEntryIds = new Set(monthlyEntries.map((entry) => entry.id));
+    const monthlyParticipants = participants.filter((participant) =>
+      monthlyEntryIds.has(participant.entryId),
+    );
+
+    return {
+      month,
+      ...calculateMonthlyEvangelismParticipation(
+        monthlyEntries.map((entry) => ({
+          didEvangelize: entry.didEvangelize,
+          leadershipId: entry.leadershipId,
+        })),
+        monthlyParticipants.map((participant) => participant.leadershipId),
+      ),
+    };
+  });
 }
 
 export function calculatePersonalEvangelismSummary(
