@@ -2,6 +2,10 @@ import "server-only";
 
 import { cache } from "react";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import {
+  formatMonthLabel,
+  getSaoPauloMonthStart,
+} from "@/lib/dates/sao-paulo";
 import { createClient } from "@/lib/supabase/server";
 
 export type CellReportLeadershipOption = {
@@ -13,6 +17,7 @@ export type CellReportLeadershipOption = {
 export type CellReportFormContext = {
   cellId: string;
   cellName: string;
+  currentUserLeadershipId: string;
   currentUserRole: "leader" | "vice_leader";
   leader: CellReportLeadershipOption;
   viceLeaders: CellReportLeadershipOption[];
@@ -20,6 +25,7 @@ export type CellReportFormContext = {
 };
 
 type RawCurrentLeadership = {
+  id: string;
   cell_id: string;
   role: "leader" | "vice_leader";
 };
@@ -46,7 +52,7 @@ export const getCellReportFormContext = cache(
     const supabase = await createClient();
     const leadershipResult = await supabase
       .from("cell_leaderships")
-      .select("cell_id, role")
+      .select("id, cell_id, role")
       .eq("profile_id", user.id)
       .is("ends_on", null)
       .maybeSingle();
@@ -129,6 +135,7 @@ export const getCellReportFormContext = cache(
     return {
       cellId: cellResult.data.id,
       cellName: cellResult.data.name,
+      currentUserLeadershipId: leadership.id,
       currentUserRole: leadership.role,
       leader,
       viceLeaders,
@@ -136,3 +143,40 @@ export const getCellReportFormContext = cache(
     };
   },
 );
+
+export const getCurrentMonthlyReportResponsibility = cache(async () => {
+  const context = await getCellReportFormContext();
+
+  if (!context) {
+    return null;
+  }
+
+  const monthStart = getSaoPauloMonthStart();
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("cell_report_monthly_responsibilities")
+    .select("responsible_leadership_id, assigned_at")
+    .eq("cell_id", context.cellId)
+    .eq("month_start", monthStart)
+    .is("replaced_at", null)
+    .maybeSingle();
+  const responsibleLeadershipId = data?.responsible_leadership_id ?? null;
+  const responsible = context.leadership.find(
+    (person) => person.leadershipId === responsibleLeadershipId,
+  );
+
+  return {
+    cellId: context.cellId,
+    monthStart,
+    monthLabel: formatMonthLabel(monthStart),
+    currentUserRole: context.currentUserRole,
+    isCurrentUserResponsible:
+      responsibleLeadershipId === context.currentUserLeadershipId,
+    leadership: context.leadership,
+    responsibleLeadershipId,
+    responsibleName:
+      responsible?.name ??
+      (responsibleLeadershipId ? "Vice-líder anteriormente vinculado" : null),
+    hasError: Boolean(error),
+  };
+});

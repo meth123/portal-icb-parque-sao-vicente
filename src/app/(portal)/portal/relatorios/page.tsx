@@ -3,7 +3,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getCellReportHistory } from "@/lib/data/cell-report-history";
-import { getCellReportFormContext } from "@/lib/data/cell-reports";
+import {
+  getCellReportFormContext,
+  getCurrentMonthlyReportResponsibility,
+} from "@/lib/data/cell-reports";
+import { MonthlyResponsibility } from "./monthly-responsibility";
 
 export const metadata: Metadata = {
   title: "Histórico de Fichas | Portal ICB Parque São Vicente",
@@ -18,6 +22,8 @@ type CellReportsPageProps = {
     celula?: string | string[];
     inicio?: string | string[];
     fim?: string | string[];
+    rede?: string | string[];
+    tipo?: string | string[];
   }>;
 };
 
@@ -56,13 +62,18 @@ export default async function CellReportsPage({
   const selectedCellId = getSingleValue(resolvedSearchParams.celula);
   const dateFrom = getSingleValue(resolvedSearchParams.inicio);
   const dateTo = getSingleValue(resolvedSearchParams.fim);
-  const [history, reportContext] = await Promise.all([
+  const selectedNetworkId = getSingleValue(resolvedSearchParams.rede);
+  const selectedCellTypeId = getSingleValue(resolvedSearchParams.tipo);
+  const [history, reportContext, monthlyResponsibility] = await Promise.all([
     getCellReportHistory({
       cellId: selectedCellId,
       dateFrom,
       dateTo,
+      networkId: selectedNetworkId,
+      cellTypeId: selectedCellTypeId,
     }),
     getCellReportFormContext(),
+    getCurrentMonthlyReportResponsibility(),
   ]);
 
   if (!history) {
@@ -95,10 +106,48 @@ export default async function CellReportsPage({
           ) : null}
         </div>
 
+        {monthlyResponsibility ? (
+          <MonthlyResponsibility {...monthlyResponsibility} />
+        ) : null}
+
         <form
           method="get"
           className="mt-8 grid gap-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-5 md:grid-cols-4"
         >
+          {history.canUseOrganizationFilters ? (
+            <>
+              <label className="md:col-span-2">
+                <span className="font-semibold text-zinc-900">Rede</span>
+                <select
+                  name="rede"
+                  defaultValue={selectedNetworkId}
+                  className="mt-2 min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-zinc-950"
+                >
+                  <option value="">Todas as Redes</option>
+                  {history.networks.map((network) => (
+                    <option key={network.id} value={network.id}>
+                      {network.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="md:col-span-2">
+                <span className="font-semibold text-zinc-900">Tipo de célula</span>
+                <select
+                  name="tipo"
+                  defaultValue={selectedCellTypeId}
+                  className="mt-2 min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-zinc-950"
+                >
+                  <option value="">Todos os tipos</option>
+                  {history.cellTypes.map((cellType) => (
+                    <option key={cellType.id} value={cellType.id}>
+                      {cellType.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </>
+          ) : null}
           <label className="md:col-span-2">
             <span className="font-semibold text-zinc-900">Célula</span>
             <select

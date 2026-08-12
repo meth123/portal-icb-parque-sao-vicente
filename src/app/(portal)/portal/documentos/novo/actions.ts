@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { canManageDocumentLibrary } from "@/lib/data/document-library";
+import { createSafePdfFileName } from "@/lib/documents/file-name";
 import { createClient } from "@/lib/supabase/server";
 
 export type CreateDocumentPublicationState = {
@@ -35,7 +36,8 @@ export async function createDocumentPublication(
   const title = readString(formData, "title");
   const description = readString(formData, "description");
   const storageObjectPath = readString(formData, "storageObjectPath");
-  const originalFileName = readString(formData, "originalFileName");
+  const receivedFileName = readString(formData, "originalFileName");
+  const originalFileName = createSafePdfFileName(receivedFileName);
   const fileSizeBytes = Number(readString(formData, "fileSizeBytes"));
 
   const expectedPathPattern = new RegExp(
@@ -48,9 +50,9 @@ export async function createDocumentPublication(
   }
 
   if (
-    originalFileName.length < 5 ||
-    originalFileName.length > 255 ||
-    !originalFileName.toLowerCase().endsWith(".pdf")
+    receivedFileName.length < 5 ||
+    receivedFileName.length > 255 ||
+    !receivedFileName.toLowerCase().endsWith(".pdf")
   ) {
     return { message: "O nome original do arquivo é inválido." };
   }

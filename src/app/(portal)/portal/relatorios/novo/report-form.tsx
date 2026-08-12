@@ -12,37 +12,20 @@ import {
 import type { CellReportInitialData } from "@/lib/cell-report-form";
 import type { CellReportLeadershipOption } from "@/lib/data/cell-reports";
 import { submitCellReport, type SubmitCellReportState } from "./actions";
+import { MemberRow } from "./components/member-row";
+import { ReportTotals } from "./components/report-totals";
+import type {
+  EvangelismRecordDraft,
+  GuestGroup,
+  GuestItem,
+  LegacyStoredReportDraft,
+  ManualName,
+  NotEvangelizedDraft,
+  StoredReportDraft,
+} from "./types";
+import { createInitialSeed, getEvangelismRecordError } from "./utils";
 
 const initialState: SubmitCellReportState = { message: "" };
-
-type ManualName = {
-  key: number;
-  name: string;
-};
-
-type GuestItem = {
-  key: number;
-  name: string;
-  isFirstTime: boolean;
-};
-
-type GuestGroup = {
-  key: number;
-  responsibleName: string;
-  guests: GuestItem[];
-};
-
-type EvangelismRecordDraft = {
-  key: number;
-  primaryLeadershipId: string;
-  leadershipIds: string[];
-  evangelismOn: string;
-  durationText: string;
-  comments: string;
-  participants: ManualName[];
-};
-
-type NotEvangelizedDraft = Record<string, string>;
 
 type ReportFormProps = {
   cellId: string;
@@ -56,51 +39,151 @@ type ReportFormProps = {
   correctionSourceVersionId?: string;
 };
 
-type StoredReportDraft = {
-  version: 2;
-  savedAt: string;
-  meetingOn: string;
-  meetingFormat: "in_person" | "online";
-  leaderWasPresent: "yes" | "no";
-  selectedViceIds: string[];
-  noViceWasPresent: boolean;
-  members: ManualName[];
-  guestGroups: GuestGroup[];
-  evangelismRecords: EvangelismRecordDraft[];
-  notEvangelized: NotEvangelizedDraft;
-  step: 1 | 2;
-};
-
-type LegacyStoredReportDraft = {
-  version: 1;
-  savedAt: string;
-  meetingOn: string;
-  meetingFormat: "in_person" | "online";
-  leaderWasPresent: "yes" | "no";
-  selectedViceIds: string[];
-  noViceWasPresent: boolean;
-  members: ManualName[];
-  guests: Array<{
-    key: number;
-    name: string;
-    responsibleName: string;
-    isFirstTime: boolean;
-  }>;
-  evangelism: Record<
-    string,
-    {
-      didEvangelize: "" | "yes" | "no";
-      evangelismOn: string;
-      durationText: string;
-      comments: string;
-      participants: ManualName[];
-    }
-  >;
-  step: 1 | 2;
-};
-
 const fieldClassName =
   "mt-2 min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-base text-zinc-950 outline-none transition focus:border-zinc-700 focus:ring-2 focus:ring-zinc-200 disabled:cursor-wait disabled:opacity-60";
+
+function formatBrazilianDate(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : "";
+}
+
+function parseBrazilianDate(value: string) {
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
+
+  if (!match) {
+    return null;
+  }
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return `${match[3]}-${match[2]}-${match[1]}`;
+}
+
+type BrazilianDateInputProps = {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  disabled: boolean;
+};
+
+function BrazilianDateInput({
+  id,
+  value,
+  onChange,
+  disabled,
+}: BrazilianDateInputProps) {
+  const [displayValue, setDisplayValue] = useState(() =>
+    formatBrazilianDate(value),
+  );
+  const internalValue = useRef(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const calendarInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (value !== internalValue.current) {
+      internalValue.current = value;
+      setDisplayValue(formatBrazilianDate(value));
+      inputRef.current?.setCustomValidity("");
+    }
+  }, [value]);
+
+  return (
+    <div className="relative">
+      <input
+        ref={inputRef}
+        id={id}
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        placeholder="dd/mm/aaaa"
+        value={displayValue}
+        onChange={(event) => {
+          const digits = event.target.value.replace(/\D/g, "").slice(0, 8);
+          const formatted = [
+            digits.slice(0, 2),
+            digits.slice(2, 4),
+            digits.slice(4, 8),
+          ]
+            .filter(Boolean)
+            .join("/");
+          const parsed = parseBrazilianDate(formatted);
+
+          setDisplayValue(formatted);
+          internalValue.current = parsed ?? "";
+          onChange(parsed ?? "");
+          event.currentTarget.setCustomValidity(
+            parsed ? "" : "Informe uma data válida no formato dia/mês/ano.",
+          );
+        }}
+        required
+        maxLength={10}
+        pattern="\d{2}/\d{2}/\d{4}"
+        title="Informe a data no formato dia/mês/ano."
+        disabled={disabled}
+        className={`${fieldClassName} pr-14`}
+      />
+      <button
+        type="button"
+        aria-label="Abrir calendário"
+        disabled={disabled}
+        onClick={() => {
+          const calendarInput = calendarInputRef.current;
+
+          if (!calendarInput) {
+            return;
+          }
+
+          if (typeof calendarInput.showPicker === "function") {
+            calendarInput.showPicker();
+          } else {
+            calendarInput.focus();
+            calendarInput.click();
+          }
+        }}
+        className="absolute right-1 top-2 mt-2 flex h-10 w-10 -translate-y-1 items-center justify-center rounded-lg text-zinc-700 hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-zinc-900 disabled:cursor-wait disabled:opacity-60"
+      >
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          className="h-5 w-5"
+        >
+          <path d="M7 2v3m10-3v3M3.5 9h17M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+        </svg>
+      </button>
+      <input
+        ref={calendarInputRef}
+        type="date"
+        value={value}
+        onChange={(event) => {
+          const nextValue = event.target.value;
+          internalValue.current = nextValue;
+          setDisplayValue(formatBrazilianDate(nextValue));
+          inputRef.current?.setCustomValidity("");
+          onChange(nextValue);
+        }}
+        aria-label="Selecionar data no calendário"
+        lang="pt-BR"
+        disabled={disabled}
+        tabIndex={-1}
+        className="pointer-events-none absolute h-px w-px opacity-0"
+      />
+    </div>
+  );
+}
 
 function RequiredMark() {
   return (
@@ -108,91 +191,6 @@ function RequiredMark() {
       *
     </span>
   );
-}
-
-function getEvangelismRecordError(draft: EvangelismRecordDraft) {
-  if (draft.leadershipIds.length < 1) {
-    return "Selecione ao menos uma pessoa da liderança.";
-  }
-
-  if (!draft.leadershipIds.includes(draft.primaryLeadershipId)) {
-    return "A liderança principal precisa permanecer neste registro.";
-  }
-
-  if (!draft.evangelismOn) {
-    return "Informe a Data do Evangelismo.";
-  }
-
-  if (!draft.durationText.trim()) {
-    return "Informe o Tempo de Evangelismo.";
-  }
-
-  if (!draft.comments.trim()) {
-    return "Preencha os Comentários.";
-  }
-
-  if (
-    draft.participants.some(
-      (participant) =>
-        participant.name.trim().length < 1 ||
-        participant.name.trim().length > 200,
-    )
-  ) {
-    return "Preencha o nome de cada integrante adicionado.";
-  }
-
-  return "";
-}
-
-function createInitialSeed(
-  initialData: CellReportInitialData | undefined,
-  defaultDate: string,
-  hasViceLeaders: boolean,
-) {
-  let key = 0;
-  const nextKey = () => {
-    key += 1;
-    return key;
-  };
-
-  return {
-    meetingOn: initialData?.meetingOn ?? defaultDate,
-    meetingFormat: initialData?.meetingFormat ?? "in_person",
-    leaderWasPresent: initialData?.leaderWasPresent ?? "yes",
-    selectedViceIds: initialData?.selectedViceIds ?? [],
-    noViceWasPresent:
-      initialData?.noViceWasPresent ?? !hasViceLeaders,
-    members:
-      initialData?.members.map((member) => ({
-        key: nextKey(),
-        name: member.name,
-      })) ?? [],
-    guestGroups:
-      initialData?.guestGroups.map((group) => ({
-        key: nextKey(),
-        responsibleName: group.responsibleName,
-        guests: group.guests.map((guest) => ({
-          key: nextKey(),
-          name: guest.name,
-          isFirstTime: guest.isFirstTime,
-        })),
-      })) ?? [],
-    evangelismRecords:
-      initialData?.evangelismRecords.map((record) => ({
-        key: nextKey(),
-        primaryLeadershipId: record.primaryLeadershipId,
-        leadershipIds: [...record.leadershipIds],
-        evangelismOn: record.evangelismOn,
-        durationText: record.durationText,
-        comments: record.comments,
-        participants: record.participants.map((participant) => ({
-          key: nextKey(),
-          name: participant.name,
-        })),
-      })) ?? [],
-    notEvangelized: { ...(initialData?.notEvangelized ?? {}) },
-    maxKey: key,
-  };
 }
 
 export function ReportForm({
@@ -258,6 +256,7 @@ export function ReportForm({
   const [openEvangelismRecordKey, setOpenEvangelismRecordKey] = useState<
     number | null
   >(null);
+  const [submissionConfirmed, setSubmissionConfirmed] = useState(false);
 
   useEffect(() => {
     const restoreTimeoutId = window.setTimeout(() => {
@@ -286,8 +285,7 @@ export function ReportForm({
 
         if (
           typeof draft.meetingOn === "string" &&
-          /^\d{4}-\d{2}-\d{2}$/.test(draft.meetingOn) &&
-          !correctionSourceVersionId
+          /^\d{4}-\d{2}-\d{2}$/.test(draft.meetingOn)
         ) {
           setMeetingOn(draft.meetingOn);
         }
@@ -661,6 +659,7 @@ export function ReportForm({
     setOpenNotEvangelizedLeadershipId(null);
     setStep(1);
     setOpenEvangelismRecordKey(null);
+    setSubmissionConfirmed(false);
     setLocalMessage("");
     setDraftMessage(
       initialData
@@ -709,6 +708,16 @@ export function ReportForm({
     leadershipId: string,
     checked: boolean,
   ) {
+    if (
+      checked &&
+      Object.prototype.hasOwnProperty.call(notEvangelized, leadershipId)
+    ) {
+      setLocalMessage(
+        "Desfaça o status de Não evangelizou antes de incluir esta pessoa.",
+      );
+      return;
+    }
+
     updateEvangelismRecord(recordKey, (record) => ({
       ...record,
       leadershipIds: checked
@@ -1027,6 +1036,14 @@ export function ReportForm({
       setLocalMessage(
         `Informe o evangelismo ou o motivo de ${firstPendingLeadership.name}.`,
       );
+      return;
+    }
+
+    if (!submissionConfirmed) {
+      event.preventDefault();
+      setLocalMessage(
+        "Confirme que você revisou as informações antes de enviar a Ficha.",
+      );
     }
   }
 
@@ -1126,9 +1143,9 @@ export function ReportForm({
         value={JSON.stringify(serializedEvangelism)}
       />
 
-      <ol className="grid grid-cols-2 gap-3" aria-label="Etapas da Ficha">
+      <ol className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3" aria-label="Etapas da Ficha">
         <li
-          className={`rounded-xl border px-4 py-3 text-sm font-semibold ${
+          className={`rounded-xl border px-4 py-3 text-sm font-semibold leading-5 ${
             step === 1
               ? "border-zinc-950 bg-zinc-950 text-white"
               : "border-zinc-300 bg-white text-zinc-700"
@@ -1137,7 +1154,7 @@ export function ReportForm({
           1. Organização
         </li>
         <li
-          className={`rounded-xl border px-4 py-3 text-sm font-semibold ${
+          className={`rounded-xl border px-4 py-3 text-sm font-semibold leading-5 ${
             step === 2
               ? "border-zinc-950 bg-zinc-950 text-white"
               : "border-zinc-300 bg-white text-zinc-700"
@@ -1146,6 +1163,58 @@ export function ReportForm({
           2. Evangelismo
         </li>
       </ol>
+
+      <details className="group overflow-hidden rounded-2xl border border-zinc-300 bg-white">
+        <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-semibold text-zinc-950 marker:hidden hover:bg-zinc-50">
+          <span className="flex items-center gap-3">
+            <span
+              aria-hidden="true"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-950 text-sm font-bold text-white"
+            >
+              ?
+            </span>
+            Como preencher esta ficha
+          </span>
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="h-5 w-5 shrink-0 transition-transform group-open:rotate-180"
+          >
+            <path d="m5 7.5 5 5 5-5" />
+          </svg>
+        </summary>
+        <div className="border-t border-zinc-200 bg-zinc-50 px-5 py-5">
+          <ol className="space-y-5 text-sm leading-6 text-zinc-700">
+            <li>
+              <strong className="block text-base text-zinc-950">
+                1. Organização
+              </strong>
+              Informe a data e o formato da célula, marque a presença da
+              liderança e adicione membros e convidados. Use o Modo rápido para
+              inserir uma lista de nomes.
+            </li>
+            <li>
+              <strong className="block text-base text-zinc-950">
+                2. Evangelismo
+              </strong>
+              Para cada Líder ou Vice, registre o evangelismo ou informe que não
+              evangelizou. Quando evangelizarem juntos, uma pessoa registra e
+              seleciona as demais em “Quem evangelizou junto?”.
+            </li>
+            <li>
+              <strong className="block text-base text-zinc-950">
+                3. Revisão e envio
+              </strong>
+              Revise os dados, confirme e envie. O rascunho é salvo
+              automaticamente; após o envio, a ficha poderá ser visualizada e
+              baixada em PDF.
+            </li>
+          </ol>
+        </div>
+      </details>
 
       {state.message || localMessage ? (
         <p
@@ -1162,15 +1231,15 @@ export function ReportForm({
         <p className="mt-1 text-lg font-semibold text-zinc-950">{cellName}</p>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-left sm:flex-row sm:items-center sm:justify-between">
-        <p aria-live="polite" className="text-sm text-blue-950">
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 px-3 py-3 text-left sm:px-4">
+        <p aria-live="polite" className="min-w-0 text-xs leading-5 text-blue-950 sm:text-sm">
           {draftMessage}
         </p>
         <button
           type="button"
           onClick={discardDraft}
           disabled={pending || !draftReady}
-          className="min-h-10 shrink-0 rounded-xl border border-blue-300 bg-white px-4 text-sm font-semibold text-blue-950 hover:bg-blue-100 disabled:opacity-60"
+          className="min-h-10 shrink-0 rounded-xl border border-blue-300 bg-white px-3 text-xs font-semibold text-blue-950 hover:bg-blue-100 disabled:opacity-60 sm:px-4 sm:text-sm"
         >
           Descartar
         </button>
@@ -1184,21 +1253,12 @@ export function ReportForm({
                 Data da Célula
                 <RequiredMark />
               </label>
-              <input
+              <BrazilianDateInput
                 id="meetingOnUi"
-                type="date"
                 value={meetingOn}
-                onChange={(event) => setMeetingOn(event.target.value)}
-                required
-                disabled={pending || Boolean(correctionSourceVersionId)}
-                className={fieldClassName}
+                onChange={setMeetingOn}
+                disabled={pending}
               />
-              {correctionSourceVersionId ? (
-                <p className="mt-2 text-sm leading-6 text-zinc-600">
-                  A data permanece fixa para garantir que o envio seja uma nova
-                  versão desta mesma Ficha.
-                </p>
-              ) : null}
             </div>
 
             <fieldset>
@@ -1344,50 +1404,25 @@ export function ReportForm({
             </div>
             <div className="mt-4 space-y-3">
               {members.map((member, index) => (
-                <div
+                <MemberRow
                   key={member.key}
-                  className="grid gap-3 rounded-2xl border border-zinc-200 p-4 sm:grid-cols-[1fr_auto] sm:items-end"
-                >
-                  <div>
-                    <label
-                      htmlFor={`member-${member.key}`}
-                      className="font-medium text-zinc-900"
-                    >
-                      Nome do membro {index + 1}
-                      <RequiredMark />
-                    </label>
-                    <input
-                      id={`member-${member.key}`}
-                      type="text"
-                      value={member.name}
-                      onChange={(event) =>
-                        setMembers((current) =>
-                          current.map((item) =>
-                            item.key === member.key
-                              ? { ...item, name: event.target.value }
-                              : item,
-                          ),
-                        )
-                      }
-                      required
-                      maxLength={200}
-                      disabled={pending}
-                      className={fieldClassName}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setMembers((current) =>
-                        current.filter((item) => item.key !== member.key),
-                      )
-                    }
-                    disabled={pending}
-                    className="min-h-12 rounded-xl border border-red-200 bg-white px-4 font-semibold text-red-800 hover:bg-red-50"
-                  >
-                    Remover
-                  </button>
-                </div>
+                  member={member}
+                  index={index}
+                  disabled={pending}
+                  inputClassName={fieldClassName}
+                  onNameChange={(name) =>
+                    setMembers((current) =>
+                      current.map((item) =>
+                        item.key === member.key ? { ...item, name } : item,
+                      ),
+                    )
+                  }
+                  onRemove={() =>
+                    setMembers((current) =>
+                      current.filter((item) => item.key !== member.key),
+                    )
+                  }
+                />
               ))}
             </div>
             <div className="mt-3 flex flex-col gap-3 sm:flex-row">
@@ -1413,10 +1448,11 @@ export function ReportForm({
                 }
                 aria-expanded={bulkMembersOpen}
                 aria-controls="bulk-member-names"
+                aria-label="Modo rápido: adicionar vários membros"
                 disabled={pending || members.length >= 500}
                 className="min-h-11 w-full rounded-xl border border-zinc-300 bg-white px-4 font-semibold text-zinc-900 hover:bg-zinc-100 sm:w-auto"
               >
-                <span aria-hidden="true">⚡</span> Adicionar vários de uma vez
+                <span aria-hidden="true">⚡</span> Modo rápido
               </button>
             </div>
 
@@ -1629,10 +1665,11 @@ export function ReportForm({
                       }
                       aria-expanded={bulkGuestGroupKey === group.key}
                       aria-controls={`bulk-guests-${group.key}`}
+                      aria-label="Modo rápido: adicionar vários convidados deste responsável"
                       disabled={pending || guests.length >= 500}
                       className="min-h-11 w-full rounded-xl border border-zinc-300 bg-white px-4 font-semibold text-zinc-900 hover:bg-zinc-100 sm:w-auto"
                     >
-                      <span aria-hidden="true">⚡</span> Adicionar vários de uma vez
+                      <span aria-hidden="true">⚡</span> Modo rápido
                     </button>
                   </div>
 
@@ -1703,24 +1740,12 @@ export function ReportForm({
             </button>
           </section>
 
-          <section
-            aria-label="Totais calculados"
-            className="grid gap-3 rounded-2xl bg-zinc-100 p-5 sm:grid-cols-4"
-          >
-            {[
-              ["MEMBROS", members.length],
-              ["CONVIDADOS", guests.length],
-              ["1ª VEZ", firstTimeGuests],
-              ["GERAL", totalParticipants],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-xl bg-white px-4 py-3">
-                <p className="text-xs font-semibold text-zinc-600">{label}</p>
-                <p className="mt-1 text-2xl font-semibold text-zinc-950">
-                  {value}
-                </p>
-              </div>
-            ))}
-          </section>
+          <ReportTotals
+            members={members.length}
+            guests={guests.length}
+            firstTimeGuests={firstTimeGuests}
+            totalParticipants={totalParticipants}
+          />
 
           <button
             type="button"
@@ -1966,10 +1991,6 @@ export function ReportForm({
                 >
                   Evangelismos preenchidos
                 </h3>
-                <p className="mt-1 text-sm leading-6 text-zinc-600">
-                  Se o mesmo grupo saiu em mais de um dia, informe o tempo total
-                  e explique nos Comentários.
-                </p>
 
                 <div className="mt-4 space-y-3">
                   {evangelismRecords.map((record, recordIndex) => {
@@ -2029,19 +2050,20 @@ export function ReportForm({
                               <p className="font-semibold text-zinc-950">
                                 Quem está registrando
                               </p>
-                              <p className="mt-2 min-h-12 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-zinc-950">
-                                {primaryPerson?.name || "Liderança"}
-                              </p>
+                              <div className="mt-2 flex min-h-12 cursor-default items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-200 px-4 py-3 text-zinc-800">
+                                <span className="font-medium">
+                                  {primaryPerson?.name || "Liderança"}
+                                </span>
+                                <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-zinc-600">
+                                  Automático
+                                </span>
+                              </div>
                             </div>
 
                             <fieldset>
                               <legend className="font-semibold text-zinc-950">
                                 Quem evangelizou junto?
                               </legend>
-                              <p className="mt-1 text-sm text-zinc-600">
-                                Deixe sem marcar quando evangelizou sem outro
-                                Líder ou Vice desta célula.
-                              </p>
                               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                                 {leadership
                                   .filter(
@@ -2049,38 +2071,60 @@ export function ReportForm({
                                       person.leadershipId !==
                                       record.primaryLeadershipId,
                                   )
-                                  .map((person) => (
-                                    <label
-                                      key={person.leadershipId}
-                                      className="flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border border-zinc-300 bg-white p-4"
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        checked={record.leadershipIds.includes(
-                                          person.leadershipId,
-                                        )}
-                                        onChange={(event) =>
-                                          handleRecordLeadershipSelection(
-                                            record.key,
+                                  .map((person) => {
+                                    const isMarkedNotEvangelized =
+                                      Object.prototype.hasOwnProperty.call(
+                                        notEvangelized,
+                                        person.leadershipId,
+                                      );
+
+                                    return (
+                                      <label
+                                        key={person.leadershipId}
+                                        className={`flex min-h-14 items-center gap-3 rounded-xl border border-zinc-300 p-4 ${
+                                          isMarkedNotEvangelized
+                                            ? "cursor-not-allowed bg-zinc-100"
+                                            : "cursor-pointer bg-white"
+                                        }`}
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={record.leadershipIds.includes(
                                             person.leadershipId,
-                                            event.target.checked,
-                                          )
-                                        }
-                                        disabled={pending}
-                                        className="h-5 w-5 shrink-0 accent-zinc-950"
-                                      />
-                                      <span>
-                                        <span className="block font-medium text-zinc-950">
-                                          {person.name}
+                                          )}
+                                          onChange={(event) =>
+                                            handleRecordLeadershipSelection(
+                                              record.key,
+                                              person.leadershipId,
+                                              event.target.checked,
+                                            )
+                                          }
+                                          disabled={
+                                            pending || isMarkedNotEvangelized
+                                          }
+                                          className="h-5 w-5 shrink-0 accent-zinc-950 disabled:cursor-not-allowed"
+                                        />
+                                        <span>
+                                          <span
+                                            className={`block font-medium ${
+                                              isMarkedNotEvangelized
+                                                ? "text-zinc-500"
+                                                : "text-zinc-950"
+                                            }`}
+                                          >
+                                            {person.name}
+                                          </span>
+                                          <span className="mt-1 block text-xs text-zinc-600">
+                                            {isMarkedNotEvangelized
+                                              ? "Marcado como Não evangelizou"
+                                              : person.role === "leader"
+                                                ? "Líder"
+                                                : "Vice-líder"}
+                                          </span>
                                         </span>
-                                        <span className="mt-1 block text-xs text-zinc-600">
-                                          {person.role === "leader"
-                                            ? "Líder"
-                                            : "Vice-líder"}
-                                        </span>
-                                      </span>
-                                    </label>
-                                  ))}
+                                      </label>
+                                    );
+                                  })}
                               </div>
                             </fieldset>
 
@@ -2093,19 +2137,16 @@ export function ReportForm({
                                   Data
                                   <RequiredMark />
                                 </label>
-                                <input
+                                <BrazilianDateInput
                                   id={`evangelism-date-${record.key}`}
-                                  type="date"
                                   value={record.evangelismOn}
-                                  onChange={(event) =>
+                                  onChange={(value) =>
                                     updateEvangelismRecord(record.key, (current) => ({
                                       ...current,
-                                      evangelismOn: event.target.value,
+                                      evangelismOn: value,
                                     }))
                                   }
-                                  required
                                   disabled={pending}
-                                  className={fieldClassName}
                                 />
                               </div>
                               <div>
@@ -2126,12 +2167,16 @@ export function ReportForm({
                                       durationText: event.target.value,
                                     }))
                                   }
-                                  placeholder="Ex.: 30 minutos ou 4h"
+                                  placeholder="Ex.: 30 minutos ou 2h"
                                   required
                                   maxLength={60}
                                   disabled={pending}
                                   className={fieldClassName}
                                 />
+                                <p className="mt-2 text-sm leading-5 text-zinc-600">
+                                  Informe quanto tempo foi dedicado exclusivamente a
+                                  essa missão.
+                                </p>
                               </div>
                             </div>
 
@@ -2143,9 +2188,6 @@ export function ReportForm({
                                 >
                                   Integrantes
                                 </h4>
-                                <p className="mt-1 text-sm text-zinc-600">
-                                  Informe as demais pessoas que participaram.
-                                </p>
                               </div>
                               <div className="mt-3 space-y-3">
                                 {record.participants.map((participant, index) => (
@@ -2238,9 +2280,6 @@ export function ReportForm({
                               >
                                 Comentários
                                 <RequiredMark />
-                                <span className="mt-1 block text-sm font-normal text-zinc-600">
-                                  Conte de forma simples como foi o evangelismo.
-                                </span>
                               </label>
                               <textarea
                                 id={`comments-${record.key}`}
@@ -2295,11 +2334,49 @@ export function ReportForm({
             ) : null}
           </section>
 
+          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <h3 className="flex items-center gap-2 font-semibold text-amber-950">
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="h-5 w-5 shrink-0"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7.5v6" />
+                <circle cx="12" cy="17" r=".75" fill="currentColor" stroke="none" />
+              </svg>
+              Revise antes de enviar
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-amber-900">
+              Confira a data, as presenças e o Relatório de Evangelismo.
+            </p>
+            <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl bg-white p-4 ring-1 ring-amber-200">
+              <input
+                type="checkbox"
+                checked={submissionConfirmed}
+                onChange={(event) =>
+                  setSubmissionConfirmed(event.target.checked)
+                }
+                required
+                disabled={pending}
+                className="mt-0.5 h-5 w-5 shrink-0 accent-zinc-950"
+              />
+              <span className="font-medium text-zinc-950">
+                Revisei as informações e confirmo o envio.
+                <RequiredMark />
+              </span>
+            </label>
+          </section>
+
           <div className="flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
               onClick={() => {
                 setStep(1);
+                setSubmissionConfirmed(false);
                 setLocalMessage("");
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}

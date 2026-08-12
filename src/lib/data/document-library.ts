@@ -2,6 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { createSafePdfFileName } from "@/lib/documents/file-name";
 import { createClient } from "@/lib/supabase/server";
 
 export type DocumentCategorySummary = {
@@ -71,30 +72,44 @@ export async function getActiveDocumentCategories() {
   };
 }
 
-export async function getDocumentLibraryOverview() {
+export async function getDocumentLibraryOverview(categoryId?: string) {
   if (!(await canAccessDocumentLibrary())) {
     return null;
   }
 
   const supabase = await createClient();
-  const [categoriesResult, publicationsResult] = await Promise.all([
-    supabase
-      .from("document_categories")
-      .select("id, name, sort_order")
-      .eq("is_active", true)
-      .order("sort_order")
-      .order("name"),
-    supabase
-      .from("document_publications")
-      .select("id, category_id, title, published_at")
-      .eq("status", "published")
-      .order("published_at", { ascending: false }),
-  ]);
+  const categoriesResult = await supabase
+    .from("document_categories")
+    .select("id, name, sort_order")
+    .eq("is_active", true)
+    .order("sort_order")
+    .order("name");
 
   const categories = (categoriesResult.data ?? []).map((category) => ({
     id: category.id,
     name: category.name,
   })) satisfies DocumentCategorySummary[];
+
+  const selectedCategoryId =
+    categoryId &&
+    uuidPattern.test(categoryId) &&
+    categories.some((category) => category.id === categoryId)
+      ? categoryId
+      : "";
+  let publicationsQuery = supabase
+    .from("document_publications")
+    .select("id, category_id, title, published_at")
+    .eq("status", "published")
+    .order("published_at", { ascending: false });
+
+  if (selectedCategoryId) {
+    publicationsQuery = publicationsQuery.eq(
+      "category_id",
+      selectedCategoryId,
+    );
+  }
+
+  const publicationsResult = await publicationsQuery;
 
   const publications = (
     (publicationsResult.data ?? []) as RawDocumentPublication[]
@@ -108,6 +123,7 @@ export async function getDocumentLibraryOverview() {
   return {
     categories,
     publications,
+    selectedCategoryId,
     hasError: Boolean(categoriesResult.error || publicationsResult.error),
   };
 }
@@ -135,7 +151,7 @@ export async function createDocumentDownloadUrl(publicationId: string) {
   const { data, error } = await supabase.storage
     .from(publication.storage_bucket_id)
     .createSignedUrl(publication.storage_object_path, 60, {
-      download: publication.original_file_name,
+      download: createSafePdfFileName(publication.original_file_name),
     });
 
   if (error || !data?.signedUrl) {

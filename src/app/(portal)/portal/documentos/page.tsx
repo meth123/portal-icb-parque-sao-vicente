@@ -6,6 +6,7 @@ import {
   canManageDocumentLibrary,
   getDocumentLibraryOverview,
 } from "@/lib/data/document-library";
+import { DeleteDocumentForm } from "./delete-document-form";
 
 export const metadata: Metadata = {
   title: "Biblioteca de documentos | Portal ICB Parque São Vicente",
@@ -25,7 +26,10 @@ function formatDate(value: string) {
 }
 
 type DocumentsPageProps = {
-  searchParams: Promise<{ erro?: string | string[] }>;
+  searchParams: Promise<{
+    categoria?: string | string[];
+    erro?: string | string[];
+  }>;
 };
 
 export default async function DocumentsPage({
@@ -41,14 +45,16 @@ export default async function DocumentsPage({
     redirect("/portal");
   }
 
-  const library = await getDocumentLibraryOverview();
+  const { categoria, erro } = await searchParams;
+  const selectedCategoryId =
+    typeof categoria === "string" ? categoria : undefined;
+  const library = await getDocumentLibraryOverview(selectedCategoryId);
 
   if (!library) {
     redirect("/portal");
   }
 
   const canManage = await canManageDocumentLibrary();
-  const { erro } = await searchParams;
   const hasDownloadError = erro === "download";
 
   return (
@@ -99,18 +105,39 @@ export default async function DocumentsPage({
                 id="categories-heading"
                 className="text-xl font-semibold text-zinc-950"
               >
-                Categorias
+                Filtrar por categoria
               </h2>
-              <ul className="mt-4 flex flex-wrap gap-2">
-                {library.categories.map((category) => (
-                  <li
-                    key={category.id}
-                    className="rounded-full border border-zinc-300 bg-zinc-50 px-4 py-2 text-sm font-medium text-zinc-800"
+              <form method="get" className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+                <label className="w-full sm:max-w-md">
+                  <span className="sr-only">Categoria</span>
+                  <select
+                    name="categoria"
+                    defaultValue={library.selectedCategoryId}
+                    className="min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
                   >
-                    {category.name}
-                  </li>
-                ))}
-              </ul>
+                    <option value="">Todas as categorias</option>
+                    {library.categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="submit"
+                  className="min-h-12 rounded-xl bg-zinc-950 px-5 font-semibold text-white hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
+                >
+                  Aplicar filtro
+                </button>
+                {library.selectedCategoryId ? (
+                  <Link
+                    href="/portal/documentos"
+                    className="flex min-h-12 items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 font-semibold text-zinc-900 hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
+                  >
+                    Limpar
+                  </Link>
+                ) : null}
+              </form>
             </section>
 
             <section aria-labelledby="publications-heading" className="mt-10">
@@ -159,6 +186,9 @@ export default async function DocumentsPage({
                         >
                           Baixar PDF
                         </a>
+                        {canManage ? (
+                          <DeleteDocumentForm publicationId={publication.id} />
+                        ) : null}
                       </li>
                     );
                   })}

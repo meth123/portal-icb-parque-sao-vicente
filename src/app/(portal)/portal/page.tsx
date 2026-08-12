@@ -8,7 +8,10 @@ import {
 } from "@/lib/auth/current-user";
 import { getCellReportDraftKey } from "@/lib/cell-report-draft";
 import { canAccessDocumentLibrary } from "@/lib/data/document-library";
-import { getCellReportFormContext } from "@/lib/data/cell-reports";
+import {
+  getCellReportFormContext,
+  getCurrentMonthlyReportResponsibility,
+} from "@/lib/data/cell-reports";
 import { logout } from "./actions";
 import { ClearCellReportDraft } from "./clear-cell-report-draft";
 
@@ -54,18 +57,24 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
     );
   }
 
-  const [hasDocumentLibraryAccess, reportContext, resolvedSearchParams] =
+  const [
+    hasDocumentLibraryAccess,
+    reportContext,
+    monthlyResponsibility,
+    resolvedSearchParams,
+  ] =
     await Promise.all([
       canAccessDocumentLibrary(),
       getCellReportFormContext(),
+      getCurrentMonthlyReportResponsibility(),
       searchParams,
     ]);
   const reportWasSubmitted =
     resolvedSearchParams.status === "ficha-enviada";
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-zinc-100 px-4 py-10 sm:px-6">
-      <section className="w-full max-w-lg rounded-3xl border border-zinc-200 bg-white p-6 text-center shadow-sm sm:p-10">
+    <main className="flex min-h-screen items-center justify-center bg-zinc-100 px-3 py-6 sm:px-6 sm:py-10">
+      <section className="w-full max-w-lg rounded-3xl border border-zinc-200 bg-white p-4 text-center shadow-sm sm:p-10">
         <Image
           src="/images/icb-parque-sao-vicente.png"
           alt="ICB Parque São Vicente"
@@ -102,6 +111,18 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
           </>
         ) : null}
 
+        {monthlyResponsibility?.isCurrentUserResponsible ? (
+          <div className="mx-auto mt-6 w-fit max-w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center text-blue-950">
+            <p className="text-sm font-semibold leading-6">
+              Você é o responsável pelas Fichas em{" "}
+              <span className="whitespace-nowrap">
+                {monthlyResponsibility.monthLabel}
+              </span>
+              .
+            </p>
+          </div>
+        ) : null}
+
         <dl className="mt-6 rounded-2xl bg-zinc-100 px-5 py-4 text-left text-sm text-zinc-700">
           {user.email ? (
             <div className="flex flex-col gap-1 py-2 sm:flex-row sm:justify-between sm:gap-4">
@@ -123,18 +144,20 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
           {reportContext ? (
             <Link
               href="/portal/relatorios/novo"
-              className="flex min-h-12 w-full items-center justify-center rounded-xl bg-zinc-950 px-5 text-base font-semibold text-white transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
+              className="flex min-h-12 w-full items-center justify-center rounded-xl bg-zinc-950 px-3 py-3 text-sm font-semibold leading-5 text-white transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900 sm:px-5 sm:text-base"
             >
-              Preencher Ficha de Organização
+              <span className="sm:hidden">Preencher Ficha</span>
+              <span className="hidden sm:inline">Preencher Ficha de Organização</span>
             </Link>
           ) : null}
 
           {reportContext || canAccessPastoralDashboard(user) ? (
             <Link
               href="/portal/relatorios"
-              className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
+              className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-3 py-3 text-sm font-semibold leading-5 text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900 sm:px-5 sm:text-base"
             >
-              Consultar Fichas enviadas
+              <span className="sm:hidden">Consultar Fichas</span>
+              <span className="hidden sm:inline">Consultar Fichas enviadas</span>
             </Link>
           ) : null}
 

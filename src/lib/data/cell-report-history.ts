@@ -1,6 +1,9 @@
 import "server-only";
 
-import { getCurrentUser } from "@/lib/auth/current-user";
+import {
+  canAccessPastoralDashboard,
+  getCurrentUser,
+} from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
 
 const uuidPattern =
@@ -24,10 +27,19 @@ type RawVersion = {
   submitted_at: string;
 };
 
+type RawClassification = {
+  cell_id: string;
+  cell_type_id: string;
+  starts_on: string;
+  ends_on: string | null;
+};
+
 export type CellReportHistoryFilters = {
   cellId?: string;
   dateFrom?: string;
   dateTo?: string;
+  networkId?: string;
+  cellTypeId?: string;
 };
 
 export type CellReportHistoryItem = {
@@ -42,6 +54,8 @@ export type CellReportHistoryItem = {
   guestsCount: number;
   firstTimeGuestsCount: number;
   submittedAt: string;
+  networkId: string | null;
+  cellTypeId: string | null;
 };
 
 export async function getCellReportHistory(
@@ -54,6 +68,7 @@ export async function getCellReportHistory(
   }
 
   const supabase = await createClient();
+  const canUseOrganizationFilters = canAccessPastoralDashboard(user);
   const accessibleReportCellsResult = await supabase
     .from("cell_reports")
     .select("cell_id")
@@ -63,6 +78,9 @@ export async function getCellReportHistory(
     return {
       reports: [] as CellReportHistoryItem[],
       cells: [] as Array<{ id: string; name: string }>,
+      networks: [] as Array<{ id: string; name: string }>,
+      cellTypes: [] as Array<{ id: string; name: string; networkId: string }>,
+      canUseOrganizationFilters,
       hasError: true,
     };
   }
@@ -72,19 +90,29 @@ export async function getCellReportHistory(
       (accessibleReportCellsResult.data ?? []).map((report) => report.cell_id),
     ),
   ];
-  const cellsResult =
+  const [cellsResult, classificationsResult] = await Promise.all([
     accessibleCellIds.length > 0
       ? await supabase
           .from("cells")
           .select("id, name")
           .in("id", accessibleCellIds)
           .order("name")
-      : { data: [], error: null };
+      : { data: [], error: null },
+    canUseOrganizationFilters && accessibleCellIds.length > 0
+      ? supabase
+          .from("cell_classifications")
+          .select("cell_id, cell_type_id, starts_on, ends_on")
+          .in("cell_id", accessibleCellIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
 
-  if (cellsResult.error) {
+  if (cellsResult.error || classificationsResult.error) {
     return {
       reports: [] as CellReportHistoryItem[],
       cells: [] as Array<{ id: string; name: string }>,
+      networks: [] as Array<{ id: string; name: string }>,
+      cellTypes: [] as Array<{ id: string; name: string; networkId: string }>,
+      canUseOrganizationFilters,
       hasError: true,
     };
   }
@@ -94,6 +122,51 @@ export async function getCellReportHistory(
     name: cell.name,
   }));
   const allowedCellIds = new Set(cells.map((cell) => cell.id));
+  const classifications = (classificationsResult.data ?? []) as RawClassification[];
+  const cellTypesResult =
+    canUseOrganizationFilters
+      ? await supabase
+          .from("cell_types")
+          .select("id, name, network_id")
+          .eq("is_active", true)
+          .order("name")
+      : { data: [], error: null };
+  const networksResult =
+    canUseOrganizationFilters
+      ? await supabase
+          .from("networks")
+          .select("id, name, code")
+          .eq("is_active", true)
+          .order("name")
+      : { data: [], error: null };
+
+  if (cellTypesResult.error || networksResult.error) {
+    return {
+      reports: [] as CellReportHistoryItem[],
+      cells,
+      networks: [] as Array<{ id: string; name: string }>,
+      cellTypes: [] as Array<{ id: string; name: string; networkId: string }>,
+      canUseOrganizationFilters,
+      hasError: true,
+    };
+  }
+
+  const cellTypes = (cellTypesResult.data ?? []).map((cellType) => ({
+    id: cellType.id,
+    name: cellType.name,
+    networkId: cellType.network_id,
+  }));
+  const networks = (networksResult.data ?? []).map((network) => ({
+    id: network.id,
+    name:
+      network.code === "RJ"
+        ? "Rede de Jovens"
+        : network.code === "H.M"
+          ? "Rede H.M"
+          : network.name,
+  }));
+  const allowedNetworkIds = new Set(networks.map((network) => network.id));
+  const allowedCellTypeIds = new Set(cellTypes.map((cellType) => cellType.id));
   let reportsQuery = supabase
     .from("cell_reports")
     .select("id, cell_id, meeting_on")
@@ -119,6 +192,9 @@ export async function getCellReportHistory(
     return {
       reports: [] as CellReportHistoryItem[],
       cells,
+      networks,
+      cellTypes,
+      canUseOrganizationFilters,
       hasError: Boolean(reportsResult.error),
     };
   }
@@ -138,6 +214,9 @@ export async function getCellReportHistory(
     return {
       reports: [] as CellReportHistoryItem[],
       cells,
+      networks,
+      cellTypes,
+      canUseOrganizationFilters,
       hasError: true,
     };
   }
@@ -149,6 +228,7 @@ export async function getCellReportHistory(
       version,
     ]),
   );
+  const cellTypeById = new Map(cellTypes.map((cellType) => [cellType.id, cellType]));
   const history = reports.flatMap((report) => {
     const version = versionsByReportId.get(report.id);
 
@@ -156,8 +236,16 @@ export async function getCellReportHistory(
       return [];
     }
 
-    return [
-      {
+    const classification = classifications.find(
+      (item) =>
+        item.cell_id === report.cell_id &&
+        item.starts_on <= report.meeting_on &&
+        (!item.ends_on || item.ends_on > report.meeting_on),
+    );
+    const cellType = classification
+      ? cellTypeById.get(classification.cell_type_id)
+      : undefined;
+    const item = {
         versionId: version.id,
         reportId: report.id,
         cellId: report.cell_id,
@@ -169,13 +257,37 @@ export async function getCellReportHistory(
         guestsCount: version.guests_count,
         firstTimeGuestsCount: version.first_time_guests_count,
         submittedAt: version.submitted_at,
-      } satisfies CellReportHistoryItem,
-    ];
+        networkId: cellType?.networkId ?? null,
+        cellTypeId: cellType?.id ?? null,
+      } satisfies CellReportHistoryItem;
+
+    if (
+      canUseOrganizationFilters &&
+      filters.networkId &&
+      allowedNetworkIds.has(filters.networkId) &&
+      item.networkId !== filters.networkId
+    ) {
+      return [];
+    }
+
+    if (
+      canUseOrganizationFilters &&
+      filters.cellTypeId &&
+      allowedCellTypeIds.has(filters.cellTypeId) &&
+      item.cellTypeId !== filters.cellTypeId
+    ) {
+      return [];
+    }
+
+    return [item];
   });
 
   return {
     reports: history,
     cells,
+    networks,
+    cellTypes,
+    canUseOrganizationFilters,
     hasError: false,
   };
 }

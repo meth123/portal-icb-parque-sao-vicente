@@ -21,6 +21,7 @@ type RawVersion = {
   submitted_by: string;
   submitted_at: string;
   is_current: boolean;
+  meeting_on: string;
 };
 
 type RawReport = {
@@ -113,7 +114,7 @@ export const getCellReportVersionDetail = cache(
     const versionResult = await supabase
       .from("cell_report_versions")
       .select(
-        "id, report_id, version_number, meeting_format, leader_was_present, leader_leadership_id, no_vice_leader_was_present, members_count, guests_count, first_time_guests_count, submitted_by, submitted_at, is_current",
+        "id, report_id, version_number, meeting_format, leader_was_present, leader_leadership_id, no_vice_leader_was_present, members_count, guests_count, first_time_guests_count, submitted_by, submitted_at, is_current, meeting_on",
       )
       .eq("id", versionId)
       .maybeSingle();
@@ -254,8 +255,8 @@ export const getCellReportVersionDetail = cache(
     const leadershipAtMeeting = cellLeaderships
       .filter(
         (leadership) =>
-          leadership.starts_on <= report.meeting_on &&
-          (!leadership.ends_on || leadership.ends_on >= report.meeting_on),
+          leadership.starts_on <= version.meeting_on &&
+          (!leadership.ends_on || leadership.ends_on > version.meeting_on),
       )
       .map((leadership) => ({
         leadershipId: leadership.id,
@@ -275,7 +276,7 @@ export const getCellReportVersionDetail = cache(
       reportId: report.id,
       cellId: report.cell_id,
       cellName: cellResult.data.name,
-      meetingOn: report.meeting_on,
+      meetingOn: version.meeting_on,
       versionNumber: version.version_number,
       meetingFormat: version.meeting_format,
       leaderWasPresent: version.leader_was_present,

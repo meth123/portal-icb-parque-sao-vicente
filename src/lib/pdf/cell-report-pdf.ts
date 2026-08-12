@@ -227,9 +227,19 @@ export function createCellReportPdf(detail: CellReportVersionDetail) {
     `Líder: ${detail.leaderName} - ${detail.leaderWasPresent ? "Presente" : "Ausente"}`,
     { size: 10, spaceAfter: 4 },
   );
-  addText(
-    `Vice-líderes presentes: ${detail.noViceLeaderWasPresent || detail.presentViceLeaderNames.length === 0 ? "Nenhum" : detail.presentViceLeaderNames.join(", ")}`,
+  const viceLeaders = detail.leadership.filter(
+    (person) => person.role === "vice_leader",
   );
+  if (viceLeaders.length === 0) {
+    addText("Vice-líderes: Nenhum vinculado à célula.");
+  } else {
+    for (const viceLeader of viceLeaders) {
+      addText(
+        `Vice-líder: ${viceLeader.name} - ${detail.presentViceLeadershipIds.includes(viceLeader.leadershipId) ? "Presente" : "Ausente"}`,
+        { size: 10, spaceAfter: 3 },
+      );
+    }
+  }
 
   addSection("Membros");
   if (detail.members.length === 0) {
@@ -259,7 +269,7 @@ export function createCellReportPdf(detail: CellReportVersionDetail) {
       });
       for (const guest of guests) {
         addText(
-          `- ${guest.name}${guest.isFirstTime ? " (1ª vez)" : ""}`,
+          `${guest.position}. ${guest.name}${guest.isFirstTime ? " (1ª vez)" : ""}`,
           { indent: 8, spaceAfter: 2 },
         );
       }

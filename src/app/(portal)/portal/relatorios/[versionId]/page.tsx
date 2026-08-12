@@ -170,11 +170,30 @@ export default async function CellReportDetailPage({
                 </dd>
               </div>
               <div className="rounded-2xl border border-zinc-200 p-5">
-                <dt className="font-semibold text-zinc-950">Vice-líderes presentes</dt>
-                <dd className="mt-2 text-zinc-700">
-                  {detail.noViceLeaderWasPresent || detail.presentViceLeaderNames.length === 0
-                    ? "Nenhum"
-                    : detail.presentViceLeaderNames.join(", ")}
+                <dt className="font-semibold text-zinc-950">Vice-líderes</dt>
+                <dd className="mt-3">
+                  {detail.leadership.some((person) => person.role === "vice_leader") ? (
+                    <ul className="space-y-2">
+                      {detail.leadership
+                        .filter((person) => person.role === "vice_leader")
+                        .map((person) => {
+                          const wasPresent = detail.presentViceLeadershipIds.includes(
+                            person.leadershipId,
+                          );
+
+                          return (
+                            <li key={person.leadershipId} className="flex flex-wrap items-center justify-between gap-2 text-zinc-700">
+                              <span>{person.name}</span>
+                              <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${wasPresent ? "bg-emerald-100 text-emerald-900" : "bg-zinc-100 text-zinc-700"}`}>
+                                {wasPresent ? "Presente" : "Ausente"}
+                              </span>
+                            </li>
+                          );
+                        })}
+                    </ul>
+                  ) : (
+                    <span className="text-zinc-700">Nenhum vinculado à célula</span>
+                  )}
                 </dd>
               </div>
             </dl>

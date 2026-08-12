@@ -17,9 +17,8 @@ export const sampleCellReportDetail: CellReportVersionDetail = {
   noViceLeaderWasPresent: false,
   presentViceLeadershipIds: [
     "77777777-7777-4777-8777-777777777777",
-    "88888888-8888-4888-8888-888888888888",
   ],
-  presentViceLeaderNames: ["Júnior", "Roberto"],
+  presentViceLeaderNames: ["Júnior"],
   membersCount: 4,
   guestsCount: 3,
   firstTimeGuestsCount: 1,
@@ -111,6 +110,11 @@ test("gera um PDF leve e estruturalmente completo", () => {
   assert.equal(content.includes("/BaseFont /Helvetica"), true);
   assert.equal(content.includes("Ficha de Organização"), true);
   assert.equal(content.includes("Não evangelizou"), true);
+  assert.equal(content.includes("Roberto - Ausente"), true);
+  assert.equal(content.includes("1. Jo"), true);
+  assert.equal(content.includes("1. Mateus"), true);
+  assert.equal(content.includes("2. Marcos"), true);
+  assert.equal(content.includes("3. Rafael"), true);
   assert.equal(pdf.byteLength < 50_000, true);
 });
 

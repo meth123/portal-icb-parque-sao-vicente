@@ -13,6 +13,7 @@ Tecnologias principais: Next.js, React, TypeScript, Tailwind CSS, Supabase/Postg
 - Fase 2 — autenticação e autorização: concluída.
 - Fase 3 — células, vínculos e isolamento de dados: concluída.
 - Fase 4 — biblioteca privada de documentos e PDFs: concluída.
-- Fase 5 — Ficha de Organização e relatórios das células: em andamento.
+- Fase 5 — Ficha de Organização e Relatório de Evangelismo: concluída.
+- Fase 6 — dashboard da própria célula: em andamento.
 
 > Projeto experimental em desenvolvimento. O escopo e a arquitetura evoluem de forma incremental.

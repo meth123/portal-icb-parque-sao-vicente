@@ -346,7 +346,7 @@ export async function submitCellReport(
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("submit_cell_report", {
+  const reportPayload = {
     target_cell_id: cellId,
     target_meeting_on: meetingOn,
     target_meeting_format: meetingFormat,
@@ -356,7 +356,13 @@ export async function submitCellReport(
     target_members: members,
     target_guests: guests,
     target_evangelism_entries: evangelismEntries,
-  });
+  };
+  const { data, error } = correctionSourceVersionId
+    ? await supabase.rpc("correct_cell_report", {
+        target_source_version_id: correctionSourceVersionId,
+        ...reportPayload,
+      })
+    : await supabase.rpc("submit_cell_report", reportPayload);
 
   if (error) {
     const safeMessagePrefixes = [
@@ -380,6 +386,8 @@ export async function submitCellReport(
       "Toda a liderança",
       "O status Não evangelizou",
       "Não informe",
+      "A versão escolhida",
+      "Já existe outra Ficha",
     ];
     const safeMessage = safeMessagePrefixes.some((prefix) =>
       error.message.startsWith(prefix),
