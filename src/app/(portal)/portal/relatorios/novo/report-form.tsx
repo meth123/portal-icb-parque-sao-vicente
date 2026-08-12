@@ -1772,14 +1772,8 @@ export function ReportForm({
 
             <section
               className="mt-5 overflow-hidden rounded-2xl border border-zinc-300 bg-white"
-              aria-labelledby="leadership-status-heading"
+              aria-label="Preenchimento do evangelismo por pessoa"
             >
-              <h3
-                id="leadership-status-heading"
-                className="bg-zinc-50 px-5 py-4 font-semibold text-zinc-950"
-              >
-                Situação da liderança
-              </h3>
               <div className="divide-y divide-zinc-200">
                 {leadership.map((person) => {
                 const personRecords = getLeadershipRecords(

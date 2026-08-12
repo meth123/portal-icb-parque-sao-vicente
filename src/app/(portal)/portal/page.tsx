@@ -8,6 +8,7 @@ import {
 } from "@/lib/auth/current-user";
 import { getCellReportDraftKey } from "@/lib/cell-report-draft";
 import { canAccessDocumentLibrary } from "@/lib/data/document-library";
+import { getInstitutionMonthlyIndicator } from "@/lib/data/institution-dashboard";
 import {
   getCellReportFormContext,
   getCurrentMonthlyReportResponsibility,
@@ -61,12 +62,14 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
     hasDocumentLibraryAccess,
     reportContext,
     monthlyResponsibility,
+    institutionIndicator,
     resolvedSearchParams,
   ] =
     await Promise.all([
       canAccessDocumentLibrary(),
       getCellReportFormContext(),
       getCurrentMonthlyReportResponsibility(),
+      getInstitutionMonthlyIndicator(),
       searchParams,
     ]);
   const reportWasSubmitted =
@@ -123,6 +126,35 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
           </div>
         ) : null}
 
+        {institutionIndicator ? (
+          <section className="mt-6 rounded-2xl border border-zinc-200 bg-white px-4 py-5 text-center">
+            <p className="text-sm font-semibold text-zinc-600">
+              {institutionIndicator.monthLabel}
+            </p>
+            {institutionIndicator.hasError ? (
+              <p className="mt-2 text-sm text-red-700" role="alert">
+                Não foi possível carregar o resumo geral.
+              </p>
+            ) : (
+              <p className="mt-2 flex flex-wrap items-baseline justify-center gap-x-2 text-base leading-7 text-zinc-800">
+                <strong className="text-3xl text-zinc-950">
+                  {institutionIndicator.firstTimeGuests}
+                </strong>
+                <span>
+                  {institutionIndicator.firstTimeGuests === 1
+                    ? "convidado pela 1ª vez"
+                    : "convidados pela 1ª vez"}
+                </span>
+              </p>
+            )}
+            {!institutionIndicator.hasError ? (
+              <p className="mt-2 text-sm text-zinc-600">
+                Todas as células · Atualizado automaticamente
+              </p>
+            ) : null}
+          </section>
+        ) : null}
+
         <dl className="mt-6 rounded-2xl bg-zinc-100 px-5 py-4 text-left text-sm text-zinc-700">
           {user.email ? (
             <div className="flex flex-col gap-1 py-2 sm:flex-row sm:justify-between sm:gap-4">
@@ -161,6 +193,15 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
             </Link>
           ) : null}
 
+          {reportContext ? (
+            <Link
+              href={`/portal/celulas/${reportContext.cellId}`}
+              className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-3 py-3 text-sm font-semibold leading-5 text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900 sm:px-5 sm:text-base"
+            >
+              Minha célula
+            </Link>
+          ) : null}
+
           {hasDocumentLibraryAccess ? (
             <Link
               href="/portal/documentos"
@@ -170,12 +211,14 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
             </Link>
           ) : null}
 
-          <Link
-            href="/portal/organizacao"
-            className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
-          >
-            Ver estrutura organizacional
-          </Link>
+          {canAccessPastoralDashboard(user) ? (
+            <Link
+              href="/portal/organizacao"
+              className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
+            >
+              Ver estrutura organizacional
+            </Link>
+          ) : null}
 
           {canAccessPastoralDashboard(user) ? (
             <Link
