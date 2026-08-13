@@ -5,6 +5,7 @@ import {
   getCurrentUser,
 } from "@/lib/auth/current-user";
 import {
+  calculateOverdueCellWeeks,
   calculatePastoralDashboardMetrics,
   calculatePastoralCellSummaries,
   calculatePastoralFirstTimeHistory,
@@ -16,6 +17,7 @@ import {
   formatMonthLabel,
   getMonthRange,
   getMonthSequence,
+  getSaoPauloDate,
   normalizeMonth,
 } from "@/lib/dates/sao-paulo";
 import { createClient } from "@/lib/supabase/server";
@@ -25,6 +27,8 @@ type PastoralDashboardFilters = {
   networkId?: string;
   cellTypeId?: string;
   cellId?: string;
+  weekday?: string;
+  submitterProfileId?: string;
   historyMonths?: string;
 };
 
@@ -43,11 +47,13 @@ type RawCellType = {
 type RawCell = {
   id: string;
   name: string;
+  started_on: string;
 };
 
 type RawReport = {
   id: string;
   cell_id: string;
+  created_at: string;
 };
 
 type RawClassification = {
@@ -55,9 +61,20 @@ type RawClassification = {
   cell_type_id: string;
 };
 
+type RawSchedule = {
+  cell_id: string;
+  weekday: number;
+};
+
+type RawLeadershipDirectoryEntry = {
+  profile_id: string;
+  full_name: string | null;
+};
+
 type RawReportVersion = {
   id: string;
   report_id: string;
+  submitted_by: string;
   meeting_on: string;
   members_count: number;
   guests_count: number;
@@ -92,6 +109,7 @@ export async function getPastoralDashboard(
   }
 
   const month = normalizeMonth(requestedFilters.month);
+  const today = getSaoPauloDate();
   const range = getMonthRange(month);
   const historyMonthsCount = normalizePastoralHistoryMonths(
     requestedFilters.historyMonths,
@@ -111,7 +129,13 @@ export async function getPastoralDashboard(
     ...emptyEvangelismParticipation,
   }));
   const supabase = await createClient();
-  const [networksResult, cellTypesResult, cellsResult, classificationsResult] =
+  const [
+    networksResult,
+    cellTypesResult,
+    cellsResult,
+    classificationsResult,
+    schedulesResult,
+  ] =
     await Promise.all([
       supabase
         .from("networks")
@@ -125,12 +149,16 @@ export async function getPastoralDashboard(
         .order("name"),
       supabase
         .from("cells")
-        .select("id, name")
+        .select("id, name, started_on")
         .eq("is_active", true)
         .order("name"),
       supabase
         .from("cell_classifications")
         .select("cell_id, cell_type_id")
+        .is("ends_on", null),
+      supabase
+        .from("cell_schedules")
+        .select("cell_id, weekday")
         .is("ends_on", null),
     ]);
 
@@ -140,7 +168,8 @@ export async function getPastoralDashboard(
     networksResult.error ||
       cellTypesResult.error ||
       cellsResult.error ||
-      classificationsResult.error,
+      classificationsResult.error ||
+      schedulesResult.error,
   );
   const selectedNetworkId = networks.some(
     (network) => network.id === requestedFilters.networkId,
@@ -165,12 +194,16 @@ export async function getPastoralDashboard(
       selectedNetworkId,
       selectedCellTypeId,
       selectedCellId: "",
+      selectedWeekday: "",
+      selectedSubmitterProfileId: "",
       cells: [],
+      submitters: [],
       historyMonths: historyMonthsCount,
       activeCells: 0,
       metrics: emptyMetrics,
       firstTimeHistory: emptyHistory,
       cellSummaries: [],
+      overdueWeeks: [],
       evangelismParticipation: emptyEvangelismParticipation,
       evangelismHistory: emptyEvangelismHistory,
       hasError: true,
@@ -194,6 +227,17 @@ export async function getPastoralDashboard(
       classification.cell_type_id,
     ]),
   );
+  const scheduleByCellId = new Map(
+    ((schedulesResult.data ?? []) as RawSchedule[]).map((schedule) => [
+      schedule.cell_id,
+      schedule.weekday,
+    ]),
+  );
+  const selectedWeekday = ["4", "5", "6"].includes(
+    requestedFilters.weekday ?? "",
+  )
+    ? (requestedFilters.weekday ?? "")
+    : "";
   const organizationFilteredCells = ((cellsResult.data ?? []) as RawCell[]).filter(
     (cell) => {
       if (!allowedCellTypeIds) {
@@ -203,6 +247,10 @@ export async function getPastoralDashboard(
       const cellTypeId = cellTypeByCellId.get(cell.id);
       return Boolean(cellTypeId && allowedCellTypeIds.has(cellTypeId));
     },
+  ).filter(
+    (cell) =>
+      !selectedWeekday ||
+      scheduleByCellId.get(cell.id) === Number(selectedWeekday),
   );
   const selectedCellId = organizationFilteredCells.some(
     (cell) => cell.id === requestedFilters.cellId,
@@ -212,9 +260,13 @@ export async function getPastoralDashboard(
   const filteredCells = selectedCellId
     ? organizationFilteredCells.filter((cell) => cell.id === selectedCellId)
     : organizationFilteredCells;
+  let submitters: Array<{ id: string; name: string }> = [];
+  let selectedSubmitterProfileId = "";
+  let directoryHasError = false;
   const filteredCellIds = filteredCells.map((cell) => cell.id);
   const reportIds: string[] = [];
   const reportCellByReportId = new Map<string, string>();
+  const reportCreatedOnByReportId = new Map<string, string>();
   let reportsHaveError = false;
 
   if (filteredCellIds.length > 0) {
@@ -225,7 +277,7 @@ export async function getPastoralDashboard(
     while (shouldContinue) {
       const reportsResult = await supabase
         .from("cell_reports")
-        .select("id, cell_id")
+        .select("id, cell_id, created_at")
         .in("cell_id", filteredCellIds)
         .gte("meeting_on", historyRange.startsOn)
         .lt("meeting_on", range.endsBefore)
@@ -242,6 +294,10 @@ export async function getPastoralDashboard(
       for (const report of page as RawReport[]) {
         reportIds.push(report.id);
         reportCellByReportId.set(report.id, report.cell_id);
+        reportCreatedOnByReportId.set(
+          report.id,
+          getSaoPauloDate(new Date(report.created_at)),
+        );
       }
       shouldContinue = page.length === pageSize;
       offset += pageSize;
@@ -257,12 +313,16 @@ export async function getPastoralDashboard(
       selectedNetworkId,
       selectedCellTypeId,
       selectedCellId,
+      selectedWeekday,
+      selectedSubmitterProfileId,
       cells: organizationFilteredCells,
+      submitters,
       historyMonths: historyMonthsCount,
       activeCells: filteredCellIds.length,
       metrics: emptyMetrics,
       firstTimeHistory: emptyHistory,
       cellSummaries: [],
+      overdueWeeks: [],
       evangelismParticipation: emptyEvangelismParticipation,
       evangelismHistory: emptyEvangelismHistory,
       hasError: true,
@@ -278,7 +338,7 @@ export async function getPastoralDashboard(
       supabase
         .from("cell_report_versions")
         .select(
-          "id, report_id, meeting_on, members_count, guests_count, first_time_guests_count",
+          "id, report_id, submitted_by, meeting_on, members_count, guests_count, first_time_guests_count",
         )
         .in("report_id", batch)
         .eq("is_current", true),
@@ -294,21 +354,85 @@ export async function getPastoralDashboard(
       selectedNetworkId,
       selectedCellTypeId,
       selectedCellId,
+      selectedWeekday,
+      selectedSubmitterProfileId,
       cells: organizationFilteredCells,
+      submitters,
       historyMonths: historyMonthsCount,
       activeCells: filteredCellIds.length,
       metrics: emptyMetrics,
       firstTimeHistory: emptyHistory,
       cellSummaries: [],
+      overdueWeeks: [],
       evangelismParticipation: emptyEvangelismParticipation,
       evangelismHistory: emptyEvangelismHistory,
       hasError: true,
     };
   }
 
-  const versions = versionResults.flatMap(
+  const unfilteredVersions = versionResults.flatMap(
     (result) => (result.data ?? []) as RawReportVersion[],
   );
+  const overdueWeeks = calculateOverdueCellWeeks(
+    filteredCells.map((cell) => ({
+      id: cell.id,
+      startedOn: cell.started_on,
+    })),
+    unfilteredVersions.map((version) => ({
+      cellId: reportCellByReportId.get(version.report_id) ?? "",
+      meetingOn: version.meeting_on,
+      submittedOn:
+        reportCreatedOnByReportId.get(version.report_id) ?? version.meeting_on,
+    })),
+    month,
+    today,
+  ).map((week) => ({
+    ...week,
+    cellName:
+      filteredCells.find((cell) => cell.id === week.cellId)?.name ??
+      "Célula não informada",
+  }));
+  const selectedMonthSubmitterIds = Array.from(
+    new Set(
+      unfilteredVersions
+        .filter((version) => version.meeting_on.slice(0, 7) === month)
+        .map((version) => version.submitted_by),
+    ),
+  );
+  const leadershipDirectoryResult =
+    selectedMonthSubmitterIds.length > 0
+      ? await supabase.rpc("get_accessible_leadership_directory")
+      : { data: [] as RawLeadershipDirectoryEntry[], error: null };
+  const leadershipNames = new Map(
+    ((leadershipDirectoryResult.data ?? []) as RawLeadershipDirectoryEntry[]).map(
+      (profile) => [profile.profile_id, profile.full_name],
+    ),
+  );
+  submitters = selectedMonthSubmitterIds
+    .map((profileId) => ({
+      id: profileId,
+      name: leadershipNames.get(profileId) ?? "Nome não informado",
+    }))
+    .sort((first, second) => first.name.localeCompare(second.name, "pt-BR"));
+  selectedSubmitterProfileId = submitters.some(
+    (submitter) => submitter.id === requestedFilters.submitterProfileId,
+  )
+    ? (requestedFilters.submitterProfileId ?? "")
+    : "";
+  directoryHasError = Boolean(leadershipDirectoryResult.error);
+  const versions = selectedSubmitterProfileId
+    ? unfilteredVersions.filter(
+        (version) => version.submitted_by === selectedSubmitterProfileId,
+      )
+    : unfilteredVersions;
+  const submittedCellIds = new Set(
+    versions.map(
+      (version) => reportCellByReportId.get(version.report_id) ?? "",
+    ),
+  );
+  const dashboardCells = selectedSubmitterProfileId
+    ? filteredCells.filter((cell) => submittedCellIds.has(cell.id))
+    : filteredCells;
   const monthlyVersions = versions.filter(
     (version) => version.meeting_on.slice(0, 7) === month,
   );
@@ -344,12 +468,16 @@ export async function getPastoralDashboard(
       selectedNetworkId,
       selectedCellTypeId,
       selectedCellId,
+      selectedWeekday,
+      selectedSubmitterProfileId,
       cells: organizationFilteredCells,
+      submitters,
       historyMonths: historyMonthsCount,
-      activeCells: filteredCellIds.length,
+      activeCells: dashboardCells.length,
       metrics,
       firstTimeHistory: emptyHistory,
       cellSummaries: [],
+      overdueWeeks,
       evangelismParticipation: emptyEvangelismParticipation,
       evangelismHistory: emptyEvangelismHistory,
       hasError: true,
@@ -384,12 +512,16 @@ export async function getPastoralDashboard(
       selectedNetworkId,
       selectedCellTypeId,
       selectedCellId,
+      selectedWeekday,
+      selectedSubmitterProfileId,
       cells: organizationFilteredCells,
+      submitters,
       historyMonths: historyMonthsCount,
-      activeCells: filteredCellIds.length,
+      activeCells: dashboardCells.length,
       metrics,
       firstTimeHistory: emptyHistory,
       cellSummaries: [],
+      overdueWeeks,
       evangelismParticipation: emptyEvangelismParticipation,
       evangelismHistory: emptyEvangelismHistory,
       hasError: true,
@@ -445,7 +577,7 @@ export async function getPastoralDashboard(
   );
   const cellTypeById = new Map(cellTypes.map((cellType) => [cellType.id, cellType]));
   const baseCellSummaries = calculatePastoralCellSummaries(
-    filteredCells.map((cell) => {
+    dashboardCells.map((cell) => {
       const cellType = cellTypeById.get(cellTypeByCellId.get(cell.id) ?? "");
 
       return {
@@ -511,14 +643,18 @@ export async function getPastoralDashboard(
     selectedNetworkId,
     selectedCellTypeId,
     selectedCellId,
+    selectedWeekday,
+    selectedSubmitterProfileId,
     cells: organizationFilteredCells,
+    submitters,
     historyMonths: historyMonthsCount,
-    activeCells: filteredCellIds.length,
+    activeCells: dashboardCells.length,
     metrics,
     firstTimeHistory,
     cellSummaries,
+    overdueWeeks,
     evangelismParticipation,
     evangelismHistory,
-    hasError: false,
+    hasError: directoryHasError,
   };
 }

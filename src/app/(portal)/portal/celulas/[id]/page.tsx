@@ -87,6 +87,19 @@ export default async function CellDetailsPage({
       note: "por Ficha",
     },
   ];
+  const viceSummaries = dashboard.viceSummaries.map((summary) => ({
+    ...summary,
+    name:
+      cell.leaderships.find(
+        (leadership) => leadership.profileId === summary.profileId,
+      )?.name ?? "Vice-líder sem nome",
+  }));
+  const pendingWeeks = dashboard.overdueWeeks.filter(
+    (week) => week.status === "pending",
+  );
+  const lateSubmissionWeeks = dashboard.overdueWeeks.filter(
+    (week) => week.status === "submitted_late",
+  );
 
   return (
     <main className="min-h-screen bg-zinc-100 px-4 py-10 sm:px-6">
@@ -224,6 +237,117 @@ export default async function CellDetailsPage({
                       : "Não participou"}
                 </span>
               </div>
+            </section>
+          ) : null}
+
+          {dashboard.personalSummary ? (
+            <section
+              className={`mt-6 rounded-2xl border p-4 sm:p-5 ${
+                pendingWeeks.length > 0
+                  ? "border-amber-200 bg-amber-50"
+                  : "border-green-200 bg-green-50"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <span
+                  aria-hidden="true"
+                  className={`flex size-9 shrink-0 items-center justify-center rounded-full text-lg font-bold ${
+                    pendingWeeks.length > 0
+                      ? "bg-amber-100 text-amber-900"
+                      : "bg-green-100 text-green-900"
+                  }`}
+                >
+                  {pendingWeeks.length > 0 ? "!" : "✓"}
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-zinc-600">
+                    {dashboard.monthLabel}
+                  </p>
+                  <h2 className="text-xl font-semibold text-zinc-950">
+                    {pendingWeeks.length > 0
+                      ? `${pendingWeeks.length} ${pendingWeeks.length === 1 ? "Ficha pendente" : "Fichas pendentes"}`
+                      : "Fichas em dia"}
+                  </h2>
+                </div>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-zinc-700">
+                {pendingWeeks.length > 0
+                  ? "Existem Fichas que precisam ser enviadas."
+                  : "Nenhuma pendência para resolver até o momento."}
+              </p>
+
+              {pendingWeeks.length > 0 ? (
+                <details className="mt-3 rounded-xl bg-white/80">
+                  <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900">
+                    Ver pendências
+                  </summary>
+                  <ul className="divide-y divide-zinc-200 border-t border-zinc-200 px-4">
+                    {pendingWeeks.map((week) => (
+                      <li key={week.weekEndsOn} className="py-3 text-sm text-zinc-700">
+                        Semana encerrada em {formatDate(week.weekEndsOn)}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              ) : null}
+
+              {lateSubmissionWeeks.length > 0 ? (
+                <details className="mt-3 rounded-xl bg-white/80">
+                  <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900">
+                    Ver envios atrasados ({lateSubmissionWeeks.length})
+                  </summary>
+                  <ul className="divide-y divide-zinc-200 border-t border-zinc-200 px-4">
+                    {lateSubmissionWeeks.map((week) => (
+                      <li key={week.weekEndsOn} className="py-3 text-sm text-zinc-700">
+                        Semana encerrada em {formatDate(week.weekEndsOn)}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              ) : null}
+            </section>
+          ) : null}
+
+          {viceSummaries.length > 0 ? (
+            <section className="mt-6 rounded-2xl border border-zinc-200 p-4 sm:p-6">
+              <p className="text-sm font-semibold text-zinc-600">
+                {dashboard.monthLabel}
+              </p>
+              <h2 className="mt-1 text-xl font-semibold text-zinc-950">
+                Resumo dos Vice-líderes
+              </h2>
+              <p className="mt-1 text-sm text-zinc-600">
+                Acompanhamento mensal da própria célula.
+              </p>
+
+              <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+                {viceSummaries.map((summary) => (
+                  <li
+                    key={summary.profileId}
+                    className="rounded-xl bg-zinc-100 p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="font-semibold text-zinc-950">
+                        {summary.name}
+                      </p>
+                      <span
+                        className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
+                          summary.didEvangelize
+                            ? "bg-green-100 text-green-900"
+                            : "bg-white text-zinc-700"
+                        }`}
+                      >
+                        {summary.didEvangelize ? "Participou" : "Sem registro"}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm text-zinc-600">
+                      {summary.didEvangelize
+                        ? `${summary.records} ${summary.records === 1 ? "relato" : "relatos"} em ${summary.reports} ${summary.reports === 1 ? "Ficha" : "Fichas"}.`
+                        : "Sem participação no evangelismo neste mês."}
+                    </p>
+                  </li>
+                ))}
+              </ul>
             </section>
           ) : null}
 

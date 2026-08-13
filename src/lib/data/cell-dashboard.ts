@@ -1,6 +1,7 @@
 import "server-only";
 
 import {
+  calculateOverdueCellWeeks,
   calculateEvangelismHistory,
   calculateMonthlyEvangelismParticipation,
   calculatePastoralDashboardMetrics,
@@ -12,6 +13,7 @@ import {
   formatMonthLabel,
   getMonthRange,
   getMonthSequence,
+  getSaoPauloDate,
   normalizeMonth,
 } from "@/lib/dates/sao-paulo";
 import { createClient } from "@/lib/supabase/server";
@@ -21,10 +23,16 @@ const uuidPattern =
 
 type RawReportVersion = {
   id: string;
+  report_id: string;
   meeting_on: string;
   members_count: number;
   guests_count: number;
   first_time_guests_count: number;
+};
+
+type RawReport = {
+  id: string;
+  created_at: string;
 };
 
 type RawEvangelismEntry = {
@@ -44,12 +52,22 @@ type RawCurrentLeadership = {
   role: "leader" | "vice_leader";
 };
 
+type RawCurrentViceLeadership = {
+  id: string;
+  profile_id: string;
+};
+
+type RawCellStart = {
+  started_on: string;
+};
+
 export async function getCellDashboard(
   cellId: string,
   requestedMonth?: string,
   requestedHistoryMonths?: string,
 ) {
   const month = normalizeMonth(requestedMonth);
+  const today = getSaoPauloDate();
   const range = getMonthRange(month);
   const historyMonthsCount = normalizePastoralHistoryMonths(
     requestedHistoryMonths,
@@ -74,27 +92,81 @@ export async function getCellDashboard(
   }
 
   const supabase = await createClient();
-  const [reportsResult, currentLeadershipResult] = await Promise.all([
-    supabase
-      .from("cell_reports")
-      .select("id")
-      .eq("cell_id", cellId)
-      .gte("meeting_on", historyRange.startsOn)
-      .lt("meeting_on", range.endsBefore)
-      .limit(200),
-    supabase
-      .from("cell_leaderships")
-      .select("id, role")
-      .eq("cell_id", cellId)
-      .eq("profile_id", user.id)
-      .is("ends_on", null)
-      .maybeSingle(),
-  ]);
+  const [
+    reportsResult,
+    currentLeadershipResult,
+    viceLeadershipsResult,
+    cellStartResult,
+  ] =
+    await Promise.all([
+      supabase
+        .from("cell_reports")
+        .select("id, created_at")
+        .eq("cell_id", cellId)
+        .gte("meeting_on", historyRange.startsOn)
+        .lt("meeting_on", range.endsBefore)
+        .limit(200),
+      supabase
+        .from("cell_leaderships")
+        .select("id, role")
+        .eq("cell_id", cellId)
+        .eq("profile_id", user.id)
+        .is("ends_on", null)
+        .maybeSingle(),
+      supabase
+        .from("cell_leaderships")
+        .select("id, profile_id")
+        .eq("cell_id", cellId)
+        .eq("role", "vice_leader")
+        .is("ends_on", null),
+      supabase
+        .from("cells")
+        .select("started_on")
+        .eq("id", cellId)
+        .maybeSingle(),
+    ]);
   const currentLeadership = currentLeadershipResult.data as
     | RawCurrentLeadership
     | null;
 
-  if (reportsResult.error || currentLeadershipResult.error) {
+  const currentViceLeaderships =
+    currentLeadership?.role === "leader"
+      ? ((viceLeadershipsResult.data ?? []) as RawCurrentViceLeadership[])
+      : [];
+  const emptyViceSummaries = currentViceLeaderships.map((leadership) => ({
+    profileId: leadership.profile_id,
+    records: 0,
+    reports: 0,
+    didEvangelize: false,
+  }));
+  const cellStart = cellStartResult.data as RawCellStart | null;
+  const reportCreatedOnById = new Map(
+    ((reportsResult.data ?? []) as RawReport[]).map((report) => [
+      report.id,
+      getSaoPauloDate(new Date(report.created_at)),
+    ]),
+  );
+  const calculateOverdueWeeks = (reports: RawReportVersion[]) =>
+    cellStart
+      ? calculateOverdueCellWeeks(
+          [{ id: cellId, startedOn: cellStart.started_on }],
+          reports.map((report) => ({
+            cellId,
+            meetingOn: report.meeting_on,
+            submittedOn:
+              reportCreatedOnById.get(report.report_id) ?? report.meeting_on,
+          })),
+          month,
+          today,
+        )
+      : [];
+
+  if (
+    reportsResult.error ||
+    currentLeadershipResult.error ||
+    viceLeadershipsResult.error ||
+    cellStartResult.error
+  ) {
     return {
       month,
       monthLabel: formatMonthLabel(range.startsOn),
@@ -108,11 +180,15 @@ export async function getCellDashboard(
         percentage: null,
       },
       personalSummary: null,
+      viceSummaries: [],
+      overdueWeeks: [],
       hasError: true,
     };
   }
 
-  const reportIds = (reportsResult.data ?? []).map((report) => report.id);
+  const reportIds = ((reportsResult.data ?? []) as RawReport[]).map(
+    (report) => report.id,
+  );
 
   if (reportIds.length === 0) {
     return {
@@ -135,6 +211,8 @@ export async function getCellDashboard(
             didEvangelize: false,
           }
         : null,
+      viceSummaries: emptyViceSummaries,
+      overdueWeeks: calculateOverdueWeeks([]),
       hasError: false,
     };
   }
@@ -142,7 +220,7 @@ export async function getCellDashboard(
   const versionsResult = await supabase
     .from("cell_report_versions")
     .select(
-      "id, meeting_on, members_count, guests_count, first_time_guests_count",
+      "id, report_id, meeting_on, members_count, guests_count, first_time_guests_count",
     )
     .in("report_id", reportIds)
     .eq("is_current", true)
@@ -163,11 +241,14 @@ export async function getCellDashboard(
         percentage: null,
       },
       personalSummary: null,
+      viceSummaries: emptyViceSummaries,
+      overdueWeeks: [],
       hasError: true,
     };
   }
 
   const reports = (versionsResult.data ?? []) as RawReportVersion[];
+  const overdueWeeks = calculateOverdueWeeks(reports);
   const history = historyMonths.map((historyMonth) => {
     const monthlyReports = reports
       .filter((report) => report.meeting_on.slice(0, 7) === historyMonth)
@@ -212,6 +293,8 @@ export async function getCellDashboard(
         percentage: null,
       },
       personalSummary: null,
+      viceSummaries: emptyViceSummaries,
+      overdueWeeks,
       hasError: true,
     };
   }
@@ -243,6 +326,8 @@ export async function getCellDashboard(
         percentage: null,
       },
       personalSummary: null,
+      viceSummaries: emptyViceSummaries,
+      overdueWeeks,
       hasError: true,
     };
   }
@@ -288,6 +373,20 @@ export async function getCellDashboard(
         ),
       }
     : null;
+  const viceSummaries = currentViceLeaderships.map((leadership) => ({
+    profileId: leadership.profile_id,
+    ...calculatePersonalEvangelismSummary(
+      leadership.id,
+      positiveEvangelismEntries.map((entry) => ({
+        id: entry.id,
+        versionId: entry.report_version_id,
+      })),
+      leadershipParticipants.map((participant) => ({
+        entryId: participant.evangelism_entry_id,
+        leadershipId: participant.cell_leadership_id,
+      })),
+    ),
+  }));
 
   return {
     month,
@@ -298,6 +397,8 @@ export async function getCellDashboard(
     evangelismHistory,
     evangelismParticipation,
     personalSummary,
+    viceSummaries,
+    overdueWeeks,
     hasError: false,
   };
 }

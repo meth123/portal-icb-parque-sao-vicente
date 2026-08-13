@@ -78,6 +78,83 @@ export type PastoralMonthlyReport = CellDashboardMetricSource & {
 
 export type PastoralHistoryMonths = 3 | 6 | 12;
 
+export type OverdueCellSource = {
+  id: string;
+  startedOn: string;
+};
+
+export type WeeklyCellReportSource = {
+  cellId: string;
+  meetingOn: string;
+  submittedOn: string;
+};
+
+function addUtcDays(date: string, days: number) {
+  const result = new Date(`${date}T12:00:00Z`);
+  result.setUTCDate(result.getUTCDate() + days);
+  return result.toISOString().slice(0, 10);
+}
+
+export function calculateOverdueCellWeeks(
+  cells: OverdueCellSource[],
+  reports: WeeklyCellReportSource[],
+  month: string,
+  today: string,
+) {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const monthStartsOn = new Date(Date.UTC(year, monthNumber - 1, 1, 12));
+  const monthEndsBefore = new Date(Date.UTC(year, monthNumber, 1, 12));
+  const completedWeeks: Array<{ startsOn: string; endsOn: string }> = [];
+
+  for (
+    const date = new Date(monthStartsOn);
+    date < monthEndsBefore;
+    date.setUTCDate(date.getUTCDate() + 1)
+  ) {
+    const endsOn = date.toISOString().slice(0, 10);
+
+    if (date.getUTCDay() === 0 && endsOn < today) {
+      completedWeeks.push({
+        startsOn: addUtcDays(endsOn, -6),
+        endsOn,
+      });
+    }
+  }
+
+  return completedWeeks.flatMap((week) =>
+    cells
+      .filter((cell) => cell.startedOn <= week.endsOn)
+      .flatMap((cell) => {
+        const weeklyReports = reports.filter(
+          (report) =>
+            report.cellId === cell.id &&
+            report.meetingOn >= week.startsOn &&
+            report.meetingOn <= week.endsOn,
+        );
+
+        if (
+          weeklyReports.some((report) => report.submittedOn <= week.endsOn)
+        ) {
+          return [];
+        }
+
+        const firstLateSubmission = weeklyReports
+          .map((report) => report.submittedOn)
+          .sort()[0];
+
+        return [
+          {
+            cellId: cell.id,
+            weekStartsOn: week.startsOn,
+            weekEndsOn: week.endsOn,
+            status: firstLateSubmission ? ("submitted_late" as const) : ("pending" as const),
+            submittedOn: firstLateSubmission ?? null,
+          },
+        ];
+      }),
+  );
+}
+
 export function normalizePastoralHistoryMonths(
   value: string | undefined,
 ): PastoralHistoryMonths {

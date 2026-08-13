@@ -7,6 +7,12 @@ import {
 } from "@/lib/auth/current-user";
 import { getPastoralDashboard } from "@/lib/data/pastoral-dashboard";
 
+function formatDate(date: string) {
+  return new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(
+    new Date(`${date}T12:00:00Z`),
+  );
+}
+
 export const metadata: Metadata = {
   title: "Painel pastoral | Portal ICB Parque São Vicente",
   robots: {
@@ -21,6 +27,8 @@ type SupervisionPageProps = {
     rede?: string | string[];
     tipo?: string | string[];
     celula?: string | string[];
+    dia?: string | string[];
+    responsavel?: string | string[];
     historico?: string | string[];
   }>;
 };
@@ -46,6 +54,10 @@ export default async function SupervisionPage({
     typeof query.tipo === "string" ? query.tipo : undefined;
   const requestedCellId =
     typeof query.celula === "string" ? query.celula : undefined;
+  const requestedWeekday =
+    typeof query.dia === "string" ? query.dia : undefined;
+  const requestedSubmitterProfileId =
+    typeof query.responsavel === "string" ? query.responsavel : undefined;
   const requestedHistoryMonths =
     typeof query.historico === "string" ? query.historico : undefined;
   const dashboard = await getPastoralDashboard({
@@ -53,6 +65,8 @@ export default async function SupervisionPage({
     networkId: requestedNetworkId,
     cellTypeId: requestedCellTypeId,
     cellId: requestedCellId,
+    weekday: requestedWeekday,
+    submitterProfileId: requestedSubmitterProfileId,
     historyMonths: requestedHistoryMonths,
   });
 
@@ -77,6 +91,11 @@ export default async function SupervisionPage({
       label: "Fichas recebidas",
       value: metrics.reports,
       note: "no período",
+    },
+    {
+      label: "Fichas atrasadas",
+      value: dashboard.overdueWeeks.length,
+      note: "prazo até domingo",
     },
     {
       label: "Média de membros presentes",
@@ -119,7 +138,7 @@ export default async function SupervisionPage({
             </div>
           </div>
 
-          <form className="mt-7 grid gap-3 rounded-2xl bg-zinc-100 p-4 sm:grid-cols-2 lg:grid-cols-6 lg:items-end">
+          <form className="mt-7 grid gap-3 rounded-2xl bg-zinc-100 p-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
             <div className="min-w-0">
                 <label
                   htmlFor="pastoral-month"
@@ -134,6 +153,48 @@ export default async function SupervisionPage({
                   defaultValue={dashboard.month}
                   className="min-h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
                 />
+            </div>
+
+            <div className="min-w-0">
+              <label
+                htmlFor="pastoral-weekday"
+                className="mb-1 block text-sm font-medium text-zinc-700"
+              >
+                Dia
+              </label>
+              <select
+                id="pastoral-weekday"
+                name="dia"
+                defaultValue={dashboard.selectedWeekday}
+                className="min-h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
+              >
+                <option value="">Todos os dias</option>
+                <option value="4">Quinta-feira</option>
+                <option value="5">Sexta-feira</option>
+                <option value="6">Sábado</option>
+              </select>
+            </div>
+
+            <div className="min-w-0">
+              <label
+                htmlFor="pastoral-submitter"
+                className="mb-1 block text-sm font-medium text-zinc-700"
+              >
+                Enviada por
+              </label>
+              <select
+                id="pastoral-submitter"
+                name="responsavel"
+                defaultValue={dashboard.selectedSubmitterProfileId}
+                className="min-h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
+              >
+                <option value="">Todas as pessoas</option>
+                {dashboard.submitters.map((submitter) => (
+                  <option key={submitter.id} value={submitter.id}>
+                    {submitter.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="min-w-0">
@@ -221,16 +282,16 @@ export default async function SupervisionPage({
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="flex items-center justify-end gap-2 sm:col-span-2 lg:col-span-4">
                 <button
                   type="submit"
-                  className="min-h-11 rounded-xl bg-zinc-950 px-4 text-sm font-semibold text-white hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
+                  className="min-h-10 rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
                 >
                   Filtrar
                 </button>
                 <Link
                   href="/portal/supervisao"
-                  className="flex min-h-11 items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-900 hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
+                  className="flex min-h-10 items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-sm font-semibold text-zinc-900 hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
                 >
                   Limpar
                 </Link>
@@ -268,6 +329,50 @@ export default async function SupervisionPage({
                   Nenhuma Ficha recebida neste período.
                 </p>
               ) : null}
+
+              <section className="mt-8 rounded-2xl border border-zinc-200 p-4 sm:p-6">
+                <h2 className="text-xl font-semibold text-zinc-950">
+                  Fichas atrasadas
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-zinc-600">
+                  Sem Ficha até domingo, a semana aparece como atrasada na
+                  segunda-feira.
+                </p>
+
+                {dashboard.overdueWeeks.length > 0 ? (
+                  <details className="mt-5 rounded-xl bg-zinc-100">
+                    <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900">
+                      Ver lista ({dashboard.overdueWeeks.length})
+                    </summary>
+                    <ul className="max-h-80 divide-y divide-zinc-200 overflow-y-auto border-t border-zinc-200 px-4">
+                      {dashboard.overdueWeeks.map((week) => (
+                        <li
+                          key={`${week.cellId}-${week.weekEndsOn}`}
+                          className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div>
+                            <p className="font-semibold text-zinc-950">
+                              {week.cellName}
+                            </p>
+                            <p className="mt-1 text-sm text-zinc-600">
+                              Semana encerrada em {formatDate(week.weekEndsOn)}
+                            </p>
+                          </div>
+                          <span className="text-sm font-medium text-red-800">
+                            {week.status === "submitted_late" && week.submittedOn
+                              ? `Enviada em ${formatDate(week.submittedOn)} com atraso`
+                              : "Pendente"}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                ) : (
+                  <p className="mt-4 rounded-xl bg-green-50 px-4 py-3 text-sm font-medium text-green-900">
+                    Nenhuma Ficha atrasada neste período.
+                  </p>
+                )}
+              </section>
 
               <section className="mt-8 rounded-2xl border border-zinc-200 p-4 sm:p-6">
                 <h2 className="text-xl font-semibold text-zinc-950">

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  calculateOverdueCellWeeks,
   calculateCellDashboardMetrics,
   calculateEvangelismHistory,
   calculateMonthlyEvangelismParticipation,
@@ -166,6 +167,84 @@ test("aceita somente os períodos pastorais de 3, 6 ou 12 meses", () => {
   assert.equal(normalizePastoralHistoryMonths("12"), 12);
   assert.equal(normalizePastoralHistoryMonths("24"), 6);
   assert.equal(normalizePastoralHistoryMonths(undefined), 6);
+});
+
+test("considera a Ficha atrasada somente depois do domingo", () => {
+  const cells = [
+    { id: "cell-a", startedOn: "2026-08-03" },
+    { id: "cell-b", startedOn: "2026-08-03" },
+  ];
+  const reports = [
+    {
+      cellId: "cell-a",
+      meetingOn: "2026-08-06",
+      submittedOn: "2026-08-09",
+    },
+  ];
+
+  assert.deepEqual(
+    calculateOverdueCellWeeks(cells, reports, "2026-08", "2026-08-09"),
+    [],
+  );
+  assert.deepEqual(
+    calculateOverdueCellWeeks(cells, reports, "2026-08", "2026-08-10"),
+    [
+      {
+        cellId: "cell-b",
+        weekStartsOn: "2026-08-03",
+        weekEndsOn: "2026-08-09",
+        status: "pending",
+        submittedOn: null,
+      },
+    ],
+  );
+});
+
+test("uma Ficha na semana satisfaz o prazo mesmo com reuniões extras", () => {
+  const overdue = calculateOverdueCellWeeks(
+    [{ id: "cell-a", startedOn: "2026-08-03" }],
+    [
+      {
+        cellId: "cell-a",
+        meetingOn: "2026-08-06",
+        submittedOn: "2026-08-09",
+      },
+      {
+        cellId: "cell-a",
+        meetingOn: "2026-08-08",
+        submittedOn: "2026-08-09",
+      },
+    ],
+    "2026-08",
+    "2026-08-10",
+  );
+
+  assert.deepEqual(overdue, []);
+});
+
+test("preserva como atrasada a Ficha enviada depois do domingo", () => {
+  const overdue = calculateOverdueCellWeeks(
+    [{ id: "cell-a", startedOn: "2026-08-10" }],
+    [
+      {
+        cellId: "cell-a",
+        meetingOn: "2026-08-13",
+        submittedOn: "2026-08-17",
+      },
+    ],
+    "2026-08",
+    "2026-08-18",
+  );
+
+  assert.deepEqual(overdue, [
+    {
+      cellId: "cell-a",
+      weekStartsOn: "2026-08-10",
+      weekEndsOn: "2026-08-16",
+      status: "submitted_late",
+      submittedOn: "2026-08-17",
+    },
+  ]);
 });
 
 test("valida o mês e calcula corretamente a virada do ano", () => {
