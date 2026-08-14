@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
-  canAccessAdministration,
+  canManageCellAdministration,
   getCurrentUser,
 } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
@@ -28,7 +28,7 @@ export async function createCell(
 ): Promise<CreateCellState> {
   const user = await getCurrentUser();
 
-  if (!user || !canAccessAdministration(user)) {
+  if (!user || !canManageCellAdministration(user)) {
     return { message: "Sua conta não possui permissão para cadastrar células." };
   }
 
@@ -96,6 +96,13 @@ export async function createCell(
   });
 
   if (error) {
+    if (error.message === "CURRENT_LEADERSHIP_REQUIRES_ACTIVE_USER") {
+      return {
+        message:
+          "Líder e vice-líderes precisam possuir uma conta comum ativa.",
+      };
+    }
+
     if (error.code === "23505") {
       if (error.message.includes("cells_name_unique_ci")) {
         return { message: "Já existe uma célula com esse nome." };
@@ -118,7 +125,7 @@ export async function createCell(
     }
 
     const expectedMessages = [
-      "Apenas um Administrador ativo",
+      "A conta não possui permissão",
       "Informe",
       "A Rede ou o tipo",
       "A cidade ou o bairro",

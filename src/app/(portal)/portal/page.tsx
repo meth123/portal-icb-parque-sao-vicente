@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import {
   canAccessAdministration,
   canAccessPastoralDashboard,
+  canManageCellAdministration,
   getCurrentUser,
 } from "@/lib/auth/current-user";
 import { getCellReportDraftKey } from "@/lib/cell-report-draft";
@@ -173,6 +174,13 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
         </dl>
 
         <div className="mt-6 space-y-3">
+          <Link
+            href="/portal/perfil"
+            className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
+          >
+            Meu perfil
+          </Link>
+
           {reportContext ? (
             <Link
               href="/portal/relatorios/novo"
@@ -234,7 +242,16 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
               href="/portal/admin"
               className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
             >
-              Testar acesso administrativo
+              Administração
+            </Link>
+          ) : null}
+          {canManageCellAdministration(user) &&
+          !canAccessAdministration(user) ? (
+            <Link
+              href="/portal/admin/celulas"
+              className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
+            >
+              Gerenciar células
             </Link>
           ) : null}
         </div>

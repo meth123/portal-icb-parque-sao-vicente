@@ -8,6 +8,9 @@ Tecnologias principais: Next.js, React, TypeScript, Tailwind CSS, Supabase/Postg
 
 ## Andamento
 
+Fase 8 — administração: em andamento. Fundação, perfil pessoal e gestão de
+contas foram validados; a gestão dos vínculos das células está em validação.
+
 - Fase 0 — preparação e estrutura inicial: concluída.
 - Fase 1 — base do Next.js e layout: concluída.
 - Fase 2 — autenticação e autorização: concluída.
@@ -15,6 +18,6 @@ Tecnologias principais: Next.js, React, TypeScript, Tailwind CSS, Supabase/Postg
 - Fase 4 — biblioteca privada de documentos e PDFs: concluída.
 - Fase 5 — Ficha de Organização e Relatório de Evangelismo: concluída.
 - Fase 6 — painel da própria célula: concluída.
-- Fase 7 — painel pastoral e supervisão: em andamento.
+- Fase 7 — painel pastoral e supervisão: concluída.
 
 > Projeto experimental em desenvolvimento. O escopo e a arquitetura evoluem de forma incremental.

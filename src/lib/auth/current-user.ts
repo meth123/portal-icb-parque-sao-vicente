@@ -10,8 +10,10 @@ export type CurrentUser = {
   id: string;
   email: string | null;
   fullName: string | null;
+  avatarPath: string | null;
   globalRole: GlobalRole;
   isSupervisor: boolean;
+  canManageCells: boolean;
   isActive: boolean;
 };
 
@@ -30,7 +32,9 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("full_name, global_role, is_supervisor, is_active")
+    .select(
+      "full_name, avatar_path, global_role, is_supervisor, can_manage_cells, is_active",
+    )
     .eq("id", claims.sub)
     .maybeSingle();
 
@@ -46,14 +50,26 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     id: claims.sub,
     email: typeof claims.email === "string" ? claims.email : null,
     fullName: profile.full_name,
+    avatarPath: profile.avatar_path,
     globalRole,
     isSupervisor: profile.is_supervisor,
+    canManageCells: profile.can_manage_cells,
     isActive: profile.is_active,
   };
 });
 
 export function canAccessAdministration(user: CurrentUser) {
-  return user.isActive && user.globalRole === "administrator";
+  return (
+    user.isActive &&
+    (user.globalRole === "administrator" || user.globalRole === "pastor")
+  );
+}
+
+export function canManageCellAdministration(user: CurrentUser) {
+  return (
+    user.isActive &&
+    (user.globalRole === "administrator" || user.globalRole === "pastor")
+  );
 }
 
 export function canAccessPastoralDashboard(user: CurrentUser) {

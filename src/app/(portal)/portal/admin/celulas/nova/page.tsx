@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
-  canAccessAdministration,
+  canManageCellAdministration,
   getCurrentUser,
 } from "@/lib/auth/current-user";
 import { getCellAdministrationOptions } from "@/lib/data/cell-administration";
@@ -23,9 +23,11 @@ export default async function NewCellPage() {
     redirect("/login?erro=perfil");
   }
 
-  if (!canAccessAdministration(user)) {
+  if (!canManageCellAdministration(user)) {
     redirect("/portal");
   }
+
+  const returnPath = "/portal/admin";
 
   const options = await getCellAdministrationOptions();
 
@@ -38,13 +40,13 @@ export default async function NewCellPage() {
           </h1>
           <p className="mt-4 leading-7 text-zinc-700">
             Não foi possível carregar Redes, localidades ou contas ativas.
-            Verifique a migração administrativa da Fase 3.
+            Tente novamente mais tarde.
           </p>
           <Link
-            href="/portal/admin"
+            href={returnPath}
             className="mt-8 flex min-h-12 items-center justify-center rounded-xl border border-zinc-300 px-5 font-semibold text-zinc-900 hover:bg-zinc-100"
           >
-            Voltar à administração
+            Voltar
           </Link>
         </section>
       </main>
@@ -62,7 +64,7 @@ export default async function NewCellPage() {
     <main className="min-h-screen bg-zinc-100 px-4 py-10 sm:px-6">
       <section className="mx-auto w-full max-w-4xl rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-10">
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-600">
-          Administração · Fase 3
+          Gestão de células
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950 sm:text-4xl">
           Cadastrar célula
@@ -80,7 +82,7 @@ export default async function NewCellPage() {
         />
 
         <Link
-          href="/portal/admin"
+          href={returnPath}
           className="mt-6 flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 font-semibold text-zinc-900 hover:bg-zinc-100 sm:w-auto sm:min-w-52"
         >
           Cancelar e voltar
