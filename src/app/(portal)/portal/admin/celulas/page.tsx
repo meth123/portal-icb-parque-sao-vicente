@@ -84,6 +84,15 @@ export default async function ManagedCellsPage({
           </p>
         ) : null}
 
+        {resolvedSearchParams.status === "desativada" ? (
+          <p
+            role="status"
+            className="mt-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-green-900"
+          >
+            Célula desativada. O histórico foi preservado.
+          </p>
+        ) : null}
+
         <ManagedCellDirectory cells={overview.cells} />
 
         <Link

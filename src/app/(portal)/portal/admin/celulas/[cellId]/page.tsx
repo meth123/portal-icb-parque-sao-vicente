@@ -7,6 +7,7 @@ import {
 } from "@/lib/auth/current-user";
 import { getManagedCell } from "@/lib/data/cell-administration";
 import { EditCellLeadershipForm } from "./edit-cell-leadership-form";
+import { DeactivateCellForm } from "./deactivate-cell-form";
 
 export const metadata: Metadata = {
   title: "Editar célula | Portal ICB Parque São Vicente",
@@ -64,8 +65,17 @@ export default async function EditManagedCellPage({
 
         <EditCellLeadershipForm
           cell={data.cell}
+          cellTypes={data.cellTypes}
+          neighborhoods={data.neighborhoods}
           leaders={data.leaders}
           defaultDate={defaultDate}
+        />
+
+        <DeactivateCellForm
+          cellId={data.cell.id}
+          cellName={data.cell.name}
+          defaultDate={defaultDate}
+          minimumDate={data.cell.startedOn ?? undefined}
         />
 
         <Link

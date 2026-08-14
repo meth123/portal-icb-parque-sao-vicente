@@ -49,6 +49,10 @@ export type ManagedCellSummary = {
 
 export type ManagedCellDetail = ManagedCellSummary & {
   startedOn: string | null;
+  weekday: number;
+  meetingTime: string;
+  neighborhoodId: string;
+  neighborhoodName: string;
   leaderProfileId: string;
   viceProfileIds: string[];
 };
@@ -195,17 +199,22 @@ type RawCell = {
   name: string;
   is_active: boolean;
   started_on: string | null;
+  ended_on: string | null;
 };
 
 type RawLeadership = {
   cell_id: string;
   profile_id: string;
   role: "leader" | "vice_leader";
+  starts_on: string;
+  ends_on: string | null;
 };
 
 type RawClassification = {
   cell_id: string;
   cell_type_id: string;
+  starts_on: string;
+  ends_on: string | null;
 };
 
 type RawCellType = {
@@ -238,16 +247,14 @@ export async function getManagedCells(): Promise<{
   ] = await Promise.all([
     supabase
       .from("cells")
-      .select("id, name, is_active, started_on")
+      .select("id, name, is_active, started_on, ended_on")
       .order("name"),
     supabase
       .from("cell_leaderships")
-      .select("cell_id, profile_id, role")
-      .is("ends_on", null),
+      .select("cell_id, profile_id, role, starts_on, ends_on"),
     supabase
       .from("cell_classifications")
-      .select("cell_id, cell_type_id")
-      .is("ends_on", null),
+      .select("cell_id, cell_type_id, starts_on, ends_on"),
     supabase.from("cell_types").select("id, network_id, name"),
     supabase.from("networks").select("id, name"),
     supabase.rpc("get_cell_management_profile_directory"),
@@ -268,13 +275,21 @@ export async function getManagedCells(): Promise<{
 
   const cells = ((cellsResult.data ?? []) as RawCell[]).map((cell) => {
     const currentLeaderships = leaderships.filter(
-      (leadership) => leadership.cell_id === cell.id,
+      (leadership) =>
+        leadership.cell_id === cell.id &&
+        (cell.is_active
+          ? leadership.ends_on === null
+          : leadership.ends_on === cell.ended_on),
     );
     const leader = currentLeaderships.find(
       (leadership) => leadership.role === "leader",
     );
     const classification = classifications.find(
-      (item) => item.cell_id === cell.id,
+      (item) =>
+        item.cell_id === cell.id &&
+        (cell.is_active
+          ? item.ends_on === null
+          : item.ends_on === cell.ended_on),
     );
     const cellType = classification
       ? cellTypesById.get(classification.cell_type_id)
@@ -340,6 +355,8 @@ export async function getManagedCell(
   cellId: string,
 ): Promise<{
   cell: ManagedCellDetail | null;
+  cellTypes: CellFormOption[];
+  neighborhoods: CellFormOption[];
   leaders: CellLeaderOption[];
   hasError: boolean;
 } | null> {
@@ -348,24 +365,52 @@ export async function getManagedCell(
   if (!user || !canManageCellAdministration(user)) return null;
 
   const supabase = await createClient();
-  const [cellResult, leadershipsResult, options] = await Promise.all([
+  const [
+    cellResult,
+    leadershipsResult,
+    classificationResult,
+    scheduleResult,
+    locationResult,
+    options,
+  ] = await Promise.all([
     supabase
       .from("cells")
-      .select("id, name, is_active, started_on")
+      .select("id, name, is_active, started_on, ended_on")
       .eq("id", cellId)
       .eq("is_active", true)
       .maybeSingle(),
     supabase
       .from("cell_leaderships")
-      .select("cell_id, profile_id, role")
+      .select("cell_id, profile_id, role, starts_on, ends_on")
       .eq("cell_id", cellId)
       .is("ends_on", null),
+    supabase
+      .from("cell_classifications")
+      .select("cell_type_id")
+      .eq("cell_id", cellId)
+      .is("ends_on", null)
+      .maybeSingle(),
+    supabase
+      .from("cell_schedules")
+      .select("weekday, meeting_time")
+      .eq("cell_id", cellId)
+      .is("ends_on", null)
+      .maybeSingle(),
+    supabase
+      .from("cell_locations")
+      .select("neighborhood_id")
+      .eq("cell_id", cellId)
+      .is("ends_on", null)
+      .maybeSingle(),
     getCellAdministrationOptions(cellId),
   ]);
 
   if (!options) return null;
 
   const rawCell = cellResult.data as RawCell | null;
+  const classification = classificationResult.data;
+  const schedule = scheduleResult.data;
+  const location = locationResult.data;
   const leaderships = (leadershipsResult.data ?? []) as RawLeadership[];
   const leader = leaderships.find(
     (leadership) => leadership.role === "leader",
@@ -375,16 +420,26 @@ export async function getManagedCell(
   );
 
   const cell =
-    rawCell && leader
+    rawCell && leader && classification && schedule && location
       ? ({
           id: rawCell.id,
           name: rawCell.name,
           isActive: rawCell.is_active,
           networkId: "",
           networkName: "",
-          cellTypeId: "",
-          cellTypeName: "",
+          cellTypeId: classification.cell_type_id,
+          cellTypeName:
+            options.cellTypes.find(
+              (option) => option.value === classification.cell_type_id,
+            )?.label ?? "Tipo não encontrado",
           startedOn: rawCell.started_on,
+          weekday: schedule.weekday,
+          meetingTime: schedule.meeting_time.slice(0, 5),
+          neighborhoodId: location.neighborhood_id,
+          neighborhoodName:
+            options.neighborhoods.find(
+              (option) => option.value === location.neighborhood_id,
+            )?.label ?? "Localidade não encontrada",
           leaderProfileId: leader.profile_id,
           viceProfileIds: leaderships
             .filter((leadership) => leadership.role === "vice_leader")
@@ -405,9 +460,16 @@ export async function getManagedCell(
 
   return {
     cell,
+    cellTypes: options.cellTypes,
+    neighborhoods: options.neighborhoods,
     leaders: options.leaders,
     hasError: Boolean(
-      cellResult.error || leadershipsResult.error || options.hasError,
+      cellResult.error ||
+        leadershipsResult.error ||
+        classificationResult.error ||
+        scheduleResult.error ||
+        locationResult.error ||
+        options.hasError,
     ),
   };
 }

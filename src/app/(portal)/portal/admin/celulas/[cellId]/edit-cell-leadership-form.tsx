@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import type {
+  CellFormOption,
   CellLeaderOption,
   ManagedCellDetail,
 } from "@/lib/data/cell-administration";
@@ -11,12 +12,16 @@ const initialState: UpdateCellState = { message: "" };
 
 type EditCellLeadershipFormProps = {
   cell: ManagedCellDetail;
+  cellTypes: CellFormOption[];
+  neighborhoods: CellFormOption[];
   leaders: CellLeaderOption[];
   defaultDate: string;
 };
 
 export function EditCellLeadershipForm({
   cell,
+  cellTypes,
+  neighborhoods,
   leaders,
   defaultDate,
 }: EditCellLeadershipFormProps) {
@@ -110,6 +115,88 @@ export function EditCellLeadershipForm({
         </div>
       </div>
 
+      <fieldset>
+        <legend className="text-lg font-semibold text-zinc-950">
+          Organização e encontro
+        </legend>
+        <div className="mt-4 grid gap-6 sm:grid-cols-2">
+          <div>
+            <label htmlFor="cellTypeId" className="font-semibold text-zinc-950">
+              Rede e tipo
+            </label>
+            <select
+              id="cellTypeId"
+              name="cellTypeId"
+              defaultValue={cell.cellTypeId}
+              required
+              className={fieldClassName}
+            >
+              {cellTypes.map((cellType) => (
+                <option key={cellType.value} value={cellType.value}>
+                  {cellType.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="neighborhoodId"
+              className="font-semibold text-zinc-950"
+            >
+              Bairro e cidade
+            </label>
+            <select
+              id="neighborhoodId"
+              name="neighborhoodId"
+              defaultValue={cell.neighborhoodId}
+              required
+              className={fieldClassName}
+            >
+              {neighborhoods.map((neighborhood) => (
+                <option key={neighborhood.value} value={neighborhood.value}>
+                  {neighborhood.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="weekday" className="font-semibold text-zinc-950">
+              Dia da reunião
+            </label>
+            <select
+              id="weekday"
+              name="weekday"
+              defaultValue={cell.weekday}
+              required
+              className={fieldClassName}
+            >
+              <option value={4}>Quinta-feira</option>
+              <option value={5}>Sexta-feira</option>
+              <option value={6}>Sábado</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="meetingTime"
+              className="font-semibold text-zinc-950"
+            >
+              Horário
+            </label>
+            <input
+              id="meetingTime"
+              name="meetingTime"
+              type="time"
+              defaultValue={cell.meetingTime}
+              required
+              className={fieldClassName}
+            />
+          </div>
+        </div>
+      </fieldset>
+
       <div>
         <label
           htmlFor="leaderProfileId"
@@ -170,8 +257,8 @@ export function EditCellLeadershipForm({
       </fieldset>
 
       <p className="rounded-xl bg-zinc-100 px-4 py-3 text-sm leading-6 text-zinc-700">
-        Ao retirar um Vice, a conta continuará ativa e ficará disponível para
-        outra célula.
+        As mudanças estruturais ficam registradas no histórico a partir da data
+        informada. Ao retirar um Vice, a conta continuará ativa.
       </p>
 
       <button
