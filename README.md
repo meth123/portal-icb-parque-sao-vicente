@@ -8,7 +8,7 @@ Tecnologias principais: Next.js, React, TypeScript, Tailwind CSS, Supabase/Postg
 
 ## Andamento
 
-Fase 8.6 — checklist semanal da liderança: em planejamento.
+Fase 8.6 — checklist semanal da liderança: concluída.
 
 - Fase 0 — preparação e estrutura inicial: concluída.
 - Fase 1 — base do Next.js e layout: concluída.
@@ -19,5 +19,6 @@ Fase 8.6 — checklist semanal da liderança: em planejamento.
 - Fase 6 — painel da própria célula: concluída.
 - Fase 7 — painel pastoral e supervisão: concluída.
 - Fase 8 — administração, perfis, contas e gestão de células: concluída.
+- Fase 8.6 — checklist semanal da liderança: concluída.
 
 > Projeto experimental em desenvolvimento. O escopo e a arquitetura evoluem de forma incremental.

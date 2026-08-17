@@ -10,6 +10,7 @@ import {
 import { getCellReportDraftKey } from "@/lib/cell-report-draft";
 import { canAccessDocumentLibrary } from "@/lib/data/document-library";
 import { getInstitutionMonthlyIndicator } from "@/lib/data/institution-dashboard";
+import { getWeeklyChecklistData } from "@/lib/data/weekly-checklist";
 import {
   getCellReportFormContext,
   getCurrentMonthlyReportResponsibility,
@@ -64,6 +65,7 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
     reportContext,
     monthlyResponsibility,
     institutionIndicator,
+    weeklyChecklist,
     resolvedSearchParams,
   ] =
     await Promise.all([
@@ -71,6 +73,7 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
       getCellReportFormContext(),
       getCurrentMonthlyReportResponsibility(),
       getInstitutionMonthlyIndicator(),
+      getWeeklyChecklistData({ includeAvatars: false }),
       searchParams,
     ]);
   const reportWasSubmitted =
@@ -125,6 +128,33 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
               .
             </p>
           </div>
+        ) : null}
+
+        {weeklyChecklist && !weeklyChecklist.hasError && weeklyChecklist.people.length > 0 ? (
+          <Link
+            href="/portal/checklist"
+            className="mt-6 block rounded-2xl border border-blue-200 bg-blue-50 px-4 py-5 text-left text-blue-950 transition-colors hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-blue-800">
+                  {weeklyChecklist.periodLabel}
+                </p>
+                <h2 className="mt-1 text-xl font-semibold">Checklist semanal</h2>
+                <p className="mt-1 text-sm leading-6">
+                  {weeklyChecklist.currentPerson
+                    ? weeklyChecklist.period.isOpen
+                      ? weeklyChecklist.currentPerson.prayedInGroup !== null &&
+                        weeklyChecklist.currentPerson.fastedForCell !== null
+                        ? "Respondido · você ainda pode corrigir"
+                        : "Disponível para responder"
+                      : "Resultado disponível"
+                    : "Acompanhar respostas"}
+                </p>
+              </div>
+              <span aria-hidden="true" className="text-2xl">→</span>
+            </div>
+          </Link>
         ) : null}
 
         {institutionIndicator ? (
