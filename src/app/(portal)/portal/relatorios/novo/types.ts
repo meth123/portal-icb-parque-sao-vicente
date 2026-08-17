@@ -27,8 +27,10 @@ export type EvangelismRecordDraft = {
 
 export type NotEvangelizedDraft = Record<string, string>;
 
+export type ReportStep = 1 | 2 | 3 | 4;
+
 export type StoredReportDraft = {
-  version: 2;
+  version: 3;
   savedAt: string;
   meetingOn: string;
   meetingFormat: "in_person" | "online";
@@ -39,6 +41,11 @@ export type StoredReportDraft = {
   guestGroups: GuestGroup[];
   evangelismRecords: EvangelismRecordDraft[];
   notEvangelized: NotEvangelizedDraft;
+  step: ReportStep;
+};
+
+export type PreviousStoredReportDraft = Omit<StoredReportDraft, "version" | "step"> & {
+  version: 2;
   step: 1 | 2;
 };
 

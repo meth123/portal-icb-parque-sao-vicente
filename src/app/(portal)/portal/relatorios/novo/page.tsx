@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { buttonClassName } from "@/components/ui/button";
+import { PageContainer } from "@/components/ui/page-container";
+import { PageHeader } from "@/components/ui/page-header";
+import { Surface } from "@/components/ui/surface";
+import { ThemeArtwork } from "@/components/ui/theme-artwork";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getCellReportDraftKey } from "@/lib/cell-report-draft";
 import { getCellReportFormContext } from "@/lib/data/cell-reports";
@@ -39,23 +44,23 @@ export default async function NewCellReportPage() {
   }).format(new Date());
 
   return (
-    <main className="min-h-screen bg-zinc-100 px-3 py-6 sm:px-6 sm:py-10">
-      <section className="mx-auto w-full max-w-4xl rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-600">
-          Relatórios · Fase 5
-        </p>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-950 sm:text-4xl">
-          Ficha de Organização
-        </h1>
-        <blockquote className="mt-4 border-l-4 border-zinc-300 pl-4 text-zinc-700">
-          <p className="italic leading-7">
-            “Tudo, porém, seja feito com decência e ordem.”
-          </p>
-          <cite className="mt-1 block text-sm not-italic text-zinc-600">
-            I Co 14:40
-          </cite>
-        </blockquote>
+    <main>
+      <PageContainer className="py-6 sm:py-8 lg:py-10">
+        <PageHeader
+          eyebrow="Relatórios"
+          title="Ficha de Organização"
+          description="Registre a reunião em quatro etapas."
+        />
 
+        <ThemeArtwork
+          decorative
+          priority
+          className="mt-6 min-h-24 sm:min-h-32"
+          imageClassName="scale-[1.35] object-center lg:scale-100"
+          sizes="(max-width: 1024px) 100vw, 896px"
+        />
+
+        <Surface className="mt-5 p-4 sm:p-7 lg:p-8">
         <ReportForm
           cellId={reportContext.cellId}
           cellName={reportContext.cellName}
@@ -65,14 +70,18 @@ export default async function NewCellReportPage() {
           viceLeaders={reportContext.viceLeaders}
           leadership={reportContext.leadership}
         />
+        </Surface>
 
         <Link
           href="/portal"
-          className="mt-6 flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 font-semibold text-zinc-900 hover:bg-zinc-100 sm:w-auto sm:min-w-52"
+          className={buttonClassName({
+            variant: "ghost",
+            className: "mt-4 w-full sm:w-auto",
+          })}
         >
           Cancelar e voltar
         </Link>
-      </section>
+      </PageContainer>
     </main>
   );
 }

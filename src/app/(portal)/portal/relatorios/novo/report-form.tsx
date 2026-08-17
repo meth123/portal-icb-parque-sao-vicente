@@ -3,6 +3,22 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import {
+  ArrowLeft,
+  ArrowRight,
+  CalendarDays,
+  CheckCircle2,
+  CloudCheck,
+  Info,
+  LoaderCircle,
+  Plus,
+  Send,
+  Trash2,
+  Zap,
+} from "lucide-react";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { IconButton } from "@/components/ui/icon-button";
+import {
   flattenGuestGroups,
   getFirstPendingLeadershipId,
   getLeadershipRecords,
@@ -13,6 +29,7 @@ import type { CellReportInitialData } from "@/lib/cell-report-form";
 import type { CellReportLeadershipOption } from "@/lib/data/cell-reports";
 import { submitCellReport, type SubmitCellReportState } from "./actions";
 import { MemberRow } from "./components/member-row";
+import { ReportStepper } from "./components/report-stepper";
 import { ReportTotals } from "./components/report-totals";
 import type {
   EvangelismRecordDraft,
@@ -21,6 +38,8 @@ import type {
   LegacyStoredReportDraft,
   ManualName,
   NotEvangelizedDraft,
+  PreviousStoredReportDraft,
+  ReportStep,
   StoredReportDraft,
 } from "./types";
 import { createInitialSeed, getEvangelismRecordError } from "./utils";
@@ -40,7 +59,7 @@ type ReportFormProps = {
 };
 
 const fieldClassName =
-  "mt-2 min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-base text-zinc-950 outline-none transition focus:border-zinc-700 focus:ring-2 focus:ring-zinc-200 disabled:cursor-wait disabled:opacity-60";
+  "min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none transition placeholder:text-app-secondary focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-subtle disabled:cursor-wait disabled:opacity-60";
 
 function formatBrazilianDate(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -151,18 +170,9 @@ function BrazilianDateInput({
             calendarInput.click();
           }
         }}
-        className="absolute right-1 top-2 mt-2 flex h-10 w-10 -translate-y-1 items-center justify-center rounded-lg text-zinc-700 hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-zinc-900 disabled:cursor-wait disabled:opacity-60"
+        className="absolute right-1 top-1 flex h-10 w-10 items-center justify-center rounded-lg text-app-secondary hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus disabled:cursor-wait disabled:opacity-60"
       >
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          className="h-5 w-5"
-        >
-          <path d="M7 2v3m10-3v3M3.5 9h17M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
-        </svg>
+        <CalendarDays aria-hidden="true" className="h-5 w-5" />
       </button>
       <input
         ref={calendarInputRef}
@@ -187,7 +197,7 @@ function BrazilianDateInput({
 
 function RequiredMark() {
   return (
-    <span aria-hidden="true" className="ml-1 text-red-700">
+    <span aria-hidden="true" className="ml-1 text-danger">
       *
     </span>
   );
@@ -213,7 +223,7 @@ export function ReportForm({
     createInitialSeed(initialData, defaultDate, viceLeaders.length > 0),
   );
   const nextLocalKey = useRef(initialSeed.maxKey);
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<ReportStep>(1);
   const [localMessage, setLocalMessage] = useState("");
   const [draftReady, setDraftReady] = useState(false);
   const [draftMessage, setDraftMessage] = useState(
@@ -277,9 +287,10 @@ export function ReportForm({
 
         const draft = parsed as
           | Partial<StoredReportDraft>
+          | Partial<PreviousStoredReportDraft>
           | Partial<LegacyStoredReportDraft>;
 
-        if (draft.version !== 1 && draft.version !== 2) {
+        if (draft.version !== 1 && draft.version !== 2 && draft.version !== 3) {
           throw new Error("invalid-draft-version");
         }
 
@@ -338,8 +349,10 @@ export function ReportForm({
         let restoredNotEvangelized: NotEvangelizedDraft = {};
         let restoredKeys = restoredMembers.map((item) => item.key);
 
-        if (draft.version === 2) {
-          const currentDraft = draft as Partial<StoredReportDraft>;
+        if (draft.version === 2 || draft.version === 3) {
+          const currentDraft = draft as
+            | Partial<StoredReportDraft>
+            | Partial<PreviousStoredReportDraft>;
           restoredGuestGroups = Array.isArray(currentDraft.guestGroups)
             ? currentDraft.guestGroups
                 .slice(0, 500)
@@ -536,7 +549,15 @@ export function ReportForm({
         setNotEvangelized(restoredNotEvangelized);
         setOpenNotEvangelizedLeadershipId(null);
         setOpenEvangelismRecordKey(null);
-        setStep(draft.step === 2 ? 2 : 1);
+        if (draft.version === 3) {
+          setStep(
+            draft.step === 2 || draft.step === 3 || draft.step === 4
+              ? draft.step
+              : 1,
+          );
+        } else {
+          setStep(draft.step === 2 ? 4 : 1);
+        }
 
         restoredKeys = [
           ...restoredKeys,
@@ -575,7 +596,7 @@ export function ReportForm({
 
     const timeoutId = window.setTimeout(() => {
       const draft: StoredReportDraft = {
-        version: 2,
+        version: 3,
         savedAt: new Date().toISOString(),
         meetingOn,
         meetingFormat,
@@ -968,23 +989,33 @@ export function ReportForm({
     }
   }
 
-  function advanceToEvangelism() {
+  function moveToStep(nextStep: ReportStep) {
+    setStep(nextStep);
+    setSubmissionConfirmed(false);
+    setLocalMessage("");
+    setOpenEvangelismRecordKey(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function advanceToStep(nextStep: ReportStep) {
     setLocalMessage("");
 
     if (!formRef.current?.reportValidity()) {
       return;
     }
 
-    if (!noViceWasPresent && selectedViceIds.length === 0) {
+    if (
+      step === 1 &&
+      !noViceWasPresent &&
+      selectedViceIds.length === 0
+    ) {
       setLocalMessage(
         "Selecione os Vices presentes ou confirme que nenhum esteve presente.",
       );
       return;
     }
 
-    setStep(2);
-    setOpenEvangelismRecordKey(null);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    moveToStep(nextStep);
   }
 
   function finishEvangelismRecord(recordKey: number) {
@@ -1005,9 +1036,9 @@ export function ReportForm({
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     setLocalMessage("");
 
-    if (step !== 2) {
+    if (step !== 4) {
       event.preventDefault();
-      advanceToEvangelism();
+      advanceToStep((Math.min(step + 1, 4) as ReportStep));
       return;
     }
 
@@ -1100,7 +1131,7 @@ export function ReportForm({
       ref={formRef}
       action={formAction}
       onSubmit={handleSubmit}
-      className="mt-8 space-y-7"
+      className="mt-7 space-y-6"
     >
       <input type="hidden" name="cellId" value={cellId} />
       {correctionSourceVersionId ? (
@@ -1143,113 +1174,63 @@ export function ReportForm({
         value={JSON.stringify(serializedEvangelism)}
       />
 
-      <ol className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3" aria-label="Etapas da Ficha">
-        <li
-          className={`rounded-xl border px-4 py-3 text-sm font-semibold leading-5 ${
-            step === 1
-              ? "border-zinc-950 bg-zinc-950 text-white"
-              : "border-zinc-300 bg-white text-zinc-700"
-          }`}
-        >
-          1. Organização
-        </li>
-        <li
-          className={`rounded-xl border px-4 py-3 text-sm font-semibold leading-5 ${
-            step === 2
-              ? "border-zinc-950 bg-zinc-950 text-white"
-              : "border-zinc-300 bg-white text-zinc-700"
-          }`}
-        >
-          2. Evangelismo
-        </li>
-      </ol>
-
-      <details className="group overflow-hidden rounded-2xl border border-zinc-300 bg-white">
-        <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-semibold text-zinc-950 marker:hidden hover:bg-zinc-50">
-          <span className="flex items-center gap-3">
-            <span
-              aria-hidden="true"
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-950 text-sm font-bold text-white"
-            >
-              ?
-            </span>
-            Como preencher esta ficha
-          </span>
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 20 20"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            className="h-5 w-5 shrink-0 transition-transform group-open:rotate-180"
-          >
-            <path d="m5 7.5 5 5 5-5" />
-          </svg>
-        </summary>
-        <div className="border-t border-zinc-200 bg-zinc-50 px-5 py-5">
-          <ol className="space-y-5 text-sm leading-6 text-zinc-700">
-            <li>
-              <strong className="block text-base text-zinc-950">
-                1. Organização
-              </strong>
-              Informe a data e o formato da célula, marque a presença da
-              liderança e adicione membros e convidados. Use o Modo rápido para
-              inserir uma lista de nomes.
-            </li>
-            <li>
-              <strong className="block text-base text-zinc-950">
-                2. Evangelismo
-              </strong>
-              Para cada Líder ou Vice, registre o evangelismo ou informe que não
-              evangelizou. Quando evangelizarem juntos, uma pessoa registra e
-              seleciona as demais em “Quem evangelizou junto?”.
-            </li>
-            <li>
-              <strong className="block text-base text-zinc-950">
-                3. Revisão e envio
-              </strong>
-              Revise os dados, confirme e envie. O rascunho é salvo
-              automaticamente; após o envio, a ficha poderá ser visualizada e
-              baixada em PDF.
-            </li>
-          </ol>
-        </div>
-      </details>
+      <ReportStepper
+        currentStep={step}
+        disabled={pending}
+        onStepChange={moveToStep}
+      />
 
       {state.message || localMessage ? (
-        <p
-          role="alert"
-          aria-live="polite"
-          className="rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-red-800"
-        >
+        <Alert tone="danger" aria-live="polite">
           {localMessage || state.message}
-        </p>
+        </Alert>
       ) : null}
 
-      <div className="rounded-2xl bg-zinc-100 px-5 py-4">
-        <p className="text-sm text-zinc-600">Célula</p>
-        <p className="mt-1 text-lg font-semibold text-zinc-950">{cellName}</p>
-      </div>
-
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 px-3 py-3 text-left sm:px-4">
-        <p aria-live="polite" className="min-w-0 text-xs leading-5 text-blue-950 sm:text-sm">
-          {draftMessage}
-        </p>
-        <button
-          type="button"
-          onClick={discardDraft}
-          disabled={pending || !draftReady}
-          className="min-h-10 shrink-0 rounded-xl border border-blue-300 bg-white px-3 text-xs font-semibold text-blue-950 hover:bg-blue-100 disabled:opacity-60 sm:px-4 sm:text-sm"
-        >
-          Descartar
-        </button>
+      <div className="flex flex-col gap-3 border-y border-app-border py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase text-app-secondary">
+            Célula
+          </p>
+          <p className="mt-1 truncate font-semibold text-app-foreground">
+            {cellName}
+          </p>
+        </div>
+        <div className="flex items-center justify-between gap-3 sm:justify-end">
+          <p
+            aria-live="polite"
+            className="flex min-w-0 items-center gap-2 text-xs text-app-secondary sm:text-sm"
+          >
+            <CloudCheck aria-hidden="true" className="h-4 w-4 shrink-0 text-success" />
+            <span className="line-clamp-2">{draftMessage}</span>
+          </p>
+          <IconButton
+            type="button"
+            onClick={discardDraft}
+            disabled={pending || !draftReady}
+            aria-label="Descartar rascunho"
+            title="Descartar rascunho"
+            size="compact"
+          >
+            <Trash2 aria-hidden="true" className="h-4 w-4" />
+          </IconButton>
+        </div>
       </div>
 
       {step === 1 ? (
         <>
+          <header>
+            <p className="text-sm font-semibold text-theme-primary">Etapa 1 de 4</p>
+            <h2 className="mt-1 text-2xl font-semibold text-app-foreground">
+              Reunião
+            </h2>
+            <p className="mt-2 text-sm text-app-secondary">
+              Data, formato e presença da liderança.
+            </p>
+          </header>
+
           <div className="grid gap-6 sm:grid-cols-2">
             <div>
-              <label htmlFor="meetingOnUi" className="font-semibold text-zinc-950">
+              <label htmlFor="meetingOnUi" className="font-semibold text-app-foreground">
                 Data da Célula
                 <RequiredMark />
               </label>
@@ -1262,7 +1243,7 @@ export function ReportForm({
             </div>
 
             <fieldset>
-              <legend className="font-semibold text-zinc-950">
+              <legend className="font-semibold text-app-foreground">
                 Formato da reunião
                 <RequiredMark />
               </legend>
@@ -1273,7 +1254,11 @@ export function ReportForm({
                 ].map(([value, label]) => (
                   <label
                     key={value}
-                    className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-zinc-300 bg-white px-4"
+                    className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-4 transition-colors ${
+                      meetingFormat === value
+                        ? "border-theme-primary bg-theme-primary-subtle text-theme-primary-active"
+                        : "border-app-border bg-surface text-app-foreground hover:bg-surface-muted"
+                    }`}
                   >
                     <input
                       type="radio"
@@ -1285,7 +1270,7 @@ export function ReportForm({
                       }
                       required
                       disabled={pending}
-                      className="h-5 w-5 accent-zinc-950"
+                      className="h-5 w-5 accent-theme-primary"
                     />
                     {label}
                   </label>
@@ -1294,20 +1279,23 @@ export function ReportForm({
             </fieldset>
           </div>
 
-          <fieldset>
-            <legend className="font-semibold text-zinc-950">
+          <fieldset className="border-t border-app-border pt-6">
+            <legend className="font-semibold text-app-foreground">
               {leader.name} esteve presente?
               <RequiredMark />
             </legend>
-            <p className="mt-1 text-sm text-zinc-600">Líder da célula</p>
             <div className="mt-2 grid grid-cols-2 gap-3 sm:max-w-sm">
               {[
                 ["yes", "Sim"],
                 ["no", "Não"],
               ].map(([value, label]) => (
-                <label
-                  key={value}
-                  className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-zinc-300 bg-white px-4"
+                  <label
+                    key={value}
+                    className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-4 transition-colors ${
+                      leaderWasPresent === value
+                        ? "border-theme-primary bg-theme-primary-subtle text-theme-primary-active"
+                        : "border-app-border bg-surface text-app-foreground hover:bg-surface-muted"
+                    }`}
                 >
                   <input
                     type="radio"
@@ -1319,7 +1307,7 @@ export function ReportForm({
                     }
                     required
                     disabled={pending}
-                    className="h-5 w-5 accent-zinc-950"
+                    className="h-5 w-5 accent-theme-primary"
                   />
                   {label}
                 </label>
@@ -1327,8 +1315,8 @@ export function ReportForm({
             </div>
           </fieldset>
 
-          <fieldset>
-            <legend className="font-semibold text-zinc-950">
+          <fieldset className="border-t border-app-border pt-6">
+            <legend className="font-semibold text-app-foreground">
               Vice-líderes presentes
               <RequiredMark />
             </legend>
@@ -1337,7 +1325,11 @@ export function ReportForm({
                 {viceLeaders.map((viceLeader) => (
                   <label
                     key={viceLeader.leadershipId}
-                    className="flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border border-zinc-300 bg-white p-4 hover:bg-zinc-50"
+                    className={`flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border p-4 transition-colors ${
+                      selectedViceIds.includes(viceLeader.leadershipId)
+                        ? "border-theme-primary bg-theme-primary-subtle"
+                        : "border-app-border bg-surface hover:bg-surface-muted"
+                    }`}
                   >
                     <input
                       type="checkbox"
@@ -1349,46 +1341,77 @@ export function ReportForm({
                         )
                       }
                       disabled={pending || noViceWasPresent}
-                      className="h-5 w-5 shrink-0 accent-zinc-950"
+                      className="h-5 w-5 shrink-0 accent-theme-primary"
                     />
-                    <span className="font-medium text-zinc-950">
+                    <span className="font-medium text-app-foreground">
                       {viceLeader.name}
                     </span>
                   </label>
                 ))}
               </div>
             ) : (
-              <p className="mt-2 text-sm text-zinc-600">
+              <p className="mt-2 text-sm text-app-secondary">
                 Esta célula não possui Vice-líderes vinculados atualmente.
               </p>
             )}
-            <label className="mt-3 flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border border-zinc-300 bg-zinc-50 p-4">
+            <label className={`mt-3 flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border p-4 transition-colors ${
+              noViceWasPresent
+                ? "border-theme-primary bg-theme-primary-subtle"
+                : "border-app-border bg-surface-muted"
+            }`}>
               <input
                 type="checkbox"
                 checked={noViceWasPresent}
                 onChange={(event) => handleNoVicePresence(event.target.checked)}
                 disabled={pending || viceLeaders.length === 0}
-                className="h-5 w-5 shrink-0 accent-zinc-950"
+                className="h-5 w-5 shrink-0 accent-theme-primary"
               />
-              <span className="font-medium text-zinc-950">
+              <span className="font-medium text-app-foreground">
                 Nenhum Vice-líder esteve presente
               </span>
             </label>
           </fieldset>
 
+          <div className="flex justify-end border-t border-app-border pt-5">
+            <Button
+              type="button"
+              onClick={() => advanceToStep(2)}
+              disabled={pending}
+              className="w-full sm:w-auto sm:min-w-52"
+            >
+              Continuar
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Button>
+          </div>
+        </>
+      ) : step === 2 ? (
+        <>
+          <header>
+            <p className="text-sm font-semibold text-theme-primary">Etapa 2 de 4</p>
+            <h2 className="mt-1 text-2xl font-semibold text-app-foreground">
+              Participantes
+            </h2>
+            <p className="mt-2 text-sm text-app-secondary">
+              Adicione quem participou da reunião.
+            </p>
+          </header>
+
           <section aria-labelledby="members-heading">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h2 id="members-heading" className="font-semibold text-zinc-950">
-                  Membros
-                </h2>
-                <p className="mt-1 text-sm text-zinc-600">
-                  Deixe vazio se nenhum membro esteve presente.
+                <h3 id="members-heading" className="font-semibold text-app-foreground">
+                  Lista de participantes
+                </h3>
+                <p className="mt-1 text-sm text-app-secondary">
+                  {members.length === 0
+                    ? "Nenhum nome adicionado."
+                    : `${members.length} ${members.length === 1 ? "nome adicionado" : "nomes adicionados"}.`}
                 </p>
               </div>
               {members.length > 0 ? (
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="compact"
                   onClick={() => {
                     if (window.confirm("Remover todos os membros adicionados?")) {
                       setMembers([]);
@@ -1396,13 +1419,14 @@ export function ReportForm({
                     }
                   }}
                   disabled={pending}
-                  className="min-h-11 rounded-xl border border-red-200 bg-white px-4 font-semibold text-red-800 hover:bg-red-50"
+                  className="text-danger"
                 >
+                  <Trash2 aria-hidden="true" className="h-4 w-4" />
                   Excluir todos
-                </button>
+                </Button>
               ) : null}
             </div>
-            <div className="mt-4 space-y-3">
+            <div className="mt-5 space-y-4">
               {members.map((member, index) => (
                 <MemberRow
                   key={member.key}
@@ -1425,9 +1449,10 @@ export function ReportForm({
                 />
               ))}
             </div>
-            <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-              <button
-                type="button"
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+              <Button
+                variant="secondary"
+                size="compact"
                 onClick={() =>
                   setMembers((current) => [
                     ...current,
@@ -1435,12 +1460,14 @@ export function ReportForm({
                   ])
                 }
                 disabled={pending || members.length >= 500}
-                className="min-h-11 w-full rounded-xl border border-zinc-300 bg-white px-4 font-semibold text-zinc-900 hover:bg-zinc-100 sm:w-auto"
+                className="w-full sm:w-auto"
               >
-                + Adicionar um membro
-              </button>
-              <button
-                type="button"
+                <Plus aria-hidden="true" className="h-4 w-4" />
+                Adicionar participante
+              </Button>
+              <Button
+                variant="ghost"
+                size="compact"
                 onClick={
                   bulkMembersOpen
                     ? closeBulkMemberInput
@@ -1450,20 +1477,21 @@ export function ReportForm({
                 aria-controls="bulk-member-names"
                 aria-label="Modo rápido: adicionar vários membros"
                 disabled={pending || members.length >= 500}
-                className="min-h-11 w-full rounded-xl border border-zinc-300 bg-white px-4 font-semibold text-zinc-900 hover:bg-zinc-100 sm:w-auto"
+                className="w-full sm:w-auto"
               >
-                <span aria-hidden="true">⚡</span> Modo rápido
-              </button>
+                <Zap aria-hidden="true" className="h-4 w-4" />
+                Modo rápido
+              </Button>
             </div>
 
             {bulkMembersOpen ? (
               <div
                 id="bulk-member-names"
-                className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4"
+                className="mt-5 rounded-xl border border-theme-primary-border bg-theme-primary-subtle p-4"
               >
                 <label
                   htmlFor="bulk-members"
-                  className="font-semibold text-blue-950"
+                  className="font-semibold text-theme-primary-active"
                 >
                   Cole os nomes dos membros, um por linha.
                 </label>
@@ -1479,47 +1507,82 @@ export function ReportForm({
                 {bulkMemberMessage ? (
                   <p
                     role="alert"
-                    className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+                    className="mt-3 rounded-xl border border-danger/20 bg-danger-soft px-4 py-3 text-sm text-danger"
                   >
                     {bulkMemberMessage}
                   </p>
                 ) : null}
                 <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-                  <button
-                    type="button"
+                  <Button
+                    size="compact"
                     onClick={addPastedMembers}
                     disabled={pending}
-                    className="min-h-11 rounded-xl bg-zinc-950 px-4 font-semibold text-white hover:bg-zinc-800"
                   >
                     Adicionar nomes
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="compact"
                     onClick={closeBulkMemberInput}
                     disabled={pending}
-                    className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 font-semibold text-zinc-900 hover:bg-zinc-100"
                   >
                     Cancelar
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : null}
           </section>
 
+          <div className="flex flex-col-reverse gap-3 border-t border-app-border pt-5 sm:flex-row sm:justify-between">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => moveToStep(1)}
+              disabled={pending}
+              className="w-full sm:w-auto"
+            >
+              <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+              Voltar
+            </Button>
+            <Button
+              type="button"
+              onClick={() => advanceToStep(3)}
+              disabled={pending}
+              className="w-full sm:w-auto sm:min-w-52"
+            >
+              Continuar
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Button>
+          </div>
+        </>
+      ) : step === 3 ? (
+        <>
+          <header>
+            <p className="text-sm font-semibold text-theme-primary">Etapa 3 de 4</p>
+            <h2 className="mt-1 text-2xl font-semibold text-app-foreground">
+              Convidados
+            </h2>
+            <p className="mt-2 text-sm text-app-secondary">
+              Organize os convidados por quem os recebeu.
+            </p>
+          </header>
+
           <section aria-labelledby="guests-heading">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h2 id="guests-heading" className="font-semibold text-zinc-950">
-                  Convidados
-                </h2>
-                <p className="mt-1 text-sm text-zinc-600">
-                  Agrupe os convidados pela pessoa responsável. Deixe vazio se
-                  não houve convidados.
+                <h3 id="guests-heading" className="font-semibold text-app-foreground">
+                  Lista de convidados
+                </h3>
+                <p className="mt-1 text-sm text-app-secondary">
+                  {guests.length === 0
+                    ? "Nenhum convidado adicionado."
+                    : `${guests.length} ${guests.length === 1 ? "convidado" : "convidados"}.`}
                 </p>
               </div>
               {guests.length > 0 ? (
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="compact"
                   onClick={() => {
                     if (
                       window.confirm("Remover todos os convidados adicionados?")
@@ -1529,23 +1592,24 @@ export function ReportForm({
                     }
                   }}
                   disabled={pending}
-                  className="min-h-11 rounded-xl border border-red-200 bg-white px-4 font-semibold text-red-800 hover:bg-red-50"
+                  className="text-danger"
                 >
+                  <Trash2 aria-hidden="true" className="h-4 w-4" />
                   Excluir todos
-                </button>
+                </Button>
               ) : null}
             </div>
             <div className="mt-4 space-y-4">
               {guestGroups.map((group, groupIndex) => (
                 <div
                   key={group.key}
-                  className="rounded-2xl border border-zinc-300 bg-zinc-50 p-4 sm:p-5"
+                  className="rounded-xl border border-app-border bg-surface-muted p-4 sm:p-5"
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                     <div className="min-w-0 flex-1">
                       <label
                         htmlFor={`responsible-${group.key}`}
-                        className="font-semibold text-zinc-950"
+                        className="font-semibold text-app-foreground"
                       >
                         Responsável {groupIndex + 1}
                         <RequiredMark />
@@ -1567,25 +1631,26 @@ export function ReportForm({
                         className={fieldClassName}
                       />
                     </div>
-                    <button
-                      type="button"
+                    <IconButton
                       onClick={() => removeGuestGroup(group.key)}
                       disabled={pending}
-                      className="min-h-12 rounded-xl border border-red-200 bg-white px-4 font-semibold text-red-800 hover:bg-red-50"
+                      aria-label={`Remover responsável ${groupIndex + 1}`}
+                      title="Remover responsável"
+                      className="text-danger"
                     >
-                      Remover responsável
-                    </button>
+                      <Trash2 aria-hidden="true" className="h-4 w-4" />
+                    </IconButton>
                   </div>
 
                   <div className="mt-4 space-y-3">
                     {group.guests.map((guest, guestIndex) => (
                       <div
                         key={guest.key}
-                        className="rounded-xl border border-zinc-200 bg-white p-4"
+                        className="rounded-xl border border-app-border bg-surface p-4"
                       >
                         <label
                           htmlFor={`guest-${guest.key}`}
-                          className="font-medium text-zinc-900"
+                          className="font-medium text-app-foreground"
                         >
                           Nome do convidado {guestIndex + 1}
                           <RequiredMark />
@@ -1628,36 +1693,41 @@ export function ReportForm({
                                 }))
                               }
                               disabled={pending}
-                              className="h-5 w-5 accent-zinc-950"
+                              className="h-5 w-5 accent-theme-primary"
                             />
                             Primeira vez
                           </label>
-                          <button
-                            type="button"
+                          <IconButton
                             onClick={() =>
                               removeGuestFromGroup(group.key, guest.key)
                             }
                             disabled={pending}
-                            className="min-h-11 rounded-xl border border-red-200 bg-white px-4 font-semibold text-red-800 hover:bg-red-50"
+                            aria-label={`Remover convidado ${guestIndex + 1}`}
+                            title="Remover convidado"
+                            size="compact"
+                            className="text-danger"
                           >
-                            Remover convidado
-                          </button>
+                            <Trash2 aria-hidden="true" className="h-4 w-4" />
+                          </IconButton>
                         </div>
                       </div>
                     ))}
                   </div>
 
                   <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-                    <button
-                      type="button"
+                    <Button
+                      variant="secondary"
+                      size="compact"
                       onClick={() => addGuestToGroup(group.key)}
                       disabled={pending || guests.length >= 500}
-                      className="min-h-11 w-full rounded-xl border border-zinc-300 bg-white px-4 font-semibold text-zinc-900 hover:bg-zinc-100 sm:w-auto"
+                      className="w-full sm:w-auto"
                     >
-                      + Adicionar um convidado
-                    </button>
-                    <button
-                      type="button"
+                      <Plus aria-hidden="true" className="h-4 w-4" />
+                      Adicionar convidado
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="compact"
                       onClick={() =>
                         bulkGuestGroupKey === group.key
                           ? closeBulkGuestInput()
@@ -1667,20 +1737,21 @@ export function ReportForm({
                       aria-controls={`bulk-guests-${group.key}`}
                       aria-label="Modo rápido: adicionar vários convidados deste responsável"
                       disabled={pending || guests.length >= 500}
-                      className="min-h-11 w-full rounded-xl border border-zinc-300 bg-white px-4 font-semibold text-zinc-900 hover:bg-zinc-100 sm:w-auto"
+                      className="w-full sm:w-auto"
                     >
-                      <span aria-hidden="true">⚡</span> Modo rápido
-                    </button>
+                      <Zap aria-hidden="true" className="h-4 w-4" />
+                      Modo rápido
+                    </Button>
                   </div>
 
                   {bulkGuestGroupKey === group.key ? (
                     <div
                       id={`bulk-guests-${group.key}`}
-                      className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4"
+                      className="mt-4 rounded-xl border border-theme-primary-border bg-theme-primary-subtle p-4"
                     >
                       <label
                         htmlFor={`bulk-guest-names-${group.key}`}
-                        className="font-semibold text-blue-950"
+                        className="font-semibold text-theme-primary-active"
                       >
                         Cole os nomes dos convidados, um por linha.
                       </label>
@@ -1695,49 +1766,50 @@ export function ReportForm({
                         disabled={pending}
                         className={`${fieldClassName} py-3`}
                       />
-                      <p className="mt-2 text-sm leading-6 text-blue-900">
+                      <p className="mt-2 text-sm leading-6 text-theme-primary-active">
                         Linhas vazias serão ignoradas. Depois você poderá
                         marcar Primeira vez individualmente.
                       </p>
                       {bulkGuestMessage ? (
                         <p
                           role="alert"
-                          className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+                          className="mt-3 rounded-xl border border-danger/20 bg-danger-soft px-4 py-3 text-sm text-danger"
                         >
                           {bulkGuestMessage}
                         </p>
                       ) : null}
                       <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-                        <button
-                          type="button"
+                        <Button
+                          size="compact"
                           onClick={() => addPastedGuests(group.key)}
                           disabled={pending}
-                          className="min-h-11 rounded-xl bg-zinc-950 px-4 font-semibold text-white hover:bg-zinc-800"
                         >
                           Adicionar nomes
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="compact"
                           onClick={closeBulkGuestInput}
                           disabled={pending}
-                          className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 font-semibold text-zinc-900 hover:bg-zinc-100"
                         >
                           Cancelar
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ) : null}
                 </div>
               ))}
             </div>
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="compact"
               onClick={addGuestGroup}
               disabled={pending || guests.length >= 500}
-              className="mt-3 min-h-11 w-full rounded-xl border border-zinc-300 bg-white px-4 font-semibold text-zinc-900 hover:bg-zinc-100 sm:w-auto"
+              className="mt-4 w-full sm:w-auto"
             >
-              + Adicionar responsável
-            </button>
+              <Plus aria-hidden="true" className="h-4 w-4" />
+              Adicionar responsável
+            </Button>
           </section>
 
           <ReportTotals
@@ -1747,34 +1819,47 @@ export function ReportForm({
             totalParticipants={totalParticipants}
           />
 
-          <button
-            type="button"
-            onClick={advanceToEvangelism}
-            disabled={pending}
-            className="min-h-12 w-full rounded-xl bg-zinc-950 px-5 text-base font-semibold text-white hover:bg-zinc-800 disabled:cursor-wait disabled:bg-zinc-500 sm:w-auto sm:min-w-56"
-          >
-            Avançar para Evangelismo
-          </button>
+          <div className="flex flex-col-reverse gap-3 border-t border-app-border pt-5 sm:flex-row sm:justify-between">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => moveToStep(2)}
+              disabled={pending}
+              className="w-full sm:w-auto"
+            >
+              <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+              Voltar
+            </Button>
+            <Button
+              type="button"
+              onClick={() => advanceToStep(4)}
+              disabled={pending}
+              className="w-full sm:w-auto sm:min-w-52"
+            >
+              Continuar
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Button>
+          </div>
         </>
       ) : (
         <>
           <section aria-labelledby="evangelism-heading">
+            <p className="text-sm font-semibold text-theme-primary">Etapa 4 de 4</p>
             <h2
               id="evangelism-heading"
-              className="text-2xl font-semibold text-zinc-950"
+              className="mt-1 text-2xl font-semibold text-app-foreground"
             >
-              Relatório de Evangelismo
+              Evangelismo
             </h2>
-            <p className="mt-2 leading-7 text-zinc-700">
-              Uma pessoa conta o que o grupo fez e marca os outros Líderes ou
-              Vices que evangelizaram junto.
+            <p className="mt-2 text-sm text-app-secondary">
+              Registre o resultado de cada pessoa da liderança.
             </p>
 
             <section
-              className="mt-5 overflow-hidden rounded-2xl border border-zinc-300 bg-white"
+              className="mt-5 overflow-hidden rounded-2xl border border-app-border bg-surface"
               aria-label="Preenchimento do evangelismo por pessoa"
             >
-              <div className="divide-y divide-zinc-200">
+              <div className="divide-y divide-app-border">
                 {leadership.map((person) => {
                 const personRecords = getLeadershipRecords(
                   validEvangelismRecords,
@@ -1809,31 +1894,31 @@ export function ReportForm({
                     className="px-5 py-4"
                   >
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                      <span>
-                        <span className="block font-semibold text-zinc-950">
-                          {person.name}
-                        </span>
-                        <span className="mt-1 block text-sm text-zinc-600">
-                          {person.role === "leader" ? "Líder" : "Vice-líder"}
-                        </span>
+                      <span className="block font-semibold text-app-foreground">
+                        {person.name}
                       </span>
                       <span
-                        className={`text-sm font-semibold ${
+                        className={`inline-flex items-center gap-1.5 text-sm font-semibold ${
                           hasEvangelized
-                            ? "text-emerald-800"
+                            ? "text-success"
                             : hasNegativeStatus
-                              ? "text-zinc-700"
-                              : "text-amber-800"
+                              ? "text-app-secondary"
+                              : "text-warning"
                         }`}
                       >
+                        {hasEvangelized ? (
+                          <CheckCircle2 aria-hidden="true" className="h-4 w-4" />
+                        ) : hasNegativeStatus ? (
+                          <Info aria-hidden="true" className="h-4 w-4" />
+                        ) : null}
                         {hasEvangelized
-                          ? `✓ Evangelizou — ${personRecords.length} ${
+                          ? `Evangelizou · ${personRecords.length} ${
                               personRecords.length === 1
                                 ? "registro"
                                 : "registros"
                             }`
                           : hasNegativeStatus
-                            ? "○ Não evangelizou"
+                            ? "Não evangelizou"
                             : "Pendente"}
                       </span>
                     </div>
@@ -1841,7 +1926,7 @@ export function ReportForm({
                     {hasEvangelized ? (
                       <>
                         {sharedRecordOwner ? (
-                          <p className="mt-3 text-sm text-emerald-800">
+                          <p className="mt-3 text-sm text-success">
                             Participou de evangelismo registrado com {" "}
                             {sharedRecordOwner.name}.
                           </p>
@@ -1850,22 +1935,22 @@ export function ReportForm({
                           type="button"
                           onClick={() => addEvangelismRecord(person.leadershipId)}
                           disabled={pending}
-                          className="mt-4 min-h-11 w-full rounded-xl border border-zinc-300 bg-white px-4 font-semibold text-zinc-950 hover:bg-zinc-100 sm:w-auto"
+                          className="mt-4 min-h-11 w-full rounded-xl border border-app-border bg-surface px-4 font-semibold text-app-foreground hover:bg-surface-muted sm:w-auto"
                         >
                           + Registrar outro
                         </button>
                       </>
                     ) : hasNegativeStatus ? (
                       isNegativeCommentOpen ? (
-                        <div className="mt-4 rounded-xl bg-zinc-50 p-4">
+                        <div className="mt-4 rounded-xl bg-surface-muted p-4">
                           <label
                             htmlFor={`not-evangelized-${person.leadershipId}`}
-                            className="font-medium text-zinc-950"
+                            className="font-medium text-app-foreground"
                           >
                             Comentários
                             <RequiredMark />
                           </label>
-                          <p className="mt-1 text-sm text-zinc-600">
+                          <p className="mt-1 text-sm text-app-secondary">
                             Explique brevemente por que não evangelizou nesta
                             semana.
                           </p>
@@ -1891,7 +1976,7 @@ export function ReportForm({
                                 finishNotEvangelizedComment(person.leadershipId)
                               }
                               disabled={pending}
-                              className="min-h-11 rounded-xl bg-zinc-950 px-4 font-semibold text-white hover:bg-zinc-800"
+                              className="min-h-11 rounded-xl bg-theme-primary px-4 font-semibold text-white hover:bg-theme-primary-hover"
                             >
                               Concluir comentário
                             </button>
@@ -1901,7 +1986,7 @@ export function ReportForm({
                                 addEvangelismRecord(person.leadershipId)
                               }
                               disabled={pending}
-                              className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 font-semibold text-zinc-900 hover:bg-zinc-100"
+                              className="min-h-11 rounded-xl border border-app-border bg-surface px-4 font-semibold text-app-foreground hover:bg-surface-muted"
                             >
                               Registrar evangelismo
                             </button>
@@ -1917,7 +2002,7 @@ export function ReportForm({
                               )
                             }
                             disabled={pending}
-                            className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 font-semibold text-zinc-900 hover:bg-zinc-100"
+                            className="min-h-11 rounded-xl border border-app-border bg-surface px-4 font-semibold text-app-foreground hover:bg-surface-muted"
                           >
                             Editar comentário
                           </button>
@@ -1927,7 +2012,7 @@ export function ReportForm({
                               addEvangelismRecord(person.leadershipId)
                             }
                             disabled={pending}
-                            className="min-h-11 rounded-xl bg-zinc-950 px-4 font-semibold text-white hover:bg-zinc-800"
+                            className="min-h-11 rounded-xl bg-theme-primary px-4 font-semibold text-white hover:bg-theme-primary-hover"
                           >
                             Registrar evangelismo
                           </button>
@@ -1942,7 +2027,7 @@ export function ReportForm({
                               setOpenNotEvangelizedLeadershipId(null);
                             }}
                             disabled={pending}
-                            className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 font-semibold text-zinc-900 hover:bg-zinc-100"
+                            className="min-h-11 rounded-xl border border-app-border bg-surface px-4 font-semibold text-app-foreground hover:bg-surface-muted"
                           >
                             Desfazer
                           </button>
@@ -1954,7 +2039,7 @@ export function ReportForm({
                           type="button"
                           onClick={() => addEvangelismRecord(person.leadershipId)}
                           disabled={pending}
-                          className="min-h-11 rounded-xl bg-zinc-950 px-4 font-semibold text-white hover:bg-zinc-800"
+                          className="min-h-11 rounded-xl bg-theme-primary px-4 font-semibold text-white hover:bg-theme-primary-hover"
                         >
                           Registrar evangelismo
                         </button>
@@ -1962,7 +2047,7 @@ export function ReportForm({
                           type="button"
                           onClick={() => markNotEvangelized(person.leadershipId)}
                           disabled={pending}
-                          className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 font-semibold text-zinc-900 hover:bg-zinc-100"
+                          className="min-h-11 rounded-xl border border-app-border bg-surface px-4 font-semibold text-app-foreground hover:bg-surface-muted"
                         >
                           Não evangelizou
                         </button>
@@ -1981,7 +2066,7 @@ export function ReportForm({
               >
                 <h3
                   id="evangelism-records-heading"
-                  className="text-xl font-semibold text-zinc-950"
+                  className="text-xl font-semibold text-app-foreground"
                 >
                   Evangelismos preenchidos
                 </h3>
@@ -2004,7 +2089,7 @@ export function ReportForm({
                     return (
                       <article
                         key={record.key}
-                        className="overflow-hidden rounded-2xl border border-zinc-300 bg-white"
+                        className="overflow-hidden rounded-2xl border border-app-border bg-surface"
                       >
                         <button
                           type="button"
@@ -2013,14 +2098,14 @@ export function ReportForm({
                           }
                           aria-expanded={isOpen}
                           aria-controls={`evangelism-record-${record.key}`}
-                          className="flex min-h-16 w-full flex-col gap-2 px-5 py-4 text-left hover:bg-zinc-50 sm:flex-row sm:items-center sm:justify-between"
+                          className="flex min-h-16 w-full flex-col gap-2 px-5 py-4 text-left hover:bg-surface-muted sm:flex-row sm:items-center sm:justify-between"
                         >
                           <span>
-                            <span className="block font-semibold text-zinc-950">
+                            <span className="block font-semibold text-app-foreground">
                               {primaryPerson?.name ||
                                 `Evangelismo ${recordIndex + 1}`}
                             </span>
-                            <span className="mt-1 block text-sm text-zinc-600">
+                            <span className="mt-1 block text-sm text-app-secondary">
                               {companionNames.length > 0
                                 ? `Com ${companionNames.join(", ")}`
                                 : "Sem outro Líder/Vice"}
@@ -2028,7 +2113,7 @@ export function ReportForm({
                           </span>
                           <span
                             className={`text-sm font-semibold ${
-                              error ? "text-amber-800" : "text-emerald-800"
+                              error ? "text-warning" : "text-success"
                             }`}
                           >
                             {error ? "Pendente" : "Pronto"}
@@ -2038,24 +2123,24 @@ export function ReportForm({
                         {isOpen ? (
                           <div
                             id={`evangelism-record-${record.key}`}
-                            className="space-y-6 border-t border-zinc-200 bg-zinc-50 p-5"
+                            className="space-y-6 border-t border-app-border bg-surface-muted p-5"
                           >
                             <div>
-                              <p className="font-semibold text-zinc-950">
+                              <p className="font-semibold text-app-foreground">
                                 Quem está registrando
                               </p>
-                              <div className="mt-2 flex min-h-12 cursor-default items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-200 px-4 py-3 text-zinc-800">
+                              <div className="mt-2 flex min-h-12 cursor-default items-center justify-between gap-3 rounded-xl border border-app-border bg-surface-muted px-4 py-3 text-app-secondary">
                                 <span className="font-medium">
                                   {primaryPerson?.name || "Liderança"}
                                 </span>
-                                <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-zinc-600">
+                                <span className="rounded-full bg-surface px-2.5 py-1 text-xs font-semibold text-app-secondary">
                                   Automático
                                 </span>
                               </div>
                             </div>
 
                             <fieldset>
-                              <legend className="font-semibold text-zinc-950">
+                              <legend className="font-semibold text-app-foreground">
                                 Quem evangelizou junto?
                               </legend>
                               <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -2075,10 +2160,10 @@ export function ReportForm({
                                     return (
                                       <label
                                         key={person.leadershipId}
-                                        className={`flex min-h-14 items-center gap-3 rounded-xl border border-zinc-300 p-4 ${
+                                        className={`flex min-h-14 items-center gap-3 rounded-xl border border-app-border p-4 ${
                                           isMarkedNotEvangelized
-                                            ? "cursor-not-allowed bg-zinc-100"
-                                            : "cursor-pointer bg-white"
+                                            ? "cursor-not-allowed bg-surface-muted"
+                                            : "cursor-pointer bg-surface"
                                         }`}
                                       >
                                         <input
@@ -2096,19 +2181,19 @@ export function ReportForm({
                                           disabled={
                                             pending || isMarkedNotEvangelized
                                           }
-                                          className="h-5 w-5 shrink-0 accent-zinc-950 disabled:cursor-not-allowed"
+                                          className="h-5 w-5 shrink-0 accent-theme-primary disabled:cursor-not-allowed"
                                         />
                                         <span>
                                           <span
                                             className={`block font-medium ${
                                               isMarkedNotEvangelized
-                                                ? "text-zinc-500"
-                                                : "text-zinc-950"
+                                                ? "text-app-secondary"
+                                                : "text-app-foreground"
                                             }`}
                                           >
                                             {person.name}
                                           </span>
-                                          <span className="mt-1 block text-xs text-zinc-600">
+                                          <span className="mt-1 block text-xs text-app-secondary">
                                             {isMarkedNotEvangelized
                                               ? "Marcado como Não evangelizou"
                                               : person.role === "leader"
@@ -2126,7 +2211,7 @@ export function ReportForm({
                               <div>
                                 <label
                                   htmlFor={`evangelism-date-${record.key}`}
-                                  className="font-semibold text-zinc-950"
+                                  className="font-semibold text-app-foreground"
                                 >
                                   Data
                                   <RequiredMark />
@@ -2146,7 +2231,7 @@ export function ReportForm({
                               <div>
                                 <label
                                   htmlFor={`duration-${record.key}`}
-                                  className="font-semibold text-zinc-950"
+                                  className="font-semibold text-app-foreground"
                                 >
                                   Tempo de Evangelismo
                                   <RequiredMark />
@@ -2167,7 +2252,7 @@ export function ReportForm({
                                   disabled={pending}
                                   className={fieldClassName}
                                 />
-                                <p className="mt-2 text-sm leading-5 text-zinc-600">
+                                <p className="mt-2 text-sm leading-5 text-app-secondary">
                                   Informe quanto tempo foi dedicado exclusivamente a
                                   essa missão.
                                 </p>
@@ -2178,7 +2263,7 @@ export function ReportForm({
                               <div>
                                 <h4
                                   id={`participants-${record.key}`}
-                                  className="font-semibold text-zinc-950"
+                                  className="font-semibold text-app-foreground"
                                 >
                                   Integrantes
                                 </h4>
@@ -2187,12 +2272,12 @@ export function ReportForm({
                                 {record.participants.map((participant, index) => (
                                   <div
                                     key={participant.key}
-                                    className="grid gap-3 rounded-xl border border-zinc-200 bg-white p-4 sm:grid-cols-[1fr_auto] sm:items-end"
+                                    className="grid gap-3 rounded-xl border border-app-border bg-surface p-4 sm:grid-cols-[1fr_auto] sm:items-end"
                                   >
                                     <div>
                                       <label
                                         htmlFor={`participant-${record.key}-${participant.key}`}
-                                        className="font-medium text-zinc-900"
+                                        className="font-medium text-app-foreground"
                                       >
                                         Nome do integrante {index + 1}
                                         <RequiredMark />
@@ -2224,8 +2309,7 @@ export function ReportForm({
                                         className={fieldClassName}
                                       />
                                     </div>
-                                    <button
-                                      type="button"
+                                    <IconButton
                                       onClick={() =>
                                         updateEvangelismRecord(
                                           record.key,
@@ -2240,10 +2324,12 @@ export function ReportForm({
                                         )
                                       }
                                       disabled={pending}
-                                      className="min-h-12 rounded-xl border border-red-200 bg-white px-4 font-semibold text-red-800 hover:bg-red-50"
+                                      aria-label={`Remover integrante ${index + 1}`}
+                                      title="Remover integrante"
+                                      className="text-danger"
                                     >
-                                      Remover
-                                    </button>
+                                      <Trash2 aria-hidden="true" className="h-4 w-4" />
+                                    </IconButton>
                                   </div>
                                 ))}
                               </div>
@@ -2261,7 +2347,7 @@ export function ReportForm({
                                 disabled={
                                   pending || record.participants.length >= 100
                                 }
-                                className="mt-3 min-h-11 w-full rounded-xl border border-zinc-300 bg-white px-4 font-semibold text-zinc-900 hover:bg-zinc-100 sm:w-auto"
+                                className="mt-3 min-h-11 w-full rounded-xl border border-app-border bg-surface px-4 font-semibold text-app-foreground hover:bg-surface-muted sm:w-auto"
                               >
                                 + Adicionar outro integrante
                               </button>
@@ -2270,7 +2356,7 @@ export function ReportForm({
                             <div>
                               <label
                                 htmlFor={`comments-${record.key}`}
-                                className="font-semibold text-zinc-950"
+                                className="font-semibold text-app-foreground"
                               >
                                 Comentários
                                 <RequiredMark />
@@ -2293,8 +2379,9 @@ export function ReportForm({
                             </div>
 
                             <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
-                              <button
-                                type="button"
+                              <Button
+                                variant="ghost"
+                                size="compact"
                                 onClick={() => {
                                   if (
                                     window.confirm(
@@ -2305,18 +2392,18 @@ export function ReportForm({
                                   }
                                 }}
                                 disabled={pending}
-                                className="min-h-11 rounded-xl border border-red-200 bg-white px-4 font-semibold text-red-800 hover:bg-red-50"
+                                className="text-danger"
                               >
+                                <Trash2 aria-hidden="true" className="h-4 w-4" />
                                 Remover registro
-                              </button>
-                              <button
-                                type="button"
+                              </Button>
+                              <Button
+                                size="compact"
                                 onClick={() => finishEvangelismRecord(record.key)}
                                 disabled={pending}
-                                className="min-h-11 rounded-xl bg-zinc-950 px-5 font-semibold text-white hover:bg-zinc-800"
                               >
                                 Salvar evangelismo
-                              </button>
+                              </Button>
                             </div>
                           </div>
                         ) : null}
@@ -2328,26 +2415,15 @@ export function ReportForm({
             ) : null}
           </section>
 
-          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-            <h3 className="flex items-center gap-2 font-semibold text-amber-950">
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="h-5 w-5 shrink-0"
-              >
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 7.5v6" />
-                <circle cx="12" cy="17" r=".75" fill="currentColor" stroke="none" />
-              </svg>
+          <section className="rounded-xl border border-warning/20 bg-warning-soft p-4">
+            <h3 className="flex items-center gap-2 font-semibold text-warning">
+              <Info aria-hidden="true" className="h-5 w-5 shrink-0" />
               Revise antes de enviar
             </h3>
-            <p className="mt-2 text-sm leading-6 text-amber-900">
+            <p className="mt-2 text-sm leading-6 text-app-secondary">
               Confira a data, as presenças e o Relatório de Evangelismo.
             </p>
-            <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl bg-white p-4 ring-1 ring-amber-200">
+            <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-warning/20 bg-surface p-4">
               <input
                 type="checkbox"
                 checked={submissionConfirmed}
@@ -2356,9 +2432,9 @@ export function ReportForm({
                 }
                 required
                 disabled={pending}
-                className="mt-0.5 h-5 w-5 shrink-0 accent-zinc-950"
+                className="mt-0.5 h-5 w-5 shrink-0 accent-theme-primary"
               />
-              <span className="font-medium text-zinc-950">
+              <span className="font-medium text-app-foreground">
                 Revisei as informações e confirmo o envio.
                 <RequiredMark />
               </span>
@@ -2366,26 +2442,28 @@ export function ReportForm({
           </section>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <button
+            <Button
               type="button"
-              onClick={() => {
-                setStep(1);
-                setSubmissionConfirmed(false);
-                setLocalMessage("");
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
+              variant="secondary"
+              onClick={() => moveToStep(3)}
               disabled={pending}
-              className="min-h-12 rounded-xl border border-zinc-300 bg-white px-5 font-semibold text-zinc-900 hover:bg-zinc-100 sm:min-w-48"
+              className="w-full sm:w-auto sm:min-w-40"
             >
-              Voltar à organização
-            </button>
-            <button
+              <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+              Voltar
+            </Button>
+            <Button
               type="submit"
               disabled={pending}
-              className="min-h-12 rounded-xl bg-zinc-950 px-5 font-semibold text-white hover:bg-zinc-800 disabled:cursor-wait disabled:bg-zinc-500 sm:min-w-56"
+              className="w-full sm:w-auto sm:min-w-56"
             >
-              {pending ? "Enviando..." : "Enviar Ficha completa"}
-            </button>
+              {pending ? (
+                <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send aria-hidden="true" className="h-4 w-4" />
+              )}
+              {pending ? "Enviando..." : "Enviar ficha"}
+            </Button>
           </div>
         </>
       )}

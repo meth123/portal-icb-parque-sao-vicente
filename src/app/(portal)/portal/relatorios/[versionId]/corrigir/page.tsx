@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { Alert } from "@/components/ui/alert";
+import { buttonClassName } from "@/components/ui/button";
+import { PageContainer } from "@/components/ui/page-container";
+import { PageHeader } from "@/components/ui/page-header";
+import { Surface } from "@/components/ui/surface";
+import { ThemeArtwork } from "@/components/ui/theme-artwork";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import type { CellReportInitialData } from "@/lib/cell-report-form";
 import { getCellReportCorrectionDraftKey } from "@/lib/cell-report-draft";
@@ -114,24 +120,31 @@ export default async function CorrectCellReportPage({
   };
 
   return (
-    <main className="min-h-screen bg-zinc-100 px-4 py-10 sm:px-6">
-      <section className="mx-auto w-full max-w-4xl rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-600">
-          Fase 5 · Correção
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950 sm:text-4xl">
-          Corrigir Ficha de Organização
-        </h1>
-        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-950">
+    <main>
+      <PageContainer className="py-6 sm:py-8 lg:py-10">
+        <PageHeader
+          eyebrow="Relatórios"
+          title="Corrigir ficha"
+          description={detail.cellName}
+        />
+
+        <ThemeArtwork
+          decorative
+          className="mt-6 min-h-24 sm:min-h-32"
+          imageClassName="scale-[1.35] object-center lg:scale-100"
+          sizes="(max-width: 1024px) 100vw, 896px"
+        />
+
+        <Alert tone="warning" className="mt-5">
           <p className="font-semibold">
             Você está corrigindo a versão {detail.versionNumber} de {detail.cellName}.
           </p>
-          <p className="mt-1 leading-7">
-            O novo envio criará outra versão. Esta versão continuará preservada
-            no histórico e não será editada diretamente.
+          <p className="mt-1">
+            O envio cria uma nova versão e preserva a anterior no histórico.
           </p>
-        </div>
+        </Alert>
 
+        <Surface className="mt-5 p-4 sm:p-7 lg:p-8">
         <ReportForm
           cellId={detail.cellId}
           cellName={detail.cellName}
@@ -147,14 +160,18 @@ export default async function CorrectCellReportPage({
           initialData={initialData}
           correctionSourceVersionId={detail.id}
         />
+        </Surface>
 
         <Link
           href={`/portal/relatorios/${detail.id}`}
-          className="mt-6 flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 font-semibold text-zinc-900 hover:bg-zinc-100 sm:w-auto sm:min-w-52"
+          className={buttonClassName({
+            variant: "ghost",
+            className: "mt-4 w-full sm:w-auto",
+          })}
         >
           Cancelar correção
         </Link>
-      </section>
+      </PageContainer>
     </main>
   );
 }

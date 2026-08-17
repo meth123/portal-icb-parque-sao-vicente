@@ -1,3 +1,5 @@
+import { Trash2 } from "lucide-react";
+import { IconButton } from "@/components/ui/icon-button";
 import type { ManualName } from "../types";
 
 type MemberRowProps = {
@@ -18,14 +20,14 @@ export function MemberRow({
   onRemove,
 }: MemberRowProps) {
   return (
-    <div className="grid gap-3 rounded-2xl border border-zinc-200 p-4 sm:grid-cols-[1fr_auto] sm:items-end">
-      <div>
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2">
+      <div className="min-w-0">
         <label
           htmlFor={`member-${member.key}`}
-          className="font-medium text-zinc-900"
+          className="font-medium text-app-foreground"
         >
-          Nome do membro {index + 1}
-          <span aria-hidden="true" className="ml-1 text-red-700">
+          Participante {index + 1}
+          <span aria-hidden="true" className="ml-1 text-danger">
             *
           </span>
         </label>
@@ -40,14 +42,15 @@ export function MemberRow({
           className={inputClassName}
         />
       </div>
-      <button
-        type="button"
+      <IconButton
         onClick={onRemove}
         disabled={disabled}
-        className="min-h-12 rounded-xl border border-red-200 bg-white px-4 font-semibold text-red-800 hover:bg-red-50"
+        aria-label={`Remover participante ${index + 1}`}
+        title="Remover participante"
+        className="text-danger"
       >
-        Remover
-      </button>
+        <Trash2 aria-hidden="true" className="h-4 w-4" />
+      </IconButton>
     </div>
   );
 }
