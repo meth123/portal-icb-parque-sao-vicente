@@ -6,7 +6,11 @@ import type {
   CellLeaderOption,
   ManagedCellDetail,
 } from "@/lib/data/cell-administration";
-import { updateCellLeadership, type UpdateCellState } from "./actions";
+import {
+  reactivateCell,
+  updateCellLeadership,
+  type UpdateCellState,
+} from "./actions";
 
 const initialState: UpdateCellState = { message: "" };
 
@@ -16,6 +20,7 @@ type EditCellLeadershipFormProps = {
   neighborhoods: CellFormOption[];
   leaders: CellLeaderOption[];
   defaultDate: string;
+  minimumDate: string;
 };
 
 export function EditCellLeadershipForm({
@@ -24,16 +29,26 @@ export function EditCellLeadershipForm({
   neighborhoods,
   leaders,
   defaultDate,
+  minimumDate,
 }: EditCellLeadershipFormProps) {
+  const initialLeaderProfileId = leaders.some(
+    (leader) => leader.value === cell.leaderProfileId,
+  )
+    ? cell.leaderProfileId
+    : (leaders[0]?.value ?? "");
   const [state, formAction, pending] = useActionState(
-    updateCellLeadership,
+    cell.isActive ? updateCellLeadership : reactivateCell,
     initialState,
   );
   const [leaderProfileId, setLeaderProfileId] = useState(
-    cell.leaderProfileId,
+    initialLeaderProfileId,
   );
   const [viceProfileIds, setViceProfileIds] = useState(
-    new Set(cell.viceProfileIds),
+    new Set(
+      cell.viceProfileIds.filter((profileId) =>
+        leaders.some((leader) => leader.value === profileId),
+      ),
+    ),
   );
   const fieldClassName =
     "mt-2 min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-base text-zinc-950 outline-none focus:border-zinc-700 focus:ring-2 focus:ring-zinc-200";
@@ -61,7 +76,10 @@ export function EditCellLeadershipForm({
       action={formAction}
       className="mt-8 space-y-7"
       onSubmit={(event) => {
-        if (!window.confirm("Confirmar as alterações desta célula?")) {
+        const confirmation = cell.isActive
+          ? "Confirmar as alterações desta célula?"
+          : "Confirmar a reativação desta célula?";
+        if (!window.confirm(confirmation)) {
           event.preventDefault();
         }
       }}
@@ -88,10 +106,11 @@ export function EditCellLeadershipForm({
             name="name"
             type="text"
             defaultValue={cell.name}
+            readOnly={!cell.isActive}
             minLength={2}
             maxLength={120}
             required
-            className={fieldClassName}
+            className={`${fieldClassName} ${!cell.isActive ? "bg-zinc-100 text-zinc-600" : ""}`}
           />
         </div>
 
@@ -100,14 +119,14 @@ export function EditCellLeadershipForm({
             htmlFor="effectiveOn"
             className="font-semibold text-zinc-950"
           >
-            Início da alteração
+            {cell.isActive ? "Início da alteração" : "Data da reativação"}
           </label>
           <input
             id="effectiveOn"
             name="effectiveOn"
             type="date"
             defaultValue={defaultDate}
-            min={cell.startedOn ?? undefined}
+            min={minimumDate}
             max={defaultDate}
             required
             className={fieldClassName}
@@ -257,8 +276,9 @@ export function EditCellLeadershipForm({
       </fieldset>
 
       <p className="rounded-xl bg-zinc-100 px-4 py-3 text-sm leading-6 text-zinc-700">
-        As mudanças estruturais ficam registradas no histórico a partir da data
-        informada. Ao retirar um Vice, a conta continuará ativa.
+        {cell.isActive
+          ? "Para trocar funções, escolha o novo Líder e marque o Líder anterior como Vice, se necessário. O histórico será preservado."
+          : "A célula voltará como um novo período. O histórico anterior será preservado."}
       </p>
 
       <button
@@ -266,7 +286,11 @@ export function EditCellLeadershipForm({
         disabled={pending}
         className="min-h-12 w-full rounded-xl bg-zinc-950 px-5 font-semibold text-white hover:bg-zinc-800 disabled:cursor-wait disabled:bg-zinc-500"
       >
-        {pending ? "Salvando..." : "Salvar alterações"}
+        {pending
+          ? "Salvando..."
+          : cell.isActive
+            ? "Salvar alterações"
+            : "Reativar célula"}
       </button>
     </form>
   );

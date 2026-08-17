@@ -160,9 +160,12 @@ export function ManagedCellDirectory({ cells }: { cells: ManagedCellSummary[] })
                   Editar
                 </Link>
               ) : (
-                <span className="text-sm font-medium text-zinc-500">
-                  Somente histórico
-                </span>
+                <Link
+                  href={`/portal/admin/celulas/${cell.id}`}
+                  className="flex min-h-11 shrink-0 items-center justify-center rounded-xl border border-zinc-300 px-5 font-semibold text-zinc-900 hover:bg-zinc-100"
+                >
+                  Reativar
+                </Link>
               )}
             </div>
           </article>

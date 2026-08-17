@@ -49,6 +49,7 @@ export type ManagedCellSummary = {
 
 export type ManagedCellDetail = ManagedCellSummary & {
   startedOn: string | null;
+  endedOn: string | null;
   weekday: number;
   meetingTime: string;
   neighborhoodId: string;
@@ -217,6 +218,19 @@ type RawClassification = {
   ends_on: string | null;
 };
 
+type RawSchedule = {
+  weekday: number;
+  meeting_time: string;
+  starts_on: string;
+  ends_on: string | null;
+};
+
+type RawLocation = {
+  neighborhood_id: string;
+  starts_on: string;
+  ends_on: string | null;
+};
+
 type RawCellType = {
   id: string;
   network_id: string;
@@ -377,41 +391,48 @@ export async function getManagedCell(
       .from("cells")
       .select("id, name, is_active, started_on, ended_on")
       .eq("id", cellId)
-      .eq("is_active", true)
       .maybeSingle(),
     supabase
       .from("cell_leaderships")
       .select("cell_id, profile_id, role, starts_on, ends_on")
-      .eq("cell_id", cellId)
-      .is("ends_on", null),
+      .eq("cell_id", cellId),
     supabase
       .from("cell_classifications")
-      .select("cell_type_id")
-      .eq("cell_id", cellId)
-      .is("ends_on", null)
-      .maybeSingle(),
+      .select("cell_id, cell_type_id, starts_on, ends_on")
+      .eq("cell_id", cellId),
     supabase
       .from("cell_schedules")
-      .select("weekday, meeting_time")
-      .eq("cell_id", cellId)
-      .is("ends_on", null)
-      .maybeSingle(),
+      .select("weekday, meeting_time, starts_on, ends_on")
+      .eq("cell_id", cellId),
     supabase
       .from("cell_locations")
-      .select("neighborhood_id")
-      .eq("cell_id", cellId)
-      .is("ends_on", null)
-      .maybeSingle(),
+      .select("neighborhood_id, starts_on, ends_on")
+      .eq("cell_id", cellId),
     getCellAdministrationOptions(cellId),
   ]);
 
   if (!options) return null;
 
   const rawCell = cellResult.data as RawCell | null;
-  const classification = classificationResult.data;
-  const schedule = scheduleResult.data;
-  const location = locationResult.data;
-  const leaderships = (leadershipsResult.data ?? []) as RawLeadership[];
+  const matchesRelevantPeriod = (endsOn: string | null) =>
+    rawCell?.is_active === true
+      ? endsOn === null
+      : Boolean(rawCell?.ended_on && endsOn === rawCell.ended_on);
+  const newestFirst = <T extends { starts_on: string }>(first: T, second: T) =>
+    second.starts_on.localeCompare(first.starts_on);
+  const classification = (
+    (classificationResult.data ?? []) as RawClassification[]
+  )
+    .filter((item) => matchesRelevantPeriod(item.ends_on))
+    .sort(newestFirst)[0];
+  const schedule = ((scheduleResult.data ?? []) as RawSchedule[])
+    .filter((item) => matchesRelevantPeriod(item.ends_on))
+    .sort(newestFirst)[0];
+  const location = ((locationResult.data ?? []) as RawLocation[])
+    .filter((item) => matchesRelevantPeriod(item.ends_on))
+    .sort(newestFirst)[0];
+  const leaderships = ((leadershipsResult.data ?? []) as RawLeadership[])
+    .filter((item) => matchesRelevantPeriod(item.ends_on));
   const leader = leaderships.find(
     (leadership) => leadership.role === "leader",
   );
@@ -433,6 +454,7 @@ export async function getManagedCell(
               (option) => option.value === classification.cell_type_id,
             )?.label ?? "Tipo não encontrado",
           startedOn: rawCell.started_on,
+          endedOn: rawCell.ended_on,
           weekday: schedule.weekday,
           meetingTime: schedule.meeting_time.slice(0, 5),
           neighborhoodId: location.neighborhood_id,

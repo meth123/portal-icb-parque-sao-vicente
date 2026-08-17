@@ -7,10 +7,27 @@ function getSafeDestination(value: string | null) {
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
+  const tokenHash = request.nextUrl.searchParams.get("token_hash");
+  const type = request.nextUrl.searchParams.get("type");
   const flowId = request.nextUrl.searchParams.get("sb_flow_id");
+  const supabase = await createClient();
+
+  if (tokenHash && type === "recovery") {
+    const { error } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type,
+    });
+
+    if (!error) {
+      const destination = request.nextUrl.clone();
+      destination.pathname = "/atualizar-senha";
+      destination.search = "";
+
+      return NextResponse.redirect(destination);
+    }
+  }
 
   if (code) {
-    const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(
       code,
       flowId ? { flowId } : undefined,

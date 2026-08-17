@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export type UpdateCellState = { message: string };
 export type DeactivateCellState = { message: string };
+export type ReactivateCellState = { message: string };
 
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -215,4 +216,105 @@ export async function deactivateCell(
   revalidatePath("/portal/admin");
   revalidatePath("/portal");
   redirect("/portal/admin/celulas?status=desativada");
+}
+
+export async function reactivateCell(
+  _previousState: ReactivateCellState,
+  formData: FormData,
+): Promise<ReactivateCellState> {
+  const user = await getCurrentUser();
+
+  if (!user || !canManageCellAdministration(user)) {
+    return { message: "Sua conta não possui permissão para reativar células." };
+  }
+
+  const cellId = readString(formData, "cellId");
+  const reactivatedOn = readString(formData, "effectiveOn");
+  const cellTypeId = readString(formData, "cellTypeId");
+  const neighborhoodId = readString(formData, "neighborhoodId");
+  const meetingTime = readString(formData, "meetingTime");
+  const weekday = Number(readString(formData, "weekday"));
+  const leaderProfileId = readString(formData, "leaderProfileId");
+  const viceProfileIds = [
+    ...new Set(
+      formData
+        .getAll("viceProfileIds")
+        .filter((value): value is string => typeof value === "string")
+        .filter((value) => uuidPattern.test(value)),
+    ),
+  ];
+
+  const parsedDate = new Date(`${reactivatedOn}T00:00:00Z`);
+  if (
+    !uuidPattern.test(cellId) ||
+    !uuidPattern.test(cellTypeId) ||
+    !uuidPattern.test(neighborhoodId) ||
+    !uuidPattern.test(leaderProfileId) ||
+    !datePattern.test(reactivatedOn) ||
+    Number.isNaN(parsedDate.getTime()) ||
+    parsedDate.toISOString().slice(0, 10) !== reactivatedOn ||
+    !Number.isInteger(weekday) ||
+    ![4, 5, 6].includes(weekday) ||
+    !timePattern.test(meetingTime)
+  ) {
+    return { message: "Revise os dados da reativação." };
+  }
+
+  if (viceProfileIds.includes(leaderProfileId)) {
+    return { message: "A mesma pessoa não pode ser Líder e Vice-líder." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("reactivate_cell", {
+    target_cell_id: cellId,
+    target_reactivated_on: reactivatedOn,
+    target_cell_type_id: cellTypeId,
+    target_weekday: weekday,
+    target_meeting_time: meetingTime,
+    target_neighborhood_id: neighborhoodId,
+    target_leader_profile_id: leaderProfileId,
+    target_vice_profile_ids: viceProfileIds,
+  });
+
+  if (error) {
+    const messages: Record<string, string> = {
+      CELL_MANAGEMENT_FORBIDDEN:
+        "Sua conta não possui permissão para reativar células.",
+      CELL_REACTIVATION_INVALID: "Revise os dados da reativação.",
+      CELL_NOT_INACTIVE: "A célula não existe ou já está ativa.",
+      CELL_REACTIVATION_DATE_INVALID:
+        "A reativação deve ser posterior ao encerramento e não pode estar no futuro.",
+      CELL_TYPE_INVALID: "Selecione uma Rede e um tipo ativos.",
+      CELL_LOCATION_INVALID: "Selecione uma localidade ativa.",
+      CELL_SCHEDULE_INVALID:
+        "Selecione quinta-feira, sexta-feira ou sábado e um horário válido.",
+      CELL_VICE_INVALID: "Selecione Vice-líderes válidos.",
+      CELL_LEADER_IS_VICE:
+        "A mesma pessoa não pode ser Líder e Vice-líder.",
+      CELL_LEADERSHIP_REQUIRES_ACTIVE_USER:
+        "Líder e Vices precisam possuir uma conta comum ativa.",
+      CELL_PROFILE_ASSIGNED_ELSEWHERE:
+        "Uma das pessoas selecionadas ainda possui vínculo com outra célula.",
+    };
+
+    if (error.code === "23505") {
+      return {
+        message:
+          "A data escolhida já possui um registro ou uma das pessoas ainda está vinculada a outra célula.",
+      };
+    }
+
+    return {
+      message:
+        messages[error.message] ??
+        "Não foi possível reativar a célula. Revise os dados e tente novamente.",
+    };
+  }
+
+  revalidatePath("/portal/admin/celulas");
+  revalidatePath(`/portal/celulas/${cellId}`);
+  revalidatePath("/portal/organizacao");
+  revalidatePath("/portal/admin");
+  revalidatePath("/portal");
+  redirect("/portal/admin/celulas?status=reativada");
 }

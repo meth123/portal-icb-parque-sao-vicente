@@ -48,6 +48,15 @@ export default async function EditManagedCellPage({
     month: "2-digit",
     day: "2-digit",
   }).format(new Date());
+  const minimumDate = data.cell.isActive
+    ? (data.cell.startedOn ?? defaultDate)
+    : data.cell.endedOn
+      ? (() => {
+        const endedOn = new Date(`${data.cell.endedOn}T12:00:00Z`);
+        endedOn.setUTCDate(endedOn.getUTCDate() + 1);
+        return endedOn.toISOString().slice(0, 10);
+        })()
+      : defaultDate;
 
   return (
     <main className="min-h-screen bg-zinc-100 px-4 py-10 sm:px-6">
@@ -56,11 +65,12 @@ export default async function EditManagedCellPage({
           Gestão de células
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950 sm:text-4xl">
-          Editar {data.cell.name}
+          {data.cell.isActive ? "Editar" : "Reativar"} {data.cell.name}
         </h1>
         <p className="mt-4 max-w-3xl leading-7 text-zinc-700">
-          A célula continuará com um Líder. Vice-líderes são opcionais e os
-          vínculos anteriores permanecerão no histórico.
+          {data.cell.isActive
+            ? "A célula continuará com um Líder. Vice-líderes são opcionais e os vínculos anteriores permanecerão no histórico."
+            : "Confirme a configuração e escolha a liderança do novo período. O histórico anterior não será alterado."}
         </p>
 
         <EditCellLeadershipForm
@@ -69,14 +79,17 @@ export default async function EditManagedCellPage({
           neighborhoods={data.neighborhoods}
           leaders={data.leaders}
           defaultDate={defaultDate}
+          minimumDate={minimumDate}
         />
 
-        <DeactivateCellForm
-          cellId={data.cell.id}
-          cellName={data.cell.name}
-          defaultDate={defaultDate}
-          minimumDate={data.cell.startedOn ?? undefined}
-        />
+        {data.cell.isActive ? (
+          <DeactivateCellForm
+            cellId={data.cell.id}
+            cellName={data.cell.name}
+            defaultDate={defaultDate}
+            minimumDate={data.cell.startedOn ?? undefined}
+          />
+        ) : null}
 
         <Link
           href="/portal/admin/celulas"
