@@ -11,7 +11,7 @@ import { getCellReportVersionDetail } from "@/lib/data/cell-report-detail";
 import { ClearSubmittedDraft } from "./clear-submitted-draft";
 
 export const metadata: Metadata = {
-  title: "Ficha de Organização | Portal ICB Parque São Vicente",
+  title: "Ficha de Organização | ICB Conecta",
   robots: {
     index: false,
     follow: false,

@@ -9,7 +9,7 @@ import {
 import { DeleteDocumentForm } from "./delete-document-form";
 
 export const metadata: Metadata = {
-  title: "Biblioteca de documentos | Portal ICB Parque São Vicente",
+  title: "Biblioteca de documentos | ICB Conecta",
   robots: {
     index: false,
     follow: false,
@@ -211,7 +211,7 @@ export default async function DocumentsPage({
           href="/portal"
           className="mt-8 flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900 sm:w-auto sm:min-w-52"
         >
-          Voltar ao portal
+          Voltar ao ICB Conecta
         </Link>
       </section>
     </main>

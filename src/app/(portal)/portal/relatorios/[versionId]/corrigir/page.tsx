@@ -9,7 +9,7 @@ import { getCellReportFormContext } from "@/lib/data/cell-reports";
 import { ReportForm } from "../../novo/report-form";
 
 export const metadata: Metadata = {
-  title: "Corrigir Ficha de Organização | Portal ICB Parque São Vicente",
+  title: "Corrigir Ficha de Organização | ICB Conecta",
   robots: {
     index: false,
     follow: false,

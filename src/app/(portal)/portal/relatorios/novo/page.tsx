@@ -7,7 +7,7 @@ import { getCellReportFormContext } from "@/lib/data/cell-reports";
 import { ReportForm } from "./report-form";
 
 export const metadata: Metadata = {
-  title: "Preencher Ficha de Organização | Portal ICB Parque São Vicente",
+  title: "Preencher Ficha de Organização | ICB Conecta",
   robots: {
     index: false,
     follow: false,

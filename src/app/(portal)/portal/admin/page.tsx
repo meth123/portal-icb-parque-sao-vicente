@@ -81,7 +81,7 @@ export default async function AdminAccessPage() {
           </aside>
         </div>
 
-        <Link href="/portal" className="mt-8 flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 font-semibold text-zinc-900 hover:bg-zinc-100 sm:w-auto sm:min-w-52">Voltar ao portal</Link>
+        <Link href="/portal" className="mt-8 flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 font-semibold text-zinc-900 hover:bg-zinc-100 sm:w-auto sm:min-w-52">Voltar ao ICB Conecta</Link>
       </section>
     </main>
   );

@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { Alert } from "@/components/ui/alert";
+import { FormField } from "@/components/ui/form-field";
+import { SubmitButton } from "@/components/ui/submit-button";
+import { AuthPanel } from "../auth-panel";
+import { authInputClassName, authTextLinkClassName } from "../auth-styles";
 import { requestPasswordRecovery } from "./actions";
 
 export const metadata: Metadata = {
-  title: "Recuperar senha | Portal ICB Parque São Vicente",
-  description: "Recuperação de acesso ao portal interno.",
+  title: "Recuperar senha | ICB Conecta",
+  description: "Recuperação de acesso ao ICB Conecta.",
   robots: {
     index: false,
     follow: false,
@@ -24,46 +30,26 @@ export default async function RecoverPasswordPage({
   const sent = status === "enviado";
 
   return (
-    <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
-      <div className="text-center">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-600">
-          Recuperação de acesso
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950">
-          Esqueci minha senha
-        </h1>
-        <p className="mt-3 text-base leading-7 text-zinc-700">
-          Informe o e-mail da sua conta para receber as instruções.
-        </p>
-      </div>
-
+    <AuthPanel
+      eyebrow="Recuperação de acesso"
+      title="Esqueci minha senha"
+      description="Informe o e-mail da sua conta para receber as instruções."
+    >
       {sent ? (
-        <div
-          role="status"
-          className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-6 text-emerald-900"
-        >
+        <Alert tone="success" className="mt-6">
           Se existir uma conta autorizada para esse e-mail, enviaremos um link
           para criar uma nova senha. Verifique também a caixa de spam.
-        </div>
+        </Alert>
       ) : (
         <>
           {errorMessages[errorCode] ? (
-            <p
-              role="alert"
-              className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm font-medium text-red-800"
-            >
+            <Alert tone="danger" className="mt-6">
               {errorMessages[errorCode]}
-            </p>
+            </Alert>
           ) : null}
 
           <form action={requestPasswordRecovery} className="mt-8 space-y-5">
-            <div>
-              <label
-                htmlFor="email"
-                className="mb-2 block text-base font-medium text-zinc-900"
-              >
-                E-mail
-              </label>
+            <FormField id="email" label="E-mail">
               <input
                 id="email"
                 name="email"
@@ -72,16 +58,13 @@ export default async function RecoverPasswordPage({
                 required
                 maxLength={254}
                 placeholder="seuemail@exemplo.com"
-                className="min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-base text-zinc-900 placeholder:text-zinc-500 focus:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-300"
+                className={authInputClassName}
               />
-            </div>
+            </FormField>
 
-            <button
-              type="submit"
-              className="min-h-12 w-full rounded-xl bg-zinc-950 px-5 text-base font-semibold text-white transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
-            >
+            <SubmitButton pendingLabel="Enviando..." className="w-full">
               Enviar link de recuperação
-            </button>
+            </SubmitButton>
           </form>
         </>
       )}
@@ -89,11 +72,12 @@ export default async function RecoverPasswordPage({
       <div className="mt-6 text-center">
         <Link
           href="/login"
-          className="rounded-md text-sm font-medium text-zinc-700 underline-offset-4 hover:text-zinc-950 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
+          className={`${authTextLinkClassName} inline-flex min-h-11 items-center gap-2 text-sm`}
         >
+          <ArrowLeft aria-hidden="true" size={18} strokeWidth={1.8} />
           Voltar para o login
         </Link>
       </div>
-    </div>
+    </AuthPanel>
   );
 }

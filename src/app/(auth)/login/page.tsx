@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Alert } from "@/components/ui/alert";
+import { FormField } from "@/components/ui/form-field";
+import { SubmitButton } from "@/components/ui/submit-button";
+import { AuthPanel } from "../auth-panel";
+import { authInputClassName, authTextLinkClassName } from "../auth-styles";
+import { PasswordInput } from "../password-input";
 import { login } from "./actions";
 
 export const metadata: Metadata = {
-  title: "Login | Portal ICB Parque São Vicente",
-  description: "Acesso ao portal interno.",
+  title: "Login | ICB Conecta",
+  description: "Acesso ao ICB Conecta.",
   robots: {
     index: false,
     follow: false,
@@ -30,45 +36,21 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const statusMessage = statusMessages[statusCode];
 
   return (
-    <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
-      <div className="text-center">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-600">
-          Área interna
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950">
-          Entrar no portal
-        </h1>
-        <p className="mt-3 text-base leading-7 text-zinc-700">
-          Use sua conta individual para acessar a área interna.
-        </p>
-      </div>
-
+    <AuthPanel title="Entrar no ICB Conecta">
       {errorMessage ? (
-        <p
-          role="alert"
-          className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm font-medium text-red-800"
-        >
+        <Alert tone="danger" className="mt-6">
           {errorMessage}
-        </p>
+        </Alert>
       ) : null}
 
       {statusMessage ? (
-        <p
-          role="status"
-          className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-sm font-medium text-emerald-800"
-        >
+        <Alert tone="success" className="mt-6">
           {statusMessage}
-        </p>
+        </Alert>
       ) : null}
 
-      <form action={login} className="mt-8 space-y-5">
-        <div>
-          <label
-            htmlFor="email"
-            className="mb-2 block text-base font-medium text-zinc-900"
-          >
-            E-mail
-          </label>
+      <form action={login} className="mt-6 space-y-5">
+        <FormField id="email" label="E-mail">
           <input
             id="email"
             name="email"
@@ -76,47 +58,33 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             autoComplete="email"
             required
             placeholder="seuemail@exemplo.com"
-            className="min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-base text-zinc-900 placeholder:text-zinc-500 focus:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-300"
+            className={authInputClassName}
           />
-          <div className="mt-3 text-right">
-            <Link
-              href="/recuperar-senha"
-              className="rounded-md text-sm font-medium text-zinc-700 underline-offset-4 hover:text-zinc-950 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
-            >
-              Esqueci minha senha
-            </Link>
-          </div>
-        </div>
+        </FormField>
 
-        <div>
-          <label
-            htmlFor="password"
-            className="mb-2 block text-base font-medium text-zinc-900"
-          >
-            Senha
-          </label>
-          <input
+        <FormField
+          id="password"
+          label="Senha"
+          labelAction={
+            <Link href="/recuperar-senha" className={authTextLinkClassName}>
+              Esqueci a senha
+            </Link>
+          }
+        >
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             autoComplete="current-password"
             required
             placeholder="Sua senha"
-            className="min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-base text-zinc-900 placeholder:text-zinc-500 focus:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-300"
           />
-        </div>
+        </FormField>
 
-        <button
-          type="submit"
-          className="min-h-12 w-full rounded-xl bg-zinc-950 px-5 text-base font-semibold text-white transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
-        >
+        <SubmitButton pendingLabel="Entrando..." className="w-full">
           Entrar
-        </button>
+        </SubmitButton>
       </form>
 
-      <p className="mt-5 text-center text-sm leading-6 text-zinc-600">
-        O acesso é exclusivo para contas autorizadas.
-      </p>
-    </div>
+    </AuthPanel>
   );
 }

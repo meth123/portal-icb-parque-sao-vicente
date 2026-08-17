@@ -10,7 +10,7 @@ import {
 import { MonthlyResponsibility } from "./monthly-responsibility";
 
 export const metadata: Metadata = {
-  title: "Histórico de Fichas | Portal ICB Parque São Vicente",
+  title: "Histórico de Fichas | ICB Conecta",
   robots: {
     index: false,
     follow: false,
@@ -291,7 +291,7 @@ export default async function CellReportsPage({
           href="/portal"
           className="mt-8 flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 font-semibold text-zinc-900 hover:bg-zinc-100 sm:w-auto sm:min-w-52"
         >
-          Voltar ao portal
+          Voltar ao ICB Conecta
         </Link>
       </section>
     </main>

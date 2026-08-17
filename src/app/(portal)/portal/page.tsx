@@ -1,20 +1,26 @@
-import Image from "next/image";
-import Link from "next/link";
-import { redirect } from "next/navigation";
 import {
-  canAccessAdministration,
-  canAccessPastoralDashboard,
-  canManageCellAdministration,
-  getCurrentUser,
-} from "@/lib/auth/current-user";
+  Check,
+  ClipboardCheck,
+  FilePlus2,
+  Users,
+} from "lucide-react";
+import { redirect } from "next/navigation";
+import { ActionCard } from "@/components/ui/action-card";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageContainer } from "@/components/ui/page-container";
+import { PageHeader } from "@/components/ui/page-header";
+import { SectionHeader } from "@/components/ui/section-header";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { getCellReportDraftKey } from "@/lib/cell-report-draft";
-import { canAccessDocumentLibrary } from "@/lib/data/document-library";
-import { getInstitutionMonthlyIndicator } from "@/lib/data/institution-dashboard";
-import { getWeeklyChecklistData } from "@/lib/data/weekly-checklist";
 import {
   getCellReportFormContext,
   getCurrentMonthlyReportResponsibility,
 } from "@/lib/data/cell-reports";
+import { getInstitutionMonthlyIndicator } from "@/lib/data/institution-dashboard";
+import { getWeeklyChecklistData } from "@/lib/data/weekly-checklist";
 import { logout } from "./actions";
 import { ClearCellReportDraft } from "./clear-cell-report-draft";
 
@@ -25,276 +31,182 @@ type PortalPageProps = {
 export default async function PortalPage({ searchParams }: PortalPageProps) {
   const user = await getCurrentUser();
 
-  if (!user) {
-    redirect("/login?erro=perfil");
-  }
-
-  const roleLabels: Record<string, string> = {
-    user: "Usuário",
-    pastor: "Pastor",
-    administrator: "Administrador",
-  };
-  const roleLabel = roleLabels[user.globalRole] ?? "Usuário";
+  if (!user) redirect("/login?erro=perfil");
 
   if (!user.isActive) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-zinc-100 px-4 py-10 sm:px-6">
-        <section className="w-full max-w-lg rounded-3xl border border-zinc-200 bg-white p-6 text-center shadow-sm sm:p-10">
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-950">
+      <main className="flex min-h-dvh items-center justify-center bg-app-background px-4 py-10">
+        <div className="w-full max-w-md text-center">
+          <h1 className="text-3xl font-semibold text-app-foreground">
             Acesso desativado
           </h1>
-          <p className="mt-4 text-base leading-7 text-zinc-700">
-            Esta conta está temporariamente sem acesso ao portal. Procure um
+          <p className="mt-4 leading-7 text-app-secondary">
+            Esta conta está temporariamente sem acesso ao ICB Conecta. Procure um
             administrador.
           </p>
           <form action={logout} className="mt-8">
-            <button
-              type="submit"
-              className="min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
-            >
+            <Button type="submit" variant="secondary" className="w-full">
               Sair
-            </button>
+            </Button>
           </form>
-        </section>
+        </div>
       </main>
     );
   }
 
   const [
-    hasDocumentLibraryAccess,
     reportContext,
     monthlyResponsibility,
     institutionIndicator,
     weeklyChecklist,
     resolvedSearchParams,
-  ] =
-    await Promise.all([
-      canAccessDocumentLibrary(),
-      getCellReportFormContext(),
-      getCurrentMonthlyReportResponsibility(),
-      getInstitutionMonthlyIndicator(),
-      getWeeklyChecklistData({ includeAvatars: false }),
-      searchParams,
-    ]);
-  const reportWasSubmitted =
-    resolvedSearchParams.status === "ficha-enviada";
+  ] = await Promise.all([
+    getCellReportFormContext(),
+    getCurrentMonthlyReportResponsibility(),
+    getInstitutionMonthlyIndicator(),
+    getWeeklyChecklistData({ includeAvatars: false }),
+    searchParams,
+  ]);
+  const reportWasSubmitted = resolvedSearchParams.status === "ficha-enviada";
+  const checklistIsVisible = Boolean(
+    weeklyChecklist &&
+      !weeklyChecklist.hasError &&
+      weeklyChecklist.people.length > 0,
+  );
+  const checklistWasAnswered = Boolean(
+    weeklyChecklist?.currentPerson &&
+      weeklyChecklist.currentPerson.prayedInGroup !== null &&
+      weeklyChecklist.currentPerson.fastedForCell !== null,
+  );
+  const checklistNeedsAnswer = Boolean(
+    weeklyChecklist?.period.isOpen &&
+      weeklyChecklist.currentPerson &&
+      !checklistWasAnswered,
+  );
+  const firstName = user.fullName?.trim().split(/\s+/)[0] ?? "usuário";
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-zinc-100 px-3 py-6 sm:px-6 sm:py-10">
-      <section className="w-full max-w-lg rounded-3xl border border-zinc-200 bg-white p-4 text-center shadow-sm sm:p-10">
-        <Image
-          src="/images/icb-parque-sao-vicente.png"
-          alt="ICB Parque São Vicente"
-          width={857}
-          height={576}
-          priority
-          className="mx-auto h-24 w-auto brightness-0"
-        />
-
-        <p className="mt-6 text-sm font-semibold uppercase tracking-[0.18em] text-zinc-600">
-          Área interna
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950">
-          Olá, {user.fullName ?? "usuário"}
-        </h1>
-        <p className="mt-4 text-base leading-7 text-zinc-700">
-          Seu perfil está conectado. O painel será construído nas próximas
-          etapas.
-        </p>
+    <main>
+      <PageContainer width="wide" className="py-6 sm:py-8 lg:py-10">
+        <PageHeader title={`Olá, ${firstName}`} />
 
         {reportWasSubmitted ? (
-          <>
+          <div className="mt-6">
             {reportContext ? (
               <ClearCellReportDraft
                 draftKey={getCellReportDraftKey(user.id, reportContext.cellId)}
               />
             ) : null}
-            <p
-              role="status"
-              className="mt-6 rounded-xl border border-green-200 bg-green-50 px-4 py-4 text-green-900"
-            >
+            <Alert tone="success">
               Ficha de Organização enviada com sucesso.
-            </p>
-          </>
-        ) : null}
-
-        {monthlyResponsibility?.isCurrentUserResponsible ? (
-          <div className="mx-auto mt-6 w-fit max-w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center text-blue-950">
-            <p className="text-sm font-semibold leading-6">
-              Você é o responsável pelas Fichas em{" "}
-              <span className="whitespace-nowrap">
-                {monthlyResponsibility.monthLabel}
-              </span>
-              .
-            </p>
+            </Alert>
           </div>
-        ) : null}
-
-        {weeklyChecklist && !weeklyChecklist.hasError && weeklyChecklist.people.length > 0 ? (
-          <Link
-            href="/portal/checklist"
-            className="mt-6 block rounded-2xl border border-blue-200 bg-blue-50 px-4 py-5 text-left text-blue-950 transition-colors hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold text-blue-800">
-                  {weeklyChecklist.periodLabel}
-                </p>
-                <h2 className="mt-1 text-xl font-semibold">Checklist semanal</h2>
-                <p className="mt-1 text-sm leading-6">
-                  {weeklyChecklist.currentPerson
-                    ? weeklyChecklist.period.isOpen
-                      ? weeklyChecklist.currentPerson.prayedInGroup !== null &&
-                        weeklyChecklist.currentPerson.fastedForCell !== null
-                        ? "Respondido · você ainda pode corrigir"
-                        : "Disponível para responder"
-                      : "Resultado disponível"
-                    : "Acompanhar respostas"}
-                </p>
-              </div>
-              <span aria-hidden="true" className="text-2xl">→</span>
-            </div>
-          </Link>
         ) : null}
 
         {institutionIndicator ? (
-          <section className="mt-6 rounded-2xl border border-zinc-200 bg-white px-4 py-5 text-center">
-            <p className="text-sm font-semibold text-zinc-600">
-              {institutionIndicator.monthLabel}
-            </p>
+          <section className="mt-7" aria-labelledby="monthly-summary-title">
             {institutionIndicator.hasError ? (
-              <p className="mt-2 text-sm text-red-700" role="alert">
-                Não foi possível carregar o resumo geral.
-              </p>
+              <Alert tone="danger">
+                Não foi possível carregar o resumo do mês.
+              </Alert>
             ) : (
-              <p className="mt-2 flex flex-wrap items-baseline justify-center gap-x-2 text-base leading-7 text-zinc-800">
-                <strong className="text-3xl text-zinc-950">
-                  {institutionIndicator.firstTimeGuests}
-                </strong>
-                <span>
-                  {institutionIndicator.firstTimeGuests === 1
-                    ? "convidado pela 1ª vez"
-                    : "convidados pela 1ª vez"}
-                </span>
-              </p>
+              <div className="relative overflow-hidden rounded-2xl bg-theme-primary-active px-5 py-6 text-theme-primary-foreground sm:px-7 sm:py-7">
+                <div className="relative flex items-center justify-between gap-6">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-white/75">
+                      {institutionIndicator.monthLabel}
+                    </p>
+                    <div className="mt-3 flex items-baseline gap-3">
+                      <p className="text-5xl font-semibold leading-none sm:text-6xl">
+                        {institutionIndicator.firstTimeGuests}
+                      </p>
+                      <h2
+                        id="monthly-summary-title"
+                        className="max-w-44 text-base font-semibold leading-5 sm:max-w-none sm:text-lg"
+                      >
+                        novos convidados
+                      </h2>
+                    </div>
+                    <p className="mt-3 text-sm text-white/75">
+                      Primeira participação nas células
+                    </p>
+                  </div>
+                  <span
+                    aria-hidden="true"
+                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/12 sm:h-16 sm:w-16"
+                  >
+                    <Users size={30} strokeWidth={1.7} />
+                  </span>
+                </div>
+              </div>
             )}
-            {!institutionIndicator.hasError ? (
-              <p className="mt-2 text-sm text-zinc-600">
-                Todas as células · Atualizado automaticamente
-              </p>
-            ) : null}
           </section>
         ) : null}
 
-        <dl className="mt-6 rounded-2xl bg-zinc-100 px-5 py-4 text-left text-sm text-zinc-700">
-          {user.email ? (
-            <div className="flex flex-col gap-1 py-2 sm:flex-row sm:justify-between sm:gap-4">
-              <dt className="font-medium text-zinc-900">E-mail</dt>
-              <dd className="break-all sm:text-right">{user.email}</dd>
+        <section className="mt-8" aria-labelledby="portal-now-title">
+          <SectionHeader id="portal-now-title" title="Para você" />
+          {checklistIsVisible || reportContext ? (
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              {checklistIsVisible && weeklyChecklist ? (
+                <ActionCard
+                  href="/portal/checklist"
+                  title="Checklist semanal"
+                  description={
+                    weeklyChecklist.currentPerson
+                      ? weeklyChecklist.period.isOpen
+                        ? checklistWasAnswered
+                          ? "Revisar respostas"
+                          : "Responder esta semana"
+                        : "Ver resultado"
+                      : "Acompanhar respostas"
+                  }
+                  icon={<ClipboardCheck size={22} strokeWidth={1.8} />}
+                  tone={checklistNeedsAnswer ? "theme" : "default"}
+                  meta={
+                    <StatusBadge
+                      tone={checklistNeedsAnswer ? "warning" : "success"}
+                    >
+                      {checklistNeedsAnswer
+                        ? "Pendente"
+                        : weeklyChecklist.period.isOpen
+                          ? "Em dia"
+                          : "Encerrado"}
+                    </StatusBadge>
+                  }
+                />
+              ) : null}
+
+              {reportContext ? (
+                <ActionCard
+                  href="/portal/relatorios/novo"
+                  title="Preencher Ficha"
+                  description={reportContext.cellName}
+                  icon={<FilePlus2 size={22} strokeWidth={1.8} />}
+                  tone={
+                    monthlyResponsibility?.isCurrentUserResponsible
+                      ? "theme"
+                      : "default"
+                  }
+                  meta={
+                    monthlyResponsibility?.isCurrentUserResponsible ? (
+                      <StatusBadge tone="theme">
+                        Responsável em {monthlyResponsibility.monthLabel}
+                      </StatusBadge>
+                    ) : null
+                  }
+                />
+              ) : null}
             </div>
-          ) : null}
-          <div className="flex justify-between gap-4 border-t border-zinc-200 py-2">
-            <dt className="font-medium text-zinc-900">Papel</dt>
-            <dd>{roleLabel}</dd>
-          </div>
-          <div className="flex justify-between gap-4 border-t border-zinc-200 py-2">
-            <dt className="font-medium text-zinc-900">Supervisor</dt>
-            <dd>{user.isSupervisor ? "Sim" : "Não"}</dd>
-          </div>
-        </dl>
-
-        <div className="mt-6 space-y-3">
-          <Link
-            href="/portal/perfil"
-            className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
-          >
-            Meu perfil
-          </Link>
-
-          {reportContext ? (
-            <Link
-              href="/portal/relatorios/novo"
-              className="flex min-h-12 w-full items-center justify-center rounded-xl bg-zinc-950 px-3 py-3 text-sm font-semibold leading-5 text-white transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900 sm:px-5 sm:text-base"
-            >
-              <span className="sm:hidden">Preencher Ficha</span>
-              <span className="hidden sm:inline">Preencher Ficha de Organização</span>
-            </Link>
-          ) : null}
-
-          {reportContext || canAccessPastoralDashboard(user) ? (
-            <Link
-              href="/portal/relatorios"
-              className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-3 py-3 text-sm font-semibold leading-5 text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900 sm:px-5 sm:text-base"
-            >
-              <span className="sm:hidden">Consultar Fichas</span>
-              <span className="hidden sm:inline">Consultar Fichas enviadas</span>
-            </Link>
-          ) : null}
-
-          {reportContext ? (
-            <Link
-              href={`/portal/celulas/${reportContext.cellId}`}
-              className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-3 py-3 text-sm font-semibold leading-5 text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900 sm:px-5 sm:text-base"
-            >
-              Minha célula
-            </Link>
-          ) : null}
-
-          {hasDocumentLibraryAccess ? (
-            <Link
-              href="/portal/documentos"
-              className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
-            >
-              Biblioteca de documentos
-            </Link>
-          ) : null}
-
-          {canAccessPastoralDashboard(user) ? (
-            <Link
-              href="/portal/organizacao"
-              className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
-            >
-              Ver estrutura organizacional
-            </Link>
-          ) : null}
-
-          {canAccessPastoralDashboard(user) ? (
-            <Link
-              href="/portal/supervisao"
-              className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
-            >
-              Painel pastoral
-            </Link>
-          ) : null}
-
-          {canAccessAdministration(user) ? (
-            <Link
-              href="/portal/admin"
-              className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
-            >
-              Administração
-            </Link>
-          ) : null}
-          {canManageCellAdministration(user) &&
-          !canAccessAdministration(user) ? (
-            <Link
-              href="/portal/admin/celulas"
-              className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
-            >
-              Gerenciar células
-            </Link>
-          ) : null}
-        </div>
-
-        <form action={logout} className="mt-4">
-          <button
-            type="submit"
-            className="min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
-          >
-            Sair
-          </button>
-        </form>
-      </section>
+          ) : (
+            <EmptyState
+              className="mt-4"
+              icon={<Check size={28} strokeWidth={1.8} />}
+              title="Tudo certo por agora"
+              description="Você não tem nenhuma pendência."
+            />
+          )}
+        </section>
+      </PageContainer>
     </main>
   );
 }

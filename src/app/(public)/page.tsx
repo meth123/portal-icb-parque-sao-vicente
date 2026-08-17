@@ -6,7 +6,7 @@ export default function Home() {
           Em desenvolvimento
         </p>
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          Portal ICB Parque São Vicente
+          ICB Conecta
         </h1>
         <p className="mt-5 text-base leading-7 text-zinc-700">
           Este é um projeto experimental de aprendizado em desenvolvimento web.

@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { Camera, Save, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   type ChangeEvent,
@@ -8,7 +8,12 @@ import {
   useEffect,
   useState,
 } from "react";
+import { Alert } from "@/components/ui/alert";
+import { Button, buttonClassName } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { createClient } from "@/lib/supabase/client";
+import { classNames } from "@/lib/ui/class-names";
 
 const avatarBucket = "profile-avatars";
 const maximumAvatarSize = 2 * 1024 * 1024;
@@ -184,72 +189,73 @@ export function ProfileForm({
   const visibleAvatarUrl = previewUrl ?? currentAvatarUrl;
 
   return (
-    <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {message ? (
-        <p
-          role={hasError ? "alert" : "status"}
+        <Alert
+          tone={hasError ? "danger" : "success"}
           aria-live="polite"
-          className={`rounded-xl border px-4 py-3 text-sm ${
-            hasError
-              ? "border-red-200 bg-red-50 text-red-800"
-              : "border-green-200 bg-green-50 text-green-900"
-          }`}
         >
           {message}
-        </p>
+        </Alert>
       ) : null}
 
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-        <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-zinc-100 text-3xl font-semibold text-zinc-500">
-          {visibleAvatarUrl ? (
-            <Image
-              src={visibleAvatarUrl}
-              alt="Foto do perfil"
-              width={112}
-              height={112}
-              unoptimized
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <span aria-hidden="true">
-              {fullName.trim().charAt(0).toUpperCase() || "?"}
-            </span>
-          )}
-        </div>
+        <UserAvatar
+          name={fullName || "Usuário"}
+          src={visibleAvatarUrl}
+          size="xlarge"
+        />
 
-        <div className="w-full">
-          <label htmlFor="avatar" className="font-semibold text-zinc-950">
-            Foto do perfil
-          </label>
+        <div className="w-full min-w-0 text-center sm:text-left">
+          <p className="font-semibold text-app-foreground">Foto do perfil</p>
+          <p id="avatar-hint" className="mt-1 text-sm text-app-secondary">
+            JPEG, PNG ou WebP, com no máximo 2 MB.
+          </p>
           <input
             id="avatar"
             name="avatar"
             type="file"
             accept="image/jpeg,image/png,image/webp"
             disabled={pending}
+            aria-describedby="avatar-hint"
             onChange={handleAvatarChange}
-            className="mt-2 block w-full rounded-xl border border-zinc-300 bg-white px-3 py-3 text-sm text-zinc-800 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-950 file:px-3 file:py-2 file:font-semibold file:text-white"
+            className="sr-only"
           />
-          <p className="mt-2 text-sm text-zinc-600">
-            JPEG, PNG ou WebP, com no máximo 2 MB.
-          </p>
-          {currentAvatarPath ? (
-            <button
-              type="button"
-              disabled={pending}
-              onClick={removeAvatar}
-              className="mt-3 min-h-11 rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-wait disabled:opacity-60"
+          <div className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
+            <label
+              htmlFor="avatar"
+              aria-disabled={pending}
+              className={classNames(
+                buttonClassName({ variant: "secondary", size: "compact" }),
+                pending && "pointer-events-none opacity-50",
+              )}
             >
-              Remover foto
-            </button>
-          ) : null}
+              <Camera aria-hidden="true" size={18} strokeWidth={1.8} />
+              Escolher foto
+            </label>
+            {currentAvatarPath ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="compact"
+                disabled={pending}
+                onClick={removeAvatar}
+                className="text-danger hover:bg-danger-soft"
+              >
+                <Trash2 aria-hidden="true" size={18} strokeWidth={1.8} />
+                Remover
+              </Button>
+            ) : null}
+          </div>
         </div>
       </div>
 
-      <div>
-        <label htmlFor="fullName" className="font-semibold text-zinc-950">
-          Nome completo <span className="text-red-700">*</span>
-        </label>
+      <FormField
+        id="fullName"
+        label="Nome completo"
+        required
+        hint="Este é o nome exibido para você e para lideranças autorizadas."
+      >
         <input
           id="fullName"
           name="fullName"
@@ -261,26 +267,34 @@ export function ProfileForm({
           value={fullName}
           onChange={(event) => setFullName(event.target.value)}
           autoComplete="name"
-          className="mt-2 min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-base text-zinc-950 outline-none focus:border-zinc-700 focus:ring-2 focus:ring-zinc-200"
+          aria-describedby="fullName-hint"
+          className="min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none transition-colors placeholder:text-app-secondary focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-soft disabled:cursor-wait disabled:bg-surface-muted"
         />
-      </div>
+      </FormField>
 
       {email ? (
-        <div>
-          <p className="font-semibold text-zinc-950">E-mail</p>
-          <p className="mt-2 min-h-12 break-all rounded-xl border border-zinc-200 bg-zinc-100 px-4 py-3 text-zinc-700">
-            {email}
-          </p>
-        </div>
+        <FormField id="profileEmail" label="E-mail">
+          <input
+            id="profileEmail"
+            type="email"
+            value={email}
+            readOnly
+            aria-readonly="true"
+            className="min-h-12 break-all rounded-xl border border-app-border bg-surface-muted px-4 py-3 text-app-secondary"
+          />
+        </FormField>
       ) : null}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="min-h-12 w-full rounded-xl bg-zinc-950 px-5 text-base font-semibold text-white transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900 disabled:cursor-wait disabled:bg-zinc-500"
-      >
-        {pending ? "Salvando..." : "Salvar perfil"}
-      </button>
+      <div className="flex justify-end border-t border-app-border pt-6">
+        <Button
+          type="submit"
+          disabled={pending}
+          className="w-full sm:w-auto"
+        >
+          <Save aria-hidden="true" size={19} strokeWidth={1.8} />
+          {pending ? "Salvando..." : "Salvar perfil"}
+        </Button>
+      </div>
     </form>
   );
 }

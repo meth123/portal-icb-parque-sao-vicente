@@ -9,7 +9,7 @@ import {
 import { DocumentUploadForm } from "./document-upload-form";
 
 export const metadata: Metadata = {
-  title: "Publicar documento | Portal ICB Parque São Vicente",
+  title: "Publicar documento | ICB Conecta",
   robots: {
     index: false,
     follow: false,

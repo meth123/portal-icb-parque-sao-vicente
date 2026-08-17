@@ -9,7 +9,7 @@ import { getManagedCells } from "@/lib/data/cell-administration";
 import { ManagedCellDirectory } from "./managed-cell-directory";
 
 export const metadata: Metadata = {
-  title: "Gerenciar células | Portal ICB Parque São Vicente",
+  title: "Gerenciar células | ICB Conecta",
   robots: { index: false, follow: false },
 };
 

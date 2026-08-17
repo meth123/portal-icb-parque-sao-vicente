@@ -1,8 +1,8 @@
-# Portal ICB Parque São Vicente
+# ICB Conecta
 
 Aplicação web full-stack experimental para aprendizado e portfólio profissional.
 
-Tecnicamente, o projeto combina um site público com um portal interno de gestão institucional. Ele possui características de um mini CRM: autenticação individual, perfis, papéis, permissões e organização de dados relacionais em uma única aplicação.
+Tecnicamente, o projeto combina um site público com o ICB Conecta, a área interna de gestão institucional. Ele possui características de um mini CRM: autenticação individual, perfis, papéis, permissões e organização de dados relacionais em uma única aplicação.
 
 Tecnologias principais: Next.js, React, TypeScript, Tailwind CSS, Supabase/PostgreSQL e Vercel.
 

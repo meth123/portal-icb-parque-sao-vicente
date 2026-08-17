@@ -8,6 +8,27 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-app-background: var(--app-background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-app-foreground: var(--app-foreground);
+  --color-app-secondary: var(--text-secondary);
+  --color-app-border: var(--app-border);
+  --color-theme-primary: var(--theme-primary);
+  --color-theme-primary-hover: var(--theme-primary-hover);
+  --color-theme-primary-active: var(--theme-primary-active);
+  --color-theme-primary-soft: var(--theme-primary-soft);
+  --color-theme-primary-subtle: var(--theme-primary-subtle);
+  --color-theme-primary-border: var(--theme-primary-border);
+  --color-theme-primary-foreground: var(--theme-primary-foreground);
+  --color-theme-artwork: var(--theme-artwork-background);
+  --color-focus: var(--focus);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

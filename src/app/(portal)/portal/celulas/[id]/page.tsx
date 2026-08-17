@@ -12,7 +12,7 @@ function formatDate(date: string) {
 }
 
 export const metadata: Metadata = {
-  title: "Minha célula | Portal ICB Parque São Vicente",
+  title: "Minha célula | ICB Conecta",
   robots: {
     index: false,
     follow: false,
@@ -616,7 +616,7 @@ export default async function CellDetailsPage({
             href={dashboard.personalSummary ? "/portal" : "/portal/organizacao"}
             className="mt-8 flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900 sm:w-auto sm:min-w-52"
           >
-            {dashboard.personalSummary ? "Voltar ao portal" : "Voltar às células"}
+            {dashboard.personalSummary ? "Voltar ao ICB Conecta" : "Voltar às células"}
           </Link>
         </section>
       </div>

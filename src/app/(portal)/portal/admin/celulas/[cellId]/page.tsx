@@ -10,7 +10,7 @@ import { EditCellLeadershipForm } from "./edit-cell-leadership-form";
 import { DeactivateCellForm } from "./deactivate-cell-form";
 
 export const metadata: Metadata = {
-  title: "Editar célula | Portal ICB Parque São Vicente",
+  title: "Editar célula | ICB Conecta",
   robots: { index: false, follow: false },
 };
 

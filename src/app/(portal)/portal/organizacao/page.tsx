@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/lib/auth/current-user";
 import { getOrganizationOverview } from "@/lib/data/organization";
 
 export const metadata: Metadata = {
-  title: "Estrutura organizacional | Portal ICB Parque São Vicente",
+  title: "Estrutura organizacional | ICB Conecta",
   robots: {
     index: false,
     follow: false,
@@ -185,7 +185,7 @@ export default async function OrganizationPage() {
             href="/portal"
             className="mt-8 flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900 sm:w-auto sm:min-w-52"
           >
-            Voltar ao portal
+            Voltar ao ICB Conecta
           </Link>
         </div>
       </div>

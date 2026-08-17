@@ -9,7 +9,7 @@ import { getCellAdministrationOptions } from "@/lib/data/cell-administration";
 import { CellForm } from "./cell-form";
 
 export const metadata: Metadata = {
-  title: "Cadastrar célula | Portal ICB Parque São Vicente",
+  title: "Cadastrar célula | ICB Conecta",
   robots: {
     index: false,
     follow: false,

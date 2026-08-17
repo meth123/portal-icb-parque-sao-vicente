@@ -1,6 +1,9 @@
 "use client";
 
+import { CircleCheck, CircleMinus, LoaderCircle } from "lucide-react";
 import { useActionState } from "react";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import {
   submitWeeklyChecklist,
   type WeeklyChecklistState,
@@ -17,34 +20,44 @@ function AnswerOptions({
   name,
   label,
   initialValue,
+  positiveLabel,
+  negativeLabel,
 }: {
   name: string;
   label: string;
   initialValue: boolean | null;
+  positiveLabel: string;
+  negativeLabel: string;
 }) {
   return (
     <fieldset>
-      <legend className="text-base font-semibold text-zinc-950">{label} *</legend>
-      <div className="mt-3 grid grid-cols-2 gap-3">
+      <legend className="text-base font-semibold text-app-foreground">
+        {label}
+      </legend>
+      <div className="mt-3 grid grid-cols-2 gap-3" aria-label={label}>
         {[
-          ["yes", "Sim"],
-          ["no", "Não"],
-        ].map(([value, text]) => (
-          <label
-            key={value}
-            className="flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white px-4 font-semibold text-zinc-900 has-[:checked]:border-zinc-950 has-[:checked]:bg-zinc-950 has-[:checked]:text-white"
-          >
-            <input
-              type="radio"
-              name={name}
-              value={value}
-              defaultChecked={initialValue === (value === "yes")}
-              required
-              className="h-4 w-4 accent-zinc-950"
-            />
-            {text}
-          </label>
-        ))}
+          { value: "yes", label: positiveLabel, icon: CircleCheck },
+          { value: "no", label: negativeLabel, icon: CircleMinus },
+        ].map((option) => {
+          const Icon = option.icon;
+          return (
+            <label
+              key={option.value}
+              className="relative flex min-h-20 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-theme-primary-border bg-surface px-2 py-3 text-center text-sm font-semibold text-app-secondary transition-colors has-[:checked]:border-theme-primary has-[:checked]:bg-theme-primary-soft has-[:checked]:text-theme-primary-active has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus"
+            >
+              <input
+                type="radio"
+                name={name}
+                value={option.value}
+                defaultChecked={initialValue === (option.value === "yes")}
+                required
+                className="absolute inset-0 h-full w-full cursor-pointer appearance-none opacity-0"
+              />
+              <Icon aria-hidden="true" size={23} strokeWidth={1.8} />
+              {option.label}
+            </label>
+          );
+        })}
       </div>
     </fieldset>
   );
@@ -60,38 +73,42 @@ export function ChecklistForm({
   );
 
   return (
-    <form action={formAction} className="mt-5 space-y-6">
+    <form action={formAction} className="space-y-6">
       {state.message ? (
-        <p
-          role={state.success ? "status" : "alert"}
-          className={`rounded-xl border px-4 py-3 text-center text-sm font-medium ${
-            state.success
-              ? "border-green-200 bg-green-50 text-green-900"
-              : "border-red-200 bg-red-50 text-red-800"
-          }`}
-        >
+        <Alert tone={state.success ? "success" : "danger"} className="mb-4">
           {state.message}
-        </p>
+        </Alert>
       ) : null}
 
       <AnswerOptions
         name="prayedInGroup"
-        label="Oração em Grupo"
+        label="Participou da oração em grupo?"
         initialValue={initialPrayer}
+        positiveLabel="Participei"
+        negativeLabel="Não participei"
       />
       <AnswerOptions
         name="fastedForCell"
-        label="Jejum pela Célula"
+        label="Jejuou pela célula?"
         initialValue={initialFasting}
+        positiveLabel="Jejuei"
+        negativeLabel="Não jejuei"
       />
 
-      <button
+      <Button
         type="submit"
         disabled={pending}
-        className="min-h-12 w-full rounded-xl bg-zinc-950 px-5 font-semibold text-white hover:bg-zinc-800 disabled:cursor-wait disabled:bg-zinc-500"
+        className="w-full sm:w-auto sm:min-w-52"
       >
-        {pending ? "Salvando..." : "Salvar respostas"}
-      </button>
+        {pending ? (
+          <>
+            <LoaderCircle aria-hidden="true" className="animate-spin" size={19} />
+            Salvando...
+          </>
+        ) : (
+          "Salvar respostas"
+        )}
+      </Button>
     </form>
   );
 }

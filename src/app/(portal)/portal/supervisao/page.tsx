@@ -14,7 +14,7 @@ function formatDate(date: string) {
 }
 
 export const metadata: Metadata = {
-  title: "Painel pastoral | Portal ICB Parque São Vicente",
+  title: "Painel pastoral | ICB Conecta",
   robots: {
     index: false,
     follow: false,
@@ -626,7 +626,7 @@ export default async function SupervisionPage({
               href="/portal"
               className="flex min-h-12 items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-center text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
             >
-              Voltar ao portal
+              Voltar ao ICB Conecta
             </Link>
           </nav>
         </section>
