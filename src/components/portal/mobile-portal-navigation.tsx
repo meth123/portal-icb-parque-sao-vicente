@@ -48,7 +48,9 @@ export function MobilePortalNavigation({
     if (!isOpen) return;
 
     const previousOverflow = document.body.style.overflow;
+    const previousRootOverflow = document.documentElement.style.overflow;
     document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
     closeButtonRef.current?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -76,13 +78,14 @@ export function MobilePortalNavigation({
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
+      document.documentElement.style.overflow = previousRootOverflow;
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen]);
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-app-border bg-surface/95 px-4 backdrop-blur lg:hidden">
+      <header className="sticky top-0 z-30 flex h-[calc(4rem+env(safe-area-inset-top))] items-center justify-between border-b border-app-border bg-surface/95 px-4 pt-[env(safe-area-inset-top)] backdrop-blur lg:hidden">
         <Link
           href="/portal"
           aria-label="Ir para o início do ICB Conecta"
@@ -91,8 +94,8 @@ export function MobilePortalNavigation({
           <Image
             src="/images/icb-parque-sao-vicente.png"
             alt=""
-            width={857}
-            height={576}
+            width={160}
+            height={108}
             priority
             className="h-11 w-auto brightness-0"
           />
@@ -157,7 +160,7 @@ export function MobilePortalNavigation({
             role="dialog"
             aria-modal="true"
             aria-labelledby="portal-more-title"
-            className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-2xl bg-surface px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4"
+            className="absolute inset-x-0 bottom-0 max-h-[85dvh] overscroll-contain overflow-y-auto rounded-t-2xl bg-surface px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4"
           >
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-app-border" />
             <div className="flex items-center gap-3 border-b border-app-border pb-4">

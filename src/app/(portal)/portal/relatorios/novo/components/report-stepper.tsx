@@ -1,14 +1,20 @@
 "use client";
 
-import { Check } from "lucide-react";
+import {
+  CalendarDays,
+  Check,
+  Megaphone,
+  UserRoundPlus,
+  UsersRound,
+} from "lucide-react";
 import { classNames } from "@/lib/ui/class-names";
 import type { ReportStep } from "../types";
 
 const steps = [
-  { value: 1, label: "Reunião" },
-  { value: 2, label: "Membros" },
-  { value: 3, label: "Convidados" },
-  { value: 4, label: "Evangelismo" },
+  { value: 1, label: "Reunião", icon: CalendarDays },
+  { value: 2, label: "Membros", icon: UsersRound },
+  { value: 3, label: "Convidados", icon: UserRoundPlus },
+  { value: 4, label: "Evangelismo", icon: Megaphone },
 ] as const;
 
 type ReportStepperProps = {
@@ -22,13 +28,28 @@ export function ReportStepper({
   disabled,
   onStepChange,
 }: ReportStepperProps) {
+  const progress = ((currentStep - 1) / (steps.length - 1)) * 100;
+
   return (
-    <nav aria-label="Etapas da Ficha de Organização">
-      <ol className="grid grid-cols-4 gap-1 sm:gap-3">
+    <nav
+      aria-label="Etapas da Ficha de Organização"
+      className="relative px-1 sm:px-3"
+    >
+      <div
+        aria-hidden="true"
+        className="absolute left-[12.5%] right-[12.5%] mt-[1.35rem] h-0.5 bg-app-border"
+      >
+        <span
+          className="block h-full bg-theme-primary transition-[width]"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+      <ol className="relative grid grid-cols-4">
         {steps.map((step) => {
           const isCurrent = step.value === currentStep;
           const isComplete = step.value < currentStep;
           const canNavigate = isComplete && !disabled;
+          const StepIcon = step.icon;
 
           return (
             <li key={step.value} className="min-w-0">
@@ -39,33 +60,34 @@ export function ReportStepper({
                 disabled={!canNavigate}
                 aria-current={isCurrent ? "step" : undefined}
                 className={classNames(
-                  "flex min-h-12 w-full min-w-0 items-center justify-center rounded-xl border p-2 text-center transition-colors sm:min-h-14 sm:justify-start sm:gap-3 sm:px-3",
-                  isCurrent &&
-                    "border-theme-primary bg-theme-primary text-theme-primary-foreground",
-                  isComplete &&
-                    "border-theme-primary-border bg-theme-primary-subtle text-theme-primary-active hover:bg-theme-primary-soft",
-                  !isCurrent &&
-                    !isComplete &&
-                    "border-app-border bg-surface-muted text-app-secondary",
+                  "flex min-h-[4.5rem] w-full min-w-0 flex-col items-center gap-2 rounded-lg px-0.5 text-center transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
+                  isCurrent && "text-theme-primary-active",
+                  isComplete && "text-theme-primary-active",
+                  !isCurrent && !isComplete && "text-app-secondary",
                   canNavigate &&
-                    "cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
+                    "cursor-pointer hover:text-theme-primary",
                 )}
               >
                 <span
                   aria-hidden="true"
                   className={classNames(
-                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold",
-                    isCurrent && "border-white/40 bg-white/15",
-                    isComplete &&
+                    "relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 bg-surface transition-colors",
+                    isCurrent &&
                       "border-theme-primary bg-theme-primary text-theme-primary-foreground",
+                    isComplete &&
+                      "border-theme-primary bg-theme-primary-soft text-theme-primary-active",
                     !isCurrent &&
                       !isComplete &&
-                      "border-app-border bg-surface",
+                      "border-app-border text-app-secondary",
                   )}
                 >
-                  {isComplete ? <Check className="h-3.5 w-3.5" /> : step.value}
+                  {isComplete ? (
+                    <Check className="h-5 w-5" />
+                  ) : (
+                    <StepIcon className="h-5 w-5" />
+                  )}
                 </span>
-                <span className="hidden min-w-0 text-sm font-semibold sm:inline">
+                <span className="min-w-0 text-[0.625rem] font-semibold leading-3 sm:text-sm sm:leading-4">
                   {step.label}
                 </span>
               </button>

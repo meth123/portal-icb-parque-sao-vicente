@@ -1,6 +1,29 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import {
+  ArrowLeft,
+  CalendarRange,
+  CheckCircle2,
+  CircleAlert,
+  ClockAlert,
+  Clock3,
+  FileCheck2,
+  House,
+  MapPin,
+  Network,
+  Send,
+  UserRoundCheck,
+  UserRoundPlus,
+  Users,
+} from "lucide-react";
+import { Alert } from "@/components/ui/alert";
+import { buttonClassName } from "@/components/ui/button";
+import { PageContainer } from "@/components/ui/page-container";
+import { PageHeader } from "@/components/ui/page-header";
+import { SectionHeader } from "@/components/ui/section-header";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { TrendBars } from "@/components/ui/trend-bars";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getCellDashboard } from "@/lib/data/cell-dashboard";
 import { getCellDetails } from "@/lib/data/organization";
@@ -43,7 +66,7 @@ export default async function CellDetailsPage({
   const requestedMonth =
     typeof query.mes === "string" ? query.mes : undefined;
   const requestedHistoryMonths =
-    typeof query.historico === "string" ? query.historico : undefined;
+    typeof query.historico === "string" ? query.historico : "3";
   const [cell, dashboard] = await Promise.all([
     getCellDetails(id),
     getCellDashboard(id, requestedMonth, requestedHistoryMonths),
@@ -62,31 +85,6 @@ export default async function CellDetailsPage({
     1,
     ...dashboard.history.map((item) => item.metrics.firstTimeGuests),
   );
-  const metricCards = [
-    { label: "Fichas", value: metrics.reports, note: "enviadas" },
-    {
-      label: "Média de membros",
-      value: metrics.averageMembers.toLocaleString("pt-BR", {
-        maximumFractionDigits: 1,
-      }),
-      note: "por reunião",
-    },
-    {
-      label: "Média de convidados",
-      value: metrics.averageGuests.toLocaleString("pt-BR", {
-        maximumFractionDigits: 1,
-      }),
-      note: "por reunião",
-    },
-    { label: "1ª vez", value: metrics.firstTimeGuests, note: "registrados" },
-    {
-      label: "Média de presentes",
-      value: metrics.averageAttendance.toLocaleString("pt-BR", {
-        maximumFractionDigits: 1,
-      }),
-      note: "por Ficha",
-    },
-  ];
   const viceSummaries = dashboard.viceSummaries.map((summary) => ({
     ...summary,
     name:
@@ -100,190 +98,174 @@ export default async function CellDetailsPage({
   const lateSubmissionWeeks = dashboard.overdueWeeks.filter(
     (week) => week.status === "submitted_late",
   );
+  const attendanceTrend = dashboard.history.map((item) => {
+    const value = item.metrics.averageAttendance;
+    const valueLabel = value.toLocaleString("pt-BR", {
+      maximumFractionDigits: 1,
+    });
+
+    return {
+      key: item.month,
+      label: item.monthLabel,
+      value,
+      valueLabel,
+      accessibleLabel: `${item.monthLabel}: média de ${valueLabel} presentes por Ficha`,
+    };
+  });
+  const firstTimeTrend = dashboard.history.map((item) => ({
+    key: item.month,
+    label: item.monthLabel,
+    value: item.metrics.firstTimeGuests,
+    valueLabel: String(item.metrics.firstTimeGuests),
+    accessibleLabel: `${item.monthLabel}: ${item.metrics.firstTimeGuests} convidados pela primeira vez`,
+  }));
+  const monthlyAverage = metrics.averageAttendance.toLocaleString("pt-BR", {
+    maximumFractionDigits: 1,
+  });
 
   return (
-    <main className="min-h-screen bg-zinc-100 px-4 py-10 sm:px-6">
-      <div className="mx-auto w-full max-w-4xl">
-        <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-10">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-600">
-                {dashboard.personalSummary ? "Minha célula" : "Célula"}
-              </p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950 sm:text-4xl">
-                {cell.name}
-              </h1>
-            </div>
-            <span className="rounded-full border border-zinc-300 bg-zinc-100 px-3 py-1 text-sm text-zinc-700">
+    <main className="min-h-full bg-app-background py-6 sm:py-8">
+      <PageContainer width="wide" className="space-y-6 sm:space-y-8">
+        <PageHeader
+          eyebrow={dashboard.personalSummary ? "Minha célula" : "Célula"}
+          title={cell.name}
+          description="Acompanhe as reuniões, o cuidado com as pessoas e o evangelismo."
+          actions={
+            <StatusBadge tone={cell.isActive ? "success" : "neutral"}>
               {cell.isActive ? "Ativa" : "Inativa"}
-            </span>
+            </StatusBadge>
+          }
+        />
+
+        {cell.hasError || dashboard.hasError ? (
+          <Alert tone="danger">
+            Parte dos dados não pôde ser carregada. Atualize a página antes de
+            considerar este resumo completo.
+          </Alert>
+        ) : null}
+
+        <section className="overflow-hidden rounded-2xl border border-theme-primary-border bg-surface">
+          <div className="flex flex-col gap-4 border-b border-theme-primary-border bg-theme-primary-subtle p-5 sm:flex-row sm:items-end sm:justify-between sm:p-6">
+            <div>
+              <p className="text-sm font-semibold text-theme-primary-active">
+                {dashboard.monthLabel}
+              </p>
+              <h2 className="mt-1 text-xl font-semibold text-app-foreground">
+                Resumo do mês
+              </h2>
+            </div>
+
+            <form className="grid items-end gap-2 sm:grid-cols-[11rem_8rem_auto]">
+              <label className="min-w-0">
+                <span className="mb-1 block text-xs font-medium text-app-secondary">
+                  Período
+                </span>
+                <input
+                  name="mes"
+                  type="month"
+                  defaultValue={dashboard.month}
+                  className="min-h-11 w-full rounded-xl border border-app-border bg-surface px-3 text-base text-app-foreground outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-soft"
+                />
+              </label>
+              <label className="min-w-0">
+                <span className="mb-1 block text-xs font-medium text-app-secondary">
+                  Histórico
+                </span>
+                <select
+                  name="historico"
+                  defaultValue={String(dashboard.historyMonths)}
+                  className="min-h-11 w-full rounded-xl border border-app-border bg-surface px-3 text-base text-app-foreground outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-soft"
+                >
+                  <option value="3">3 meses</option>
+                  <option value="6">6 meses</option>
+                  <option value="12">12 meses</option>
+                </select>
+              </label>
+              <button
+                type="submit"
+                className={buttonClassName({
+                  size: "compact",
+                })}
+              >
+                Ver período
+              </button>
+            </form>
           </div>
 
-          {cell.hasError || dashboard.hasError ? (
-            <p
-              role="alert"
-              className="mt-8 rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-red-800"
-            >
-              Parte dos dados não pôde ser carregada. Tente novamente antes de
-              considerar estas informações completas.
-            </p>
-          ) : null}
-
-          <section className="mt-8 rounded-2xl border border-zinc-200 p-4 sm:p-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-zinc-600">
-                  {dashboard.monthLabel}
-                </p>
-                <h2 className="mt-1 text-xl font-semibold text-zinc-950">
-                  Resumo mensal
-                </h2>
-              </div>
-
-              <form className="grid w-full grid-cols-2 items-end gap-2 sm:w-auto sm:grid-cols-[12rem_9rem_auto]">
-                <div className="min-w-0">
-                  <label
-                    htmlFor="dashboard-month"
-                    className="mb-1 block text-sm font-medium text-zinc-700"
-                  >
-                    Período
-                  </label>
-                  <input
-                    id="dashboard-month"
-                    name="mes"
-                    type="month"
-                    defaultValue={dashboard.month}
-                    className="min-h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
-                  />
-                </div>
-
-                <div className="min-w-0">
-                  <label
-                    htmlFor="dashboard-history"
-                    className="mb-1 block text-sm font-medium text-zinc-700"
-                  >
-                    Histórico
-                  </label>
-                  <select
-                    id="dashboard-history"
-                    name="historico"
-                    defaultValue={String(dashboard.historyMonths)}
-                    className="min-h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
-                  >
-                    <option value="3">3 meses</option>
-                    <option value="6">6 meses</option>
-                    <option value="12">12 meses</option>
-                  </select>
-                </div>
-                <button
-                  type="submit"
-                  className="col-span-2 min-h-11 shrink-0 rounded-xl bg-zinc-950 px-4 text-sm font-semibold text-white hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 sm:col-span-1"
-                >
-                  Ver
-                </button>
-              </form>
+          <div className="grid lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="bg-theme-primary-active p-6 text-theme-primary-foreground sm:p-8">
+              <p className="text-sm font-medium opacity-80">Média de presentes</p>
+              <p className="mt-2 text-5xl font-semibold">{monthlyAverage}</p>
+              <p className="mt-3 text-sm opacity-80">
+                por reunião em {dashboard.monthLabel.toLowerCase()}
+              </p>
             </div>
-
-            <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-              {metricCards.map((metric) => (
+            <dl className="grid grid-cols-2 bg-surface">
+              {[
+                ["Fichas enviadas", metrics.reports],
+                [
+                  "Média de membros por reunião",
+                  metrics.averageMembers.toLocaleString("pt-BR", {
+                    maximumFractionDigits: 1,
+                  }),
+                ],
+                [
+                  "Média de convidados por reunião",
+                  metrics.averageGuests.toLocaleString("pt-BR", {
+                    maximumFractionDigits: 1,
+                  }),
+                ],
+                ["Primeira vez no mês", metrics.firstTimeGuests],
+              ].map(([label, value], index) => (
                 <div
-                  key={metric.label}
-                  className="rounded-xl bg-zinc-100 px-3 py-4"
+                  key={label}
+                  className={`min-w-0 p-5 sm:p-6 ${index % 2 === 0 ? "border-r border-app-border" : ""} ${index < 2 ? "border-b border-app-border" : ""}`}
                 >
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                    {metric.label}
-                  </dt>
-                  <dd className="mt-1 text-2xl font-semibold text-zinc-950">
-                    {metric.value}
-                  </dd>
-                  <p className="mt-1 text-xs text-zinc-600">{metric.note}</p>
+                  <dt className="text-sm font-medium leading-5 text-app-secondary">{label}</dt>
+                  <dd className="mt-2 text-2xl font-semibold text-app-foreground">{value}</dd>
                 </div>
               ))}
             </dl>
+          </div>
+        </section>
 
-            {metrics.reports === 0 && !dashboard.hasError ? (
-              <p className="mt-4 text-sm text-zinc-600">
-                Nenhuma Ficha enviada neste período.
-              </p>
-            ) : null}
-          </section>
-
-          {dashboard.personalSummary ? (
-            <section className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-950 p-4 text-white sm:p-6">
-              <div className="flex flex-col gap-4 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
-                <div>
-                  <p className="text-sm font-semibold text-zinc-300">
-                    Meu resumo · {dashboard.monthLabel}
-                  </p>
-                  <h2 className="mt-1 text-xl font-semibold">
-                    {dashboard.personalSummary.role === "leader"
-                      ? "Líder"
-                      : "Vice-líder"}{" "}
-                    da célula {cell.name}
-                  </h2>
-                  <p className="mt-2 text-sm leading-6 text-zinc-300">
-                    {metrics.reports === 0
-                      ? "Sem Fichas neste período."
-                      : dashboard.personalSummary.didEvangelize
-                        ? `Participou de ${dashboard.personalSummary.records} ${dashboard.personalSummary.records === 1 ? "relato" : "relatos"} em ${dashboard.personalSummary.reports} ${dashboard.personalSummary.reports === 1 ? "Ficha" : "Fichas"}.`
-                        : "Sem participação no evangelismo neste período."}
-                  </p>
-                </div>
-                <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-zinc-950">
-                  {metrics.reports === 0
-                    ? "Sem dados"
-                    : dashboard.personalSummary.didEvangelize
-                      ? "Participou"
-                      : "Não participou"}
-                </span>
-              </div>
-            </section>
-          ) : null}
-
-          {dashboard.personalSummary ? (
+        {dashboard.personalSummary ? (
+          <div className="grid gap-4 lg:grid-cols-2">
             <section
-              className={`mt-6 rounded-2xl border p-4 sm:p-5 ${
+              className={`rounded-2xl border p-5 sm:p-6 ${
                 pendingWeeks.length > 0
-                  ? "border-amber-200 bg-amber-50"
-                  : "border-green-200 bg-green-50"
+                  ? "border-warning/20 bg-warning-soft"
+                  : "border-success/20 bg-success-soft"
               }`}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-start gap-3">
                 <span
-                  aria-hidden="true"
-                  className={`flex size-9 shrink-0 items-center justify-center rounded-full text-lg font-bold ${
-                    pendingWeeks.length > 0
-                      ? "bg-amber-100 text-amber-900"
-                      : "bg-green-100 text-green-900"
-                  }`}
+                  className={`flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface ${pendingWeeks.length > 0 ? "text-warning" : "text-success"}`}
                 >
-                  {pendingWeeks.length > 0 ? "!" : "✓"}
+                  {pendingWeeks.length > 0 ? (
+                    <CircleAlert aria-hidden="true" className="size-5" />
+                  ) : (
+                    <CheckCircle2 aria-hidden="true" className="size-5" />
+                  )}
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-zinc-600">
-                    {dashboard.monthLabel}
-                  </p>
-                  <h2 className="text-xl font-semibold text-zinc-950">
+                  <p className="text-sm font-medium text-app-secondary">Situação das Fichas</p>
+                  <h2 className="mt-1 text-xl font-semibold text-app-foreground">
                     {pendingWeeks.length > 0
-                      ? `${pendingWeeks.length} ${pendingWeeks.length === 1 ? "Ficha pendente" : "Fichas pendentes"}`
-                      : "Fichas em dia"}
+                      ? `${pendingWeeks.length} ${pendingWeeks.length === 1 ? "pendência" : "pendências"}`
+                      : "Tudo em dia"}
                   </h2>
                 </div>
               </div>
-              <p className="mt-3 text-sm leading-6 text-zinc-700">
-                {pendingWeeks.length > 0
-                  ? "Existem Fichas que precisam ser enviadas."
-                  : "Nenhuma pendência para resolver até o momento."}
-              </p>
 
               {pendingWeeks.length > 0 ? (
-                <details className="mt-3 rounded-xl bg-white/80">
-                  <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900">
-                    Ver pendências
+                <details className="mt-4 border-t border-warning/20 pt-4">
+                  <summary className="cursor-pointer text-sm font-semibold text-app-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+                    Ver semanas pendentes
                   </summary>
-                  <ul className="divide-y divide-zinc-200 border-t border-zinc-200 px-4">
+                  <ul className="mt-3 space-y-2">
                     {pendingWeeks.map((week) => (
-                      <li key={week.weekEndsOn} className="py-3 text-sm text-zinc-700">
+                      <li key={week.weekEndsOn} className="text-sm text-app-secondary">
                         Semana encerrada em {formatDate(week.weekEndsOn)}
                       </li>
                     ))}
@@ -292,13 +274,14 @@ export default async function CellDetailsPage({
               ) : null}
 
               {lateSubmissionWeeks.length > 0 ? (
-                <details className="mt-3 rounded-xl bg-white/80">
-                  <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900">
-                    Ver envios atrasados ({lateSubmissionWeeks.length})
+                <details className="mt-4 border-t border-app-border pt-4">
+                  <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium text-app-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus [&::-webkit-details-marker]:hidden">
+                    <ClockAlert aria-hidden="true" className="size-4 shrink-0 text-warning" />
+                    Histórico: {lateSubmissionWeeks.length} {lateSubmissionWeeks.length === 1 ? "envio após o prazo" : "envios após o prazo"}
                   </summary>
-                  <ul className="divide-y divide-zinc-200 border-t border-zinc-200 px-4">
+                  <ul className="mt-3 space-y-2 pl-6">
                     {lateSubmissionWeeks.map((week) => (
-                      <li key={week.weekEndsOn} className="py-3 text-sm text-zinc-700">
+                      <li key={week.weekEndsOn} className="text-sm text-app-secondary">
                         Semana encerrada em {formatDate(week.weekEndsOn)}
                       </li>
                     ))}
@@ -306,320 +289,267 @@ export default async function CellDetailsPage({
                 </details>
               ) : null}
             </section>
-          ) : null}
 
-          {viceSummaries.length > 0 ? (
-            <section className="mt-6 rounded-2xl border border-zinc-200 p-4 sm:p-6">
-              <p className="text-sm font-semibold text-zinc-600">
-                {dashboard.monthLabel}
-              </p>
-              <h2 className="mt-1 text-xl font-semibold text-zinc-950">
-                Resumo dos Vice-líderes
-              </h2>
-              <p className="mt-1 text-sm text-zinc-600">
-                Acompanhamento mensal da própria célula.
-              </p>
-
-              <ul className="mt-5 grid gap-3 sm:grid-cols-2">
-                {viceSummaries.map((summary) => (
-                  <li
-                    key={summary.profileId}
-                    className="rounded-xl bg-zinc-100 p-4"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="font-semibold text-zinc-950">
-                        {summary.name}
-                      </p>
-                      <span
-                        className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
-                          summary.didEvangelize
-                            ? "bg-green-100 text-green-900"
-                            : "bg-white text-zinc-700"
-                        }`}
-                      >
-                        {summary.didEvangelize ? "Participou" : "Sem registro"}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-sm text-zinc-600">
-                      {summary.didEvangelize
-                        ? `${summary.records} ${summary.records === 1 ? "relato" : "relatos"} em ${summary.reports} ${summary.reports === 1 ? "Ficha" : "Fichas"}.`
-                        : "Sem participação no evangelismo neste mês."}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          <section className="mt-6 rounded-2xl border border-zinc-200 p-4 sm:p-6">
-            <h2 className="text-xl font-semibold text-zinc-950">
-              Presença nos últimos {dashboard.historyMonths} meses
-            </h2>
-            <p className="mt-1 text-sm text-zinc-600">
-              Média de presentes por Ficha.
-            </p>
-
-            <ul className="mt-5 space-y-4">
-              {dashboard.history.map((item) => {
-                const average = item.metrics.averageAttendance;
-                const formattedAverage = average.toLocaleString("pt-BR", {
-                  maximumFractionDigits: 1,
-                });
-                const barWidth = (average / highestAverage) * 100;
-
-                return (
-                  <li
-                    key={item.month}
-                    className="grid grid-cols-[minmax(6.5rem,auto)_1fr_auto] items-center gap-3"
-                  >
-                    <span className="text-sm font-medium text-zinc-700">
-                      {item.monthLabel}
-                    </span>
-                    <span
-                      className="h-3 overflow-hidden rounded-full bg-zinc-100"
-                      aria-hidden="true"
-                    >
-                      <span
-                        className="block h-full rounded-full bg-zinc-900"
-                        style={{ width: `${barWidth}%` }}
-                      />
-                    </span>
-                    <span
-                      className="min-w-7 text-right text-sm font-semibold text-zinc-950"
-                      aria-label={`${item.monthLabel}: média de ${formattedAverage} presentes por Ficha`}
-                    >
-                      {formattedAverage}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-
-          <section className="mt-6 rounded-2xl border border-zinc-200 p-4 sm:p-6">
-            <h2 className="text-xl font-semibold text-zinc-950">
-              Primeira vez nos últimos {dashboard.historyMonths} meses
-            </h2>
-            <p className="mt-1 text-sm text-zinc-600">
-              Convidados que chegaram pela primeira vez na célula.
-            </p>
-
-            <ul className="mt-5 space-y-4">
-              {dashboard.history.map((item) => {
-                const total = item.metrics.firstTimeGuests;
-                const barWidth = (total / highestFirstTimeTotal) * 100;
-
-                return (
-                  <li
-                    key={item.month}
-                    className="grid grid-cols-[minmax(6.5rem,auto)_1fr_auto] items-center gap-3"
-                  >
-                    <span className="text-sm font-medium text-zinc-700">
-                      {item.monthLabel}
-                    </span>
-                    <span
-                      className="h-3 overflow-hidden rounded-full bg-zinc-100"
-                      aria-hidden="true"
-                    >
-                      <span
-                        className="block h-full rounded-full bg-zinc-900"
-                        style={{ width: `${barWidth}%` }}
-                      />
-                    </span>
-                    <span
-                      className="min-w-7 text-right text-sm font-semibold text-zinc-950"
-                      aria-label={`${item.monthLabel}: ${total} convidados pela primeira vez`}
-                    >
-                      {total}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-
-          <section className="mt-6 rounded-2xl border border-zinc-200 p-4 sm:p-6">
-            <h2 className="text-xl font-semibold text-zinc-950">
-              Evangelismo no período
-            </h2>
-            <p className="mt-1 text-sm text-zinc-600">
-              Histórico das Fichas de {dashboard.monthLabel.toLowerCase()}.
-            </p>
-
-            <div className="mt-5 rounded-xl bg-zinc-100 p-4 sm:p-5">
-              <div className="flex flex-col gap-1 text-center sm:flex-row sm:items-end sm:justify-between sm:text-left">
+            <section className="rounded-2xl border border-theme-primary-border bg-theme-primary-subtle p-5 sm:p-6">
+              <div className="flex items-start gap-3">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface text-theme-primary-active">
+                  <Send aria-hidden="true" className="size-5" />
+                </span>
                 <div>
-                  <div className="flex items-center justify-center gap-2 sm:justify-start">
-                    <p className="text-sm font-semibold text-zinc-700">
-                      Participação no evangelismo
-                    </p>
-                    <details className="group relative">
-                      <summary
-                        className="flex size-6 cursor-pointer list-none items-center justify-center rounded-full border border-zinc-300 bg-white text-xs font-bold text-zinc-700 hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 [&::-webkit-details-marker]:hidden"
-                        aria-label="Como esta porcentagem é calculada?"
-                      >
-                        i
-                      </summary>
-                      <div className="absolute left-1/2 z-10 mt-2 w-64 -translate-x-1/2 rounded-xl border border-zinc-200 bg-white p-3 text-left text-sm font-normal leading-6 text-zinc-700 shadow-lg sm:left-0 sm:translate-x-0">
-                        Mostra quantos, entre o Líder e os Vice-líderes desta
-                        célula, evangelizaram pelo menos uma vez no mês. Cada
-                        pessoa conta somente uma vez.
-                      </div>
-                    </details>
-                  </div>
-                  {dashboard.evangelismParticipation.percentage !== null ? (
-                    <p className="mt-1 text-sm text-zinc-600">
-                      {dashboard.evangelismParticipation.evangelized} de{" "}
-                      {dashboard.evangelismParticipation.accompanied} entre
-                      Líder e Vice-líderes da célula participaram no mês.
-                    </p>
-                  ) : (
-                    <p className="mt-1 text-sm text-zinc-600">
-                      Sem Fichas para calcular este período.
-                    </p>
-                  )}
+                  <p className="text-sm font-medium text-app-secondary">Sua participação</p>
+                  <h2 className="mt-1 text-xl font-semibold text-app-foreground">
+                    {metrics.reports === 0
+                      ? "Sem dados no período"
+                      : dashboard.personalSummary.didEvangelize
+                        ? "Você evangelizou"
+                        : "Sem registro de evangelismo"}
+                  </h2>
                 </div>
-                <strong className="text-3xl text-zinc-950">
+              </div>
+              {metrics.reports === 0 ? (
+                <p className="mt-4 text-base leading-6 text-app-secondary">
+                  Nenhuma Ficha foi enviada neste mês.
+                </p>
+              ) : dashboard.personalSummary.didEvangelize ? (
+                <p className="mt-4 text-lg font-semibold text-theme-primary-active">
+                  {dashboard.personalSummary.records} {dashboard.personalSummary.records === 1 ? "relato" : "relatos"}{" "}
+                  <span className="text-base font-medium text-app-secondary">
+                    em {dashboard.personalSummary.reports} {dashboard.personalSummary.reports === 1 ? "Ficha" : "Fichas"}
+                  </span>
+                </p>
+              ) : (
+                <p className="mt-4 text-base leading-6 text-app-secondary">
+                  Ainda não há participação registrada neste mês.
+                </p>
+              )}
+            </section>
+          </div>
+        ) : null}
+
+        <section aria-labelledby="trends-heading">
+          <SectionHeader
+            id="trends-heading"
+            title="Evolução da célula"
+          />
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <section className="rounded-2xl border border-app-border bg-surface p-5 sm:p-6">
+              <div className="flex items-center gap-3">
+                <span className="flex size-9 items-center justify-center rounded-xl bg-theme-primary-soft text-theme-primary-active">
+                  <Users aria-hidden="true" className="size-5" />
+                </span>
+                <div>
+                  <h3 className="font-semibold text-app-foreground">Presença</h3>
+                  <p className="text-sm text-app-secondary">Média por Ficha</p>
+                </div>
+              </div>
+              <div className="mt-5">
+                <TrendBars items={attendanceTrend} highestValue={highestAverage} />
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-app-border bg-surface p-5 sm:p-6">
+              <div className="flex items-center gap-3">
+                <span className="flex size-9 items-center justify-center rounded-xl bg-success-soft text-success">
+                  <UserRoundPlus aria-hidden="true" className="size-5" />
+                </span>
+                <div>
+                  <h3 className="font-semibold text-app-foreground">Primeira vez</h3>
+                </div>
+              </div>
+              <div className="mt-5">
+                <TrendBars
+                  items={firstTimeTrend}
+                  highestValue={highestFirstTimeTotal}
+                  tone="success"
+                />
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section aria-labelledby="evangelism-heading" className="border-t border-app-border pt-8">
+          <SectionHeader
+            id="evangelism-heading"
+            title="Evangelismo"
+          />
+
+          <div className="mt-4 overflow-hidden rounded-2xl border border-theme-primary-border bg-surface">
+            <div className="grid md:grid-cols-[0.75fr_1.25fr]">
+              <div className="bg-theme-primary-active p-6 text-theme-primary-foreground sm:p-8">
+                <p className="text-sm font-medium opacity-80">Participação da liderança</p>
+                <strong className="mt-2 block text-5xl font-semibold">
                   {dashboard.evangelismParticipation.percentage === null
                     ? "—"
                     : `${dashboard.evangelismParticipation.percentage}%`}
                 </strong>
+                <p className="mt-3 text-sm leading-6 opacity-80">
+                  {dashboard.evangelismParticipation.percentage === null
+                    ? "Sem Fichas para calcular."
+                    : `${dashboard.evangelismParticipation.evangelized} de ${dashboard.evangelismParticipation.accompanied} líderes evangelizaram no mês.`}
+                </p>
               </div>
+              <div className="p-5 sm:p-6">
+                <div
+                  className="h-3 overflow-hidden rounded-full bg-surface-muted"
+                  role="progressbar"
+                  aria-label="Participação mensal da liderança no evangelismo"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={dashboard.evangelismParticipation.percentage ?? undefined}
+                >
+                  <span
+                    className="block h-full rounded-full bg-theme-primary"
+                    style={{
+                      width: `${dashboard.evangelismParticipation.percentage ?? 0}%`,
+                    }}
+                  />
+                </div>
 
-              <div
-                className="mt-4 h-4 overflow-hidden rounded-full bg-white"
-                role="progressbar"
-                aria-label="Participação mensal do Líder e dos Vice-líderes da célula no evangelismo"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={
-                  dashboard.evangelismParticipation.percentage ?? undefined
-                }
-                aria-valuetext={
-                  dashboard.evangelismParticipation.percentage === null
-                    ? "Sem dados no período"
-                    : `${dashboard.evangelismParticipation.percentage}% entre Líder e Vice-líderes da célula participaram no mês`
-                }
-              >
-                <span
-                  className="block h-full rounded-full bg-zinc-900"
-                  style={{
-                    width: `${dashboard.evangelismParticipation.percentage ?? 0}%`,
-                  }}
-                />
+                {viceSummaries.length > 0 ? (
+                  <ul className="mt-5 divide-y divide-app-border">
+                    {viceSummaries.map((summary) => (
+                      <li
+                        key={summary.profileId}
+                        className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-app-foreground">{summary.name}</p>
+                          <p className="mt-0.5 text-sm text-app-secondary">
+                            {summary.didEvangelize
+                              ? `${summary.records} ${summary.records === 1 ? "relato" : "relatos"}`
+                              : "Sem registro no mês"}
+                          </p>
+                        </div>
+                        <StatusBadge tone={summary.didEvangelize ? "success" : "neutral"}>
+                          {summary.didEvangelize ? "Participou" : "Pendente"}
+                        </StatusBadge>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-5 text-sm text-app-secondary">
+                    Nenhum Vice-líder para acompanhar.
+                  </p>
+                )}
               </div>
             </div>
+          </div>
 
-            {dashboard.evangelismHistory.length > 0 ? (
-              <ul className="mt-5 divide-y divide-zinc-200">
-                {dashboard.evangelismHistory.map((item) => {
-                  const hasEvangelism = item.records > 0;
+          {dashboard.evangelismHistory.length > 0 ? (
+            <ul className="mt-4 divide-y divide-app-border rounded-2xl border border-app-border bg-surface px-5 sm:px-6">
+              {dashboard.evangelismHistory.map((item) => {
+                const hasEvangelism = item.records > 0;
 
-                  return (
-                    <li
-                      key={item.versionId}
-                      className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
-                    >
+                return (
+                  <li
+                    key={item.versionId}
+                    className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl ${hasEvangelism ? "bg-success-soft text-success" : "bg-surface-muted text-app-secondary"}`}>
+                        {hasEvangelism ? (
+                          <CheckCircle2 aria-hidden="true" className="size-5" />
+                        ) : (
+                          <FileCheck2 aria-hidden="true" className="size-5" />
+                        )}
+                      </span>
                       <div>
-                        <p className="font-semibold text-zinc-950">
+                        <p className="font-semibold text-app-foreground">
                           {formatDate(item.meetingOn)}
                         </p>
-                        <p className="mt-1 text-sm text-zinc-600">
+                        <p className="mt-1 text-sm text-app-secondary">
                           {hasEvangelism
-                            ? `${item.records} ${item.records === 1 ? "relato" : "relatos"} · ${item.leadershipParticipants} ${item.leadershipParticipants === 1 ? "Líder/Vice-líder" : "Líderes/Vice-líderes"}`
-                            : "Nenhum evangelismo registrado"}
+                            ? `${item.records} ${item.records === 1 ? "relato" : "relatos"} com ${item.leadershipParticipants} ${item.leadershipParticipants === 1 ? "líder" : "líderes"}.`
+                            : "Nenhum evangelismo registrado."}
                         </p>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`rounded-full px-3 py-1 text-sm font-semibold ${
-                            hasEvangelism
-                              ? "bg-green-100 text-green-900"
-                              : "bg-zinc-100 text-zinc-700"
-                          }`}
-                        >
-                          {hasEvangelism ? "Registrado" : "Não houve"}
-                        </span>
-                        <Link
-                          href={`/portal/relatorios/${item.versionId}`}
-                          className="text-sm font-semibold text-zinc-900 underline decoration-zinc-300 underline-offset-4 hover:decoration-zinc-900"
-                        >
-                          Ver Ficha
-                        </Link>
+                    </div>
+                    <Link
+                      href={`/portal/relatorios/${item.versionId}`}
+                      className={buttonClassName({
+                        variant: "secondary",
+                        size: "compact",
+                        className: "w-full sm:w-auto",
+                      })}
+                    >
+                      Ver Ficha
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="mt-4 text-sm text-app-secondary">
+              Nenhuma Ficha enviada neste período.
+            </p>
+          )}
+        </section>
+
+        <details className="group overflow-hidden rounded-2xl border border-app-border bg-surface">
+          <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 px-5 font-semibold text-app-foreground focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus [&::-webkit-details-marker]:hidden sm:px-6">
+            <span className="flex items-center gap-3">
+              <House aria-hidden="true" className="size-5 text-theme-primary" />
+              Informações da célula
+            </span>
+            <span className="text-sm font-medium text-app-secondary group-open:hidden">Ver</span>
+            <span className="hidden text-sm font-medium text-app-secondary group-open:inline">Ocultar</span>
+          </summary>
+          <div className="border-t border-app-border p-5 sm:p-6">
+            <dl className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                [<Network key="network" className="size-4" />, "Rede e tipo", cell.classification],
+                [<Clock3 key="clock" className="size-4" />, "Encontro", cell.schedule],
+                [<MapPin key="pin" className="size-4" />, "Localidade", cell.location],
+                [<CalendarRange key="calendar" className="size-4" />, "Início", cell.startedOn ?? "Não informado"],
+              ].map(([icon, label, value]) => (
+                <div key={String(label)} className="min-w-0">
+                  <dt className="flex items-center gap-2 text-xs font-medium text-app-secondary">
+                    {icon}
+                    {label}
+                  </dt>
+                  <dd className="mt-2 text-sm font-semibold capitalize text-app-foreground">{value}</dd>
+                </div>
+              ))}
+            </dl>
+
+            <section className="mt-6 border-t border-app-border pt-6">
+              <h3 className="font-semibold text-app-foreground">Liderança atual</h3>
+              {cell.leaderships.length > 0 ? (
+                <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {cell.leaderships.map((leadership) => (
+                    <li
+                      key={leadership.profileId}
+                      className="flex items-center gap-3 rounded-xl bg-surface-muted p-3"
+                    >
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-theme-primary-soft text-theme-primary-active">
+                        <UserRoundCheck aria-hidden="true" className="size-4" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-app-foreground">{leadership.name}</p>
+                        <p className="mt-0.5 text-xs text-app-secondary">
+                          {leadership.role} · desde {leadership.startsOn}
+                        </p>
                       </div>
                     </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className="mt-4 text-sm text-zinc-600">
-                Nenhuma Ficha enviada neste período.
-              </p>
-            )}
-          </section>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-app-secondary">
+                  Nenhuma liderança vigente encontrada.
+                </p>
+              )}
+            </section>
+          </div>
+        </details>
 
-          <h2 className="mt-8 text-xl font-semibold text-zinc-950">
-            Informações da célula
-          </h2>
-          <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-2xl bg-zinc-100 p-4">
-              <dt className="font-semibold text-zinc-950">Rede e tipo</dt>
-              <dd className="mt-2 text-zinc-700">{cell.classification}</dd>
-            </div>
-            <div className="rounded-2xl bg-zinc-100 p-4">
-              <dt className="font-semibold text-zinc-950">Encontro</dt>
-              <dd className="mt-2 capitalize text-zinc-700">{cell.schedule}</dd>
-            </div>
-            <div className="rounded-2xl bg-zinc-100 p-4">
-              <dt className="font-semibold text-zinc-950">Localidade</dt>
-              <dd className="mt-2 text-zinc-700">{cell.location}</dd>
-            </div>
-            <div className="rounded-2xl bg-zinc-100 p-4">
-              <dt className="font-semibold text-zinc-950">Início registrado</dt>
-              <dd className="mt-2 text-zinc-700">
-                {cell.startedOn ?? "Não informado"}
-              </dd>
-            </div>
-          </dl>
-
-          <section className="mt-8 rounded-2xl border border-zinc-200 p-5 sm:p-6">
-            <h2 className="text-xl font-semibold text-zinc-950">Liderança</h2>
-            {cell.leaderships.length > 0 ? (
-              <ul className="mt-4 divide-y divide-zinc-200">
-                {cell.leaderships.map((leadership) => (
-                  <li
-                    key={leadership.profileId}
-                    className="flex flex-col gap-1 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-                  >
-                    <div>
-                      <p className="font-semibold text-zinc-950">
-                        {leadership.name}
-                      </p>
-                      <p className="mt-1 text-sm text-zinc-600">
-                        Desde {leadership.startsOn}
-                      </p>
-                    </div>
-                    <span className="text-sm font-medium text-zinc-700">
-                      {leadership.role}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-4 text-zinc-700">
-                Nenhuma liderança vigente encontrada.
-              </p>
-            )}
-          </section>
-
-          <Link
-            href={dashboard.personalSummary ? "/portal" : "/portal/organizacao"}
-            className="mt-8 flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900 sm:w-auto sm:min-w-52"
-          >
-            {dashboard.personalSummary ? "Voltar ao ICB Conecta" : "Voltar às células"}
-          </Link>
-        </section>
-      </div>
+        <Link
+          href={dashboard.personalSummary ? "/portal" : "/portal/organizacao"}
+          className={buttonClassName({ variant: "ghost", size: "compact", className: "-ml-3" })}
+        >
+          <ArrowLeft aria-hidden="true" className="size-4" />
+          {dashboard.personalSummary ? "Voltar ao ICB Conecta" : "Voltar às células"}
+        </Link>
+      </PageContainer>
     </main>
   );
 }

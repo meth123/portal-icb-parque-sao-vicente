@@ -2,8 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   flattenGuestGroups,
+  filterLettersAndSpaces,
+  filterNameListInput,
   getFirstPendingLeadershipId,
   getLeadershipRecords,
+  normalizeLettersAndSpacesName,
   parsePastedNames,
   removeIncompleteLeadershipDrafts,
 } from "../src/lib/cell-report-form.ts";
@@ -184,4 +187,18 @@ test("lista colada cria somente nomes não vazios com espaços externos removido
     ),
     ["Manoel", "Rafael", "Lucas", "Maria", "Joana"],
   );
+});
+
+test("campos de nomes preservam letras acentuadas e bloqueiam números e símbolos", () => {
+  assert.equal(filterLettersAndSpaces("Eugênio 2 @ Silva"), "Eugênio   Silva");
+  assert.equal(
+    filterNameListInput("João 1\nMaria!\r\nÁgata"),
+    "João \nMaria\r\nÁgata",
+  );
+});
+
+test("nome para o PDF aceita somente letras e normaliza os espaços", () => {
+  assert.equal(normalizeLettersAndSpacesName("  Ana   Cláudia  "), "Ana Cláudia");
+  assert.equal(normalizeLettersAndSpacesName("Ana 2"), null);
+  assert.equal(normalizeLettersAndSpacesName("Ana-Cláudia"), null);
 });

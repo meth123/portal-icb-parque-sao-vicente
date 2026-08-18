@@ -6,13 +6,13 @@ import { buttonClassName } from "@/components/ui/button";
 import { PageContainer } from "@/components/ui/page-container";
 import { PageHeader } from "@/components/ui/page-header";
 import { Surface } from "@/components/ui/surface";
-import { ThemeArtwork } from "@/components/ui/theme-artwork";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import type { CellReportInitialData } from "@/lib/cell-report-form";
 import { getCellReportCorrectionDraftKey } from "@/lib/cell-report-draft";
 import { getCellReportVersionDetail } from "@/lib/data/cell-report-detail";
 import { getCellReportFormContext } from "@/lib/data/cell-reports";
 import { ReportForm } from "../../novo/report-form";
+import { ReportThemeIntroduction } from "../../novo/components/report-theme-introduction";
 
 export const metadata: Metadata = {
   title: "Corrigir Ficha de Organização | ICB Conecta",
@@ -127,17 +127,7 @@ export default async function CorrectCellReportPage({
           description={detail.cellName}
         />
 
-        <blockquote className="mt-3 text-sm leading-6 text-app-secondary">
-          <p>“Tudo, porém, seja feito com decência e ordem.”</p>
-          <cite className="not-italic">I Co 14:40</cite>
-        </blockquote>
-
-        <ThemeArtwork
-          decorative
-          className="mt-5 aspect-[16/7] !min-h-0 sm:aspect-[16/6] lg:aspect-[16/7]"
-          imageClassName="scale-[1.35] object-center lg:scale-100"
-          sizes="(max-width: 1024px) 100vw, 896px"
-        />
+        <ReportThemeIntroduction />
 
         <Alert tone="warning" className="mt-5">
           Corrigindo a versão {detail.versionNumber}. O envio cria uma nova

@@ -1,6 +1,10 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { FormSection } from "@/components/ui/form-section";
 import type {
   CellFormOption,
   CellLeaderOption,
@@ -13,6 +17,8 @@ import {
 } from "./actions";
 
 const initialState: UpdateCellState = { message: "" };
+const fieldClassName =
+  "min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-subtle read-only:bg-surface-muted read-only:text-app-secondary";
 
 type EditCellLeadershipFormProps = {
   cell: ManagedCellDetail;
@@ -50,8 +56,6 @@ export function EditCellLeadershipForm({
       ),
     ),
   );
-  const fieldClassName =
-    "mt-2 min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-base text-zinc-950 outline-none focus:border-zinc-700 focus:ring-2 focus:ring-zinc-200";
 
   function changeLeader(nextLeaderProfileId: string) {
     setLeaderProfileId(nextLeaderProfileId);
@@ -74,75 +78,66 @@ export function EditCellLeadershipForm({
   return (
     <form
       action={formAction}
-      className="mt-8 space-y-7"
+      className="space-y-7"
       onSubmit={(event) => {
         const confirmation = cell.isActive
           ? "Confirmar as alterações desta célula?"
           : "Confirmar a reativação desta célula?";
-        if (!window.confirm(confirmation)) {
-          event.preventDefault();
-        }
+        if (!window.confirm(confirmation)) event.preventDefault();
       }}
     >
       <input type="hidden" name="cellId" value={cell.id} />
 
-      {state.message ? (
-        <p
-          role="alert"
-          aria-live="polite"
-          className="rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-red-800"
-        >
-          {state.message}
-        </p>
-      ) : null}
+      {state.message ? <Alert tone="danger">{state.message}</Alert> : null}
 
-      <div className="grid gap-6 sm:grid-cols-[1fr_14rem]">
-        <div>
-          <label htmlFor="name" className="font-semibold text-zinc-950">
-            Nome da célula
-          </label>
-          <input
-            id="name"
-            name="name"
-            type="text"
-            defaultValue={cell.name}
-            readOnly={!cell.isActive}
-            minLength={2}
-            maxLength={120}
-            required
-            className={`${fieldClassName} ${!cell.isActive ? "bg-zinc-100 text-zinc-600" : ""}`}
-          />
-        </div>
+      <FormSection
+        title="Identificação"
+        description={
+          cell.isActive
+            ? "Atualize o nome e informe quando a alteração passa a valer."
+            : "Confirme a célula e defina a data do novo período."
+        }
+      >
+        <div className="grid gap-5 sm:grid-cols-[1fr_14rem]">
+          <FormField id="name" label="Nome da célula" required>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              defaultValue={cell.name}
+              readOnly={!cell.isActive}
+              minLength={2}
+              maxLength={120}
+              required
+              className={fieldClassName}
+            />
+          </FormField>
 
-        <div>
-          <label
-            htmlFor="effectiveOn"
-            className="font-semibold text-zinc-950"
-          >
-            {cell.isActive ? "Início da alteração" : "Data da reativação"}
-          </label>
-          <input
+          <FormField
             id="effectiveOn"
-            name="effectiveOn"
-            type="date"
-            defaultValue={defaultDate}
-            min={minimumDate}
-            max={defaultDate}
+            label={cell.isActive ? "Início da alteração" : "Data da reativação"}
             required
-            className={fieldClassName}
-          />
+          >
+            <input
+              id="effectiveOn"
+              name="effectiveOn"
+              type="date"
+              defaultValue={defaultDate}
+              min={minimumDate}
+              max={defaultDate}
+              required
+              className={fieldClassName}
+            />
+          </FormField>
         </div>
-      </div>
+      </FormSection>
 
-      <fieldset>
-        <legend className="text-lg font-semibold text-zinc-950">
-          Organização e encontro
-        </legend>
-        <div className="mt-4 grid gap-6 sm:grid-cols-2">
-          <div>
-            <label htmlFor="cellTypeId" className="font-semibold text-zinc-950">
-              Rede e tipo
-            </label>
+      <FormSection
+        title="Organização e encontro"
+        description="Rede, localidade e horário vigentes neste período."
+      >
+        <div className="grid gap-5 sm:grid-cols-2">
+          <FormField id="cellTypeId" label="Rede e tipo" required>
             <select
               id="cellTypeId"
               name="cellTypeId"
@@ -156,15 +151,9 @@ export function EditCellLeadershipForm({
                 </option>
               ))}
             </select>
-          </div>
+          </FormField>
 
-          <div>
-            <label
-              htmlFor="neighborhoodId"
-              className="font-semibold text-zinc-950"
-            >
-              Bairro e cidade
-            </label>
+          <FormField id="neighborhoodId" label="Bairro e cidade" required>
             <select
               id="neighborhoodId"
               name="neighborhoodId"
@@ -178,12 +167,9 @@ export function EditCellLeadershipForm({
                 </option>
               ))}
             </select>
-          </div>
+          </FormField>
 
-          <div>
-            <label htmlFor="weekday" className="font-semibold text-zinc-950">
-              Dia da reunião
-            </label>
+          <FormField id="weekday" label="Dia da reunião" required>
             <select
               id="weekday"
               name="weekday"
@@ -195,15 +181,9 @@ export function EditCellLeadershipForm({
               <option value={5}>Sexta-feira</option>
               <option value={6}>Sábado</option>
             </select>
-          </div>
+          </FormField>
 
-          <div>
-            <label
-              htmlFor="meetingTime"
-              className="font-semibold text-zinc-950"
-            >
-              Horário
-            </label>
+          <FormField id="meetingTime" label="Horário" required>
             <input
               id="meetingTime"
               name="meetingTime"
@@ -212,86 +192,81 @@ export function EditCellLeadershipForm({
               required
               className={fieldClassName}
             />
-          </div>
+          </FormField>
         </div>
-      </fieldset>
+      </FormSection>
 
-      <div>
-        <label
-          htmlFor="leaderProfileId"
-          className="font-semibold text-zinc-950"
-        >
-          Líder
-        </label>
-        <select
-          id="leaderProfileId"
-          name="leaderProfileId"
-          value={leaderProfileId}
-          required
-          onChange={(event) => changeLeader(event.target.value)}
-          className={fieldClassName}
-        >
-          {leaders.map((leader) => (
-            <option key={leader.value} value={leader.value}>
-              {leader.label} — {leader.description}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <fieldset>
-        <legend className="font-semibold text-zinc-950">
-          Vice-líderes{" "}
-          <span className="font-normal text-zinc-600">(opcional)</span>
-        </legend>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          {leaders
-            .filter((leader) => leader.value !== leaderProfileId)
-            .map((leader) => (
-              <label
-                key={leader.value}
-                className="flex min-h-14 cursor-pointer items-start gap-3 rounded-xl border border-zinc-300 p-4 hover:bg-zinc-50"
-              >
-                <input
-                  type="checkbox"
-                  name="viceProfileIds"
-                  value={leader.value}
-                  checked={viceProfileIds.has(leader.value)}
-                  onChange={(event) =>
-                    changeVice(leader.value, event.target.checked)
-                  }
-                  className="mt-1 h-5 w-5 shrink-0 accent-zinc-950"
-                />
-                <span>
-                  <span className="block font-medium text-zinc-950">
-                    {leader.label}
-                  </span>
-                  <span className="mt-1 block break-all text-sm text-zinc-600">
-                    {leader.description}
-                  </span>
-                </span>
-              </label>
-            ))}
-        </div>
-      </fieldset>
-
-      <p className="rounded-xl bg-zinc-100 px-4 py-3 text-sm leading-6 text-zinc-700">
-        {cell.isActive
-          ? "Para trocar funções, escolha o novo Líder e marque o Líder anterior como Vice, se necessário. O histórico será preservado."
-          : "A célula voltará como um novo período. O histórico anterior será preservado."}
-      </p>
-
-      <button
-        type="submit"
-        disabled={pending}
-        className="min-h-12 w-full rounded-xl bg-zinc-950 px-5 font-semibold text-white hover:bg-zinc-800 disabled:cursor-wait disabled:bg-zinc-500"
+      <FormSection
+        title="Liderança"
+        description="A célula deve permanecer com um Líder; Vice-líderes são opcionais."
       >
+        <FormField id="leaderProfileId" label="Líder" required>
+          <select
+            id="leaderProfileId"
+            name="leaderProfileId"
+            value={leaderProfileId}
+            required
+            onChange={(event) => changeLeader(event.target.value)}
+            className={fieldClassName}
+          >
+            {leaders.map((leader) => (
+              <option key={leader.value} value={leader.value}>
+                {leader.label} — {leader.description}
+              </option>
+            ))}
+          </select>
+        </FormField>
+
+        <fieldset className="mt-6">
+          <legend className="font-semibold text-app-foreground">
+            Vice-líderes{" "}
+            <span className="font-normal text-app-secondary">(opcional)</span>
+          </legend>
+          <div className="mt-3 grid max-h-80 gap-3 overflow-y-auto pr-1 sm:grid-cols-2">
+            {leaders
+              .filter((leader) => leader.value !== leaderProfileId)
+              .map((leader) => (
+                <label
+                  key={leader.value}
+                  className="flex min-h-14 cursor-pointer items-start gap-3 rounded-xl border border-app-border p-4 hover:border-theme-primary-border hover:bg-theme-primary-subtle"
+                >
+                  <input
+                    type="checkbox"
+                    name="viceProfileIds"
+                    value={leader.value}
+                    checked={viceProfileIds.has(leader.value)}
+                    onChange={(event) =>
+                      changeVice(leader.value, event.target.checked)
+                    }
+                    className="mt-1 size-5 shrink-0 accent-theme-primary"
+                  />
+                  <span className="min-w-0">
+                    <span className="block font-medium text-app-foreground">
+                      {leader.label}
+                    </span>
+                    <span className="mt-1 block break-words text-sm text-app-secondary">
+                      {leader.description}
+                    </span>
+                  </span>
+                </label>
+              ))}
+          </div>
+        </fieldset>
+
+        <Alert className="mt-5">
+          {cell.isActive
+            ? "As funções anteriores permanecem no histórico após a alteração."
+            : "A reativação inicia um novo período e preserva o histórico anterior."}
+        </Alert>
+      </FormSection>
+
+      <Button type="submit" disabled={pending} className="w-full">
         {pending
           ? "Salvando..."
           : cell.isActive
             ? "Salvar alterações"
             : "Reativar célula"}
-      </button>
+      </Button>
     </form>
   );
 }

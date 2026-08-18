@@ -115,6 +115,9 @@ test("gera um PDF leve e estruturalmente completo", () => {
   assert.equal(content.includes("1. Mateus"), true);
   assert.equal(content.includes("2. Marcos"), true);
   assert.equal(content.includes("3. Rafael"), true);
+  assert.equal(content.includes("Integrantes:"), true);
+  assert.equal(content.includes("1. Anderson"), true);
+  assert.equal(content.includes("2. Jos"), true);
   assert.equal(pdf.byteLength < 50_000, true);
 });
 

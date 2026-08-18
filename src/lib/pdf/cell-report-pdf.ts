@@ -297,10 +297,17 @@ export function createCellReportPdf(detail: CellReportVersionDetail) {
         `Data: ${entry.evangelismOn ? formatDate(entry.evangelismOn) : "Não informada"}  |  Tempo: ${entry.durationText ?? "Não informado"}`,
         { indent: 8, spaceAfter: 2 },
       );
-      addText(
-        `Integrantes: ${entry.participantNames.length > 0 ? entry.participantNames.join(", ") : "Nenhum"}`,
-        { indent: 8, spaceAfter: 2 },
-      );
+      if (entry.participantNames.length === 0) {
+        addText("Integrantes: Nenhum", { indent: 8, spaceAfter: 2 });
+      } else {
+        addText("Integrantes:", { indent: 8, spaceAfter: 2 });
+        for (const [participantIndex, participantName] of entry.participantNames.entries()) {
+          addText(`${participantIndex + 1}. ${participantName}`, {
+            indent: 16,
+            spaceAfter: 2,
+          });
+        }
+      }
     } else {
       addText(`${entry.registeredByName} - Não evangelizou`, {
         size: 11,

@@ -8,14 +8,17 @@ import {
   ArrowRight,
   CalendarDays,
   CheckCircle2,
+  ChevronDown,
   CircleMinus,
   CloudCheck,
   Clock3,
   Info,
   LoaderCircle,
+  Megaphone,
   Plus,
   Send,
   Trash2,
+  UserRound,
   Zap,
 } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
@@ -23,6 +26,8 @@ import { Button } from "@/components/ui/button";
 import { IconButton } from "@/components/ui/icon-button";
 import {
   flattenGuestGroups,
+  filterLettersAndSpaces,
+  filterNameListInput,
   getFirstPendingLeadershipId,
   getLeadershipRecords,
   parsePastedNames,
@@ -202,6 +207,62 @@ function RequiredMark() {
     <span aria-hidden="true" className="ml-1 text-danger">
       *
     </span>
+  );
+}
+
+type ManualNameListInputProps = {
+  id: string;
+  participants: ManualName[];
+  disabled: boolean;
+  createKey: () => number;
+  onChange: (participants: ManualName[]) => void;
+};
+
+function ManualNameListInput({
+  id,
+  participants,
+  disabled,
+  createKey,
+  onChange,
+}: ManualNameListInputProps) {
+  const externalValue = participants.map((participant) => participant.name).join("\n");
+  const [value, setValue] = useState(externalValue);
+  const lastEmittedValue = useRef(externalValue);
+
+  useEffect(() => {
+    if (externalValue !== lastEmittedValue.current) {
+      setValue(externalValue);
+      lastEmittedValue.current = externalValue;
+    }
+  }, [externalValue]);
+
+  return (
+    <textarea
+      id={id}
+      rows={5}
+      value={value}
+      onChange={(event) => {
+        const filtered = filterNameListInput(event.target.value)
+          .split(/\r?\n/)
+          .slice(0, 100)
+          .map((line) => line.slice(0, 200))
+          .join("\n");
+        const names = parsePastedNames(filtered);
+        const nextParticipants = names.map((name, index) => ({
+          key: participants[index]?.key ?? createKey(),
+          name,
+        }));
+
+        setValue(filtered);
+        lastEmittedValue.current = nextParticipants
+          .map((participant) => participant.name)
+          .join("\n");
+        onChange(nextParticipants);
+      }}
+      placeholder={"Manoel\nMatheus"}
+      disabled={disabled}
+      className={`${fieldClassName} py-3`}
+    />
   );
 }
 
@@ -640,54 +701,6 @@ export function ReportForm({
   function newKey() {
     nextLocalKey.current += 1;
     return nextLocalKey.current;
-  }
-
-  function discardDraft() {
-    try {
-      window.localStorage.removeItem(draftKey);
-    } catch {
-      // Os estados abaixo ainda limpam o formulário visível.
-    }
-
-    nextLocalKey.current = initialSeed.maxKey;
-    setMeetingOn(initialSeed.meetingOn);
-    setMeetingFormat(initialSeed.meetingFormat);
-    setLeaderWasPresent(initialSeed.leaderWasPresent);
-    setSelectedViceIds([...initialSeed.selectedViceIds]);
-    setNoViceWasPresent(initialSeed.noViceWasPresent);
-    setMembers(initialSeed.members.map((member) => ({ ...member })));
-    setBulkMembersOpen(false);
-    setBulkMemberNames("");
-    setBulkMemberMessage("");
-    setGuestGroups(
-      initialSeed.guestGroups.map((group) => ({
-        ...group,
-        guests: group.guests.map((guest) => ({ ...guest })),
-      })),
-    );
-    setBulkGuestGroupKey(null);
-    setBulkGuestNames("");
-    setBulkGuestMessage("");
-    setEvangelismRecords(
-      initialSeed.evangelismRecords.map((record) => ({
-        ...record,
-        leadershipIds: [...record.leadershipIds],
-        participants: record.participants.map((participant) => ({
-          ...participant,
-        })),
-      })),
-    );
-    setNotEvangelized({ ...initialSeed.notEvangelized });
-    setOpenNotEvangelizedLeadershipId(null);
-    setStep(1);
-    setOpenEvangelismRecordKey(null);
-    setSubmissionConfirmed(false);
-    setLocalMessage("");
-    setDraftMessage(
-      initialData
-        ? "Alterações descartadas; a versão anterior foi restaurada."
-        : "Rascunho descartado.",
-    );
   }
 
   function updateEvangelismRecord(
@@ -1188,7 +1201,7 @@ export function ReportForm({
         </Alert>
       ) : null}
 
-      <div className="-mt-2 flex items-center justify-end gap-2">
+      <div className="-mt-2 flex items-center justify-end gap-2 text-xs font-medium text-app-secondary">
           <p
             aria-live="polite"
             className="sr-only"
@@ -1197,8 +1210,7 @@ export function ReportForm({
           </p>
           <span
             aria-hidden="true"
-            title={draftMessage}
-            className={`flex h-9 w-9 items-center justify-center rounded-lg bg-surface ${
+            className={`flex h-8 w-8 items-center justify-center ${
               draftSaveFailed ? "text-danger" : "text-success"
             }`}
           >
@@ -1208,16 +1220,7 @@ export function ReportForm({
               <CloudCheck className="h-4 w-4" />
             )}
           </span>
-          <IconButton
-            type="button"
-            onClick={discardDraft}
-            disabled={pending || !draftReady}
-            aria-label="Descartar rascunho"
-            title="Descartar rascunho"
-            size="compact"
-          >
-            <Trash2 aria-hidden="true" className="h-4 w-4" />
-          </IconButton>
+          <span>{draftSaveFailed ? "Rascunho indisponível" : "Rascunho automático"}</span>
       </div>
 
       {step === 1 ? (
@@ -1428,7 +1431,9 @@ export function ReportForm({
                   onNameChange={(name) =>
                     setMembers((current) =>
                       current.map((item) =>
-                        item.key === member.key ? { ...item, name } : item,
+                        item.key === member.key
+                          ? { ...item, name: filterLettersAndSpaces(name) }
+                          : item,
                       ),
                     )
                   }
@@ -1457,7 +1462,7 @@ export function ReportForm({
                 Adicionar membro
               </Button>
               <Button
-                variant="ghost"
+                variant="secondary"
                 size="compact"
                 onClick={
                   bulkMembersOpen
@@ -1468,7 +1473,7 @@ export function ReportForm({
                 aria-controls="bulk-member-names"
                 aria-label="Modo rápido: adicionar vários membros"
                 disabled={pending || members.length >= 500}
-                className="w-full sm:w-auto"
+                className="w-full border-theme-primary-border text-theme-primary-active sm:w-auto"
               >
                 <Zap aria-hidden="true" className="h-4 w-4" />
                 Modo rápido
@@ -1490,7 +1495,9 @@ export function ReportForm({
                   id="bulk-members"
                   rows={7}
                   value={bulkMemberNames}
-                  onChange={(event) => setBulkMemberNames(event.target.value)}
+                  onChange={(event) =>
+                    setBulkMemberNames(filterNameListInput(event.target.value))
+                  }
                   placeholder={"João\nAndré\nMaria"}
                   disabled={pending}
                   className={`${fieldClassName} py-3`}
@@ -1583,17 +1590,45 @@ export function ReportForm({
               {guestGroups.map((group, groupIndex) => (
                 <div
                   key={group.key}
-                  className="rounded-xl border border-app-border bg-surface-muted p-4 sm:p-5"
+                  className="overflow-hidden rounded-xl border border-app-border bg-surface"
                 >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                    <div className="min-w-0 flex-1">
+                  <div className="bg-theme-primary-subtle p-4 sm:p-5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface text-theme-primary-active">
+                          <UserRound aria-hidden="true" className="h-5 w-5" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-app-foreground">
+                            Responsável {groupIndex + 1}
+                          </p>
+                          <p className="text-sm text-app-secondary">
+                            {group.guests.length} {group.guests.length === 1 ? "convidado" : "convidados"}
+                          </p>
+                        </div>
+                      </div>
+                      <IconButton
+                        onClick={() => removeGuestGroup(group.key)}
+                        disabled={pending}
+                        aria-label={`Remover responsável ${groupIndex + 1}`}
+                        title="Remover responsável"
+                        className="text-danger"
+                      >
+                        <Trash2 aria-hidden="true" className="h-4 w-4" />
+                      </IconButton>
+                    </div>
+
+                    <div className="relative mt-4">
                       <label
                         htmlFor={`responsible-${group.key}`}
-                        className="font-semibold text-app-foreground"
+                        className="sr-only"
                       >
-                        Responsável {groupIndex + 1}
-                        <RequiredMark />
+                        Nome do responsável {groupIndex + 1}
                       </label>
+                      <UserRound
+                        aria-hidden="true"
+                        className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-app-secondary"
+                      />
                       <input
                         id={`responsible-${group.key}`}
                         type="text"
@@ -1601,61 +1636,64 @@ export function ReportForm({
                         onChange={(event) =>
                           updateGuestGroup(group.key, (current) => ({
                             ...current,
-                            responsibleName: event.target.value,
+                            responsibleName: filterLettersAndSpaces(
+                              event.target.value,
+                            ),
                           }))
                         }
-                        placeholder="Ex.: Eugênio"
+                        placeholder="Nome do responsável"
+                        autoComplete="name"
                         required
                         maxLength={200}
                         disabled={pending}
-                        className={fieldClassName}
+                        className={`${fieldClassName} pl-12`}
                       />
                     </div>
-                    <IconButton
-                      onClick={() => removeGuestGroup(group.key)}
-                      disabled={pending}
-                      aria-label={`Remover responsável ${groupIndex + 1}`}
-                      title="Remover responsável"
-                      className="text-danger"
-                    >
-                      <Trash2 aria-hidden="true" className="h-4 w-4" />
-                    </IconButton>
                   </div>
 
-                  <div className="mt-4 space-y-3">
+                  <div className="space-y-3 p-4 sm:p-5">
                     {group.guests.map((guest, guestIndex) => (
                       <div
                         key={guest.key}
-                        className="rounded-xl border border-app-border bg-surface p-4"
+                        className="rounded-xl bg-surface-muted p-3 sm:grid sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end sm:gap-4 sm:p-4"
                       >
-                        <label
-                          htmlFor={`guest-${guest.key}`}
-                          className="font-medium text-app-foreground"
-                        >
-                          Nome do convidado {guestIndex + 1}
-                          <RequiredMark />
-                        </label>
-                        <input
-                          id={`guest-${guest.key}`}
-                          type="text"
-                          value={guest.name}
-                          onChange={(event) =>
-                            updateGuestGroup(group.key, (current) => ({
-                              ...current,
-                              guests: current.guests.map((item) =>
-                                item.key === guest.key
-                                  ? { ...item, name: event.target.value }
-                                  : item,
-                              ),
-                            }))
-                          }
-                          required
-                          maxLength={200}
-                          disabled={pending}
-                          className={fieldClassName}
-                        />
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                          <label className="flex min-h-11 cursor-pointer items-center gap-3">
+                        <div className="min-w-0">
+                          <label
+                            htmlFor={`guest-${guest.key}`}
+                            className="font-medium text-app-foreground"
+                          >
+                            Convidado {guestIndex + 1}
+                            <RequiredMark />
+                          </label>
+                          <input
+                            id={`guest-${guest.key}`}
+                            type="text"
+                            value={guest.name}
+                            onChange={(event) =>
+                              updateGuestGroup(group.key, (current) => ({
+                                ...current,
+                                guests: current.guests.map((item) =>
+                                  item.key === guest.key
+                                    ? {
+                                        ...item,
+                                        name: filterLettersAndSpaces(
+                                          event.target.value,
+                                        ),
+                                      }
+                                    : item,
+                                ),
+                              }))
+                            }
+                            placeholder="Nome completo"
+                            autoComplete="name"
+                            required
+                            maxLength={200}
+                            disabled={pending}
+                            className={fieldClassName}
+                          />
+                        </div>
+                        <div className="mt-3 flex items-center justify-between gap-3 sm:mt-0 sm:justify-end">
+                          <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-app-border bg-surface px-3 font-medium text-app-foreground has-[:checked]:border-theme-primary has-[:checked]:bg-theme-primary-soft has-[:checked]:text-theme-primary-active">
                             <input
                               type="checkbox"
                               checked={guest.isFirstTime}
@@ -1675,7 +1713,7 @@ export function ReportForm({
                               disabled={pending}
                               className="h-5 w-5 accent-theme-primary"
                             />
-                            Primeira vez
+                            1ª vez
                           </label>
                           <IconButton
                             onClick={() =>
@@ -1694,7 +1732,7 @@ export function ReportForm({
                     ))}
                   </div>
 
-                  <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+                  <div className="flex flex-col gap-3 px-4 pb-4 sm:flex-row sm:px-5 sm:pb-5">
                     <Button
                       variant="secondary"
                       size="compact"
@@ -1706,7 +1744,7 @@ export function ReportForm({
                       Adicionar convidado
                     </Button>
                     <Button
-                      variant="ghost"
+                      variant="secondary"
                       size="compact"
                       onClick={() =>
                         bulkGuestGroupKey === group.key
@@ -1717,7 +1755,7 @@ export function ReportForm({
                       aria-controls={`bulk-guests-${group.key}`}
                       aria-label="Modo rápido: adicionar vários convidados deste responsável"
                       disabled={pending || guests.length >= 500}
-                      className="w-full sm:w-auto"
+                      className="w-full border-theme-primary-border text-theme-primary-active sm:w-auto"
                     >
                       <Zap aria-hidden="true" className="h-4 w-4" />
                       Modo rápido
@@ -1727,7 +1765,7 @@ export function ReportForm({
                   {bulkGuestGroupKey === group.key ? (
                     <div
                       id={`bulk-guests-${group.key}`}
-                      className="mt-4 rounded-xl border border-theme-primary-border bg-theme-primary-subtle p-4"
+                      className="mx-4 mb-4 rounded-xl border border-theme-primary-border bg-theme-primary-subtle p-4 sm:mx-5 sm:mb-5"
                     >
                       <label
                         htmlFor={`bulk-guest-names-${group.key}`}
@@ -1740,7 +1778,9 @@ export function ReportForm({
                         rows={7}
                         value={bulkGuestNames}
                         onChange={(event) =>
-                          setBulkGuestNames(event.target.value)
+                          setBulkGuestNames(
+                            filterNameListInput(event.target.value),
+                          )
                         }
                         placeholder={"Manoel\nRafael\nLucas\nMaria\nJoana"}
                         disabled={pending}
@@ -1888,7 +1928,7 @@ export function ReportForm({
                 return (
                   <article
                     key={person.leadershipId}
-                    className={`rounded-xl border p-5 sm:p-6 ${
+                    className={`rounded-xl border p-4 sm:p-5 ${
                       hasEvangelized
                         ? "border-success/20 bg-success-soft"
                         : hasNegativeStatus
@@ -1897,9 +1937,17 @@ export function ReportForm({
                     }`}
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <span className="block text-lg font-semibold text-app-foreground">
-                        {person.name}
-                      </span>
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span
+                          aria-hidden="true"
+                          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface text-sm font-bold text-theme-primary-active"
+                        >
+                          {person.name.trim().slice(0, 1).toUpperCase()}
+                        </span>
+                        <span className="min-w-0 text-lg font-semibold text-app-foreground">
+                          {person.name}
+                        </span>
+                      </div>
                       <span
                         className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold ${
                           hasEvangelized
@@ -1917,22 +1965,22 @@ export function ReportForm({
                           <Clock3 aria-hidden="true" className="h-4 w-4" />
                         )}
                         {hasEvangelized
-                          ? `Missão registrada · ${personRecords.length} ${
+                          ? `${personRecords.length} ${
                               personRecords.length === 1
                                 ? "registro"
                                 : "registros"
                             }`
                           : hasNegativeStatus
-                            ? "Sem evangelismo nesta semana"
-                            : "Aguardando resposta"}
+                            ? "Semana registrada"
+                            : "Escolha uma opção"}
                       </span>
                     </div>
 
                     {hasEvangelized ? (
                       <>
                         {sharedRecordOwner ? (
-                          <p className="mt-3 text-sm text-success">
-                            Participou de evangelismo registrado com {" "}
+                          <p className="mt-3 text-sm font-medium text-success">
+                            Evangelizou com {" "}
                             {sharedRecordOwner.name}.
                           </p>
                         ) : null}
@@ -1949,7 +1997,7 @@ export function ReportForm({
                       </>
                     ) : hasNegativeStatus ? (
                       isNegativeCommentOpen ? (
-                        <div className="mt-5 rounded-xl bg-surface p-4">
+                        <div className="mt-5 rounded-xl bg-surface p-4 sm:p-5">
                           <label
                             htmlFor={`not-evangelized-${person.leadershipId}`}
                             className="font-medium text-app-foreground"
@@ -2021,25 +2069,43 @@ export function ReportForm({
                         </div>
                       )
                     ) : (
-                      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                        <Button
-                          size="compact"
+                      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                        <button
+                          type="button"
                           onClick={() => addEvangelismRecord(person.leadershipId)}
                           disabled={pending}
+                          className="flex min-h-20 items-center gap-3 rounded-xl border border-success/25 bg-surface px-4 text-left transition-colors hover:bg-success-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          <CheckCircle2 aria-hidden="true" className="h-4 w-4" />
-                          Registrar evangelismo
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="compact"
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success-soft text-success">
+                            <CheckCircle2 aria-hidden="true" className="h-5 w-5" />
+                          </span>
+                          <span>
+                            <span className="block font-semibold text-app-foreground">
+                              Evangelizou
+                            </span>
+                            <span className="mt-0.5 block text-sm text-app-secondary">
+                              Registrar a missão
+                            </span>
+                          </span>
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => markNotEvangelized(person.leadershipId)}
                           disabled={pending}
-                          className="bg-surface"
+                          className="flex min-h-20 items-center gap-3 rounded-xl border border-app-border bg-surface px-4 text-left transition-colors hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          <CircleMinus aria-hidden="true" className="h-4 w-4" />
-                          Não evangelizou
-                        </Button>
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-muted text-app-secondary">
+                            <CircleMinus aria-hidden="true" className="h-5 w-5" />
+                          </span>
+                          <span>
+                            <span className="block font-semibold text-app-foreground">
+                              Não evangelizou
+                            </span>
+                            <span className="mt-0.5 block text-sm text-app-secondary">
+                              Informar o motivo
+                            </span>
+                          </span>
+                        </button>
                       </div>
                     )}
                     </article>
@@ -2078,7 +2144,9 @@ export function ReportForm({
                     return (
                       <article
                         key={record.key}
-                        className="overflow-hidden rounded-2xl border border-app-border bg-surface"
+                        className={`overflow-hidden rounded-xl border bg-surface ${
+                          error ? "border-warning/30" : "border-success/25"
+                        }`}
                       >
                         <button
                           type="button"
@@ -2087,36 +2155,55 @@ export function ReportForm({
                           }
                           aria-expanded={isOpen}
                           aria-controls={`evangelism-record-${record.key}`}
-                          className="flex min-h-16 w-full flex-col gap-2 px-5 py-4 text-left hover:bg-surface-muted sm:flex-row sm:items-center sm:justify-between"
+                          className="flex min-h-20 w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus sm:px-5"
                         >
-                          <span>
-                            <span className="block font-semibold text-app-foreground">
-                              {primaryPerson?.name ||
-                                `Evangelismo ${recordIndex + 1}`}
-                            </span>
-                            {companionNames.length > 0 ? (
-                              <span className="mt-1 block text-sm text-app-secondary">
-                                Com {companionNames.join(", ")}
-                              </span>
-                            ) : null}
+                          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-theme-primary-subtle text-theme-primary-active">
+                            <Megaphone aria-hidden="true" className="h-5 w-5" />
                           </span>
-                          <span
-                            className={`text-sm font-semibold ${
-                              error ? "text-warning" : "text-success"
-                            }`}
-                          >
-                            {error ? "Pendente" : "Pronto"}
+                          <span className="min-w-0 flex-1">
+                            <span className="block font-semibold text-app-foreground">
+                              Registro {recordIndex + 1} · {primaryPerson?.name || "Evangelismo"}
+                            </span>
+                            <span className="mt-1 block truncate text-sm text-app-secondary">
+                              {companionNames.length > 0
+                                ? `Com ${companionNames.join(", ")}`
+                                : record.evangelismOn && record.durationText
+                                  ? `${formatBrazilianDate(record.evangelismOn)} · ${record.durationText}`
+                                  : "Complete os detalhes da missão"}
+                            </span>
+                          </span>
+                          <span className="flex shrink-0 items-center gap-2">
+                            <span
+                              className={`hidden rounded-full px-3 py-1 text-sm font-semibold sm:inline-flex ${
+                                error
+                                  ? "bg-warning-soft text-warning"
+                                  : "bg-success-soft text-success"
+                              }`}
+                            >
+                              {error ? "Pendente" : "Pronto"}
+                            </span>
+                            <ChevronDown
+                              aria-hidden="true"
+                              className={`h-5 w-5 text-app-secondary transition-transform ${
+                                isOpen ? "rotate-180" : ""
+                              }`}
+                            />
                           </span>
                         </button>
 
                         {isOpen ? (
                           <div
                             id={`evangelism-record-${record.key}`}
-                            className="space-y-6 bg-surface-muted p-5"
+                            className="space-y-6 border-t border-app-border bg-surface p-4 sm:p-5"
                           >
                             <fieldset>
-                              <legend className="font-semibold text-app-foreground">
-                                Quem evangelizou junto?
+                              <legend>
+                                <span className="block font-semibold text-app-foreground">
+                                  Equipe da missão
+                                </span>
+                                <span className="mt-1 block text-sm text-app-secondary">
+                                  Marque quem evangelizou junto neste registro.
+                                </span>
                               </legend>
                               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                                 {leadership
@@ -2135,10 +2222,10 @@ export function ReportForm({
                                     return (
                                       <label
                                         key={person.leadershipId}
-                                        className={`flex min-h-14 items-center gap-3 rounded-xl border border-app-border p-4 ${
+                                        className={`flex min-h-14 items-center gap-3 rounded-xl border p-4 transition-colors has-[:checked]:border-theme-primary has-[:checked]:bg-theme-primary-soft ${
                                           isMarkedNotEvangelized
-                                            ? "cursor-not-allowed bg-surface-muted"
-                                            : "cursor-pointer bg-surface"
+                                            ? "cursor-not-allowed border-app-border bg-surface-muted"
+                                            : "cursor-pointer border-app-border bg-surface"
                                         }`}
                                       >
                                         <input
@@ -2221,106 +2308,38 @@ export function ReportForm({
                               </div>
                             </div>
 
-                            <section aria-labelledby={`participants-${record.key}`}>
-                              <div>
-                                <h4
-                                  id={`participants-${record.key}`}
+                            <div>
+                              <div className="flex items-center justify-between gap-3">
+                                <label
+                                  htmlFor={`participants-${record.key}`}
                                   className="font-semibold text-app-foreground"
                                 >
                                   Integrantes
-                                </h4>
+                                </label>
+                                <span className="text-xs font-medium text-app-secondary">
+                                  Um nome por linha
+                                </span>
                               </div>
-                              <div className="mt-3 space-y-3">
-                                {record.participants.map((participant, index) => (
-                                  <div
-                                    key={participant.key}
-                                    className="grid gap-3 rounded-xl border border-app-border bg-surface p-4 sm:grid-cols-[1fr_auto] sm:items-end"
-                                  >
-                                    <div>
-                                      <label
-                                        htmlFor={`participant-${record.key}-${participant.key}`}
-                                        className="font-medium text-app-foreground"
-                                      >
-                                        Nome do integrante {index + 1}
-                                        <RequiredMark />
-                                      </label>
-                                      <input
-                                        id={`participant-${record.key}-${participant.key}`}
-                                        type="text"
-                                        value={participant.name}
-                                        onChange={(event) =>
-                                          updateEvangelismRecord(
-                                            record.key,
-                                            (current) => ({
-                                              ...current,
-                                              participants:
-                                                current.participants.map((item) =>
-                                                  item.key === participant.key
-                                                    ? {
-                                                        ...item,
-                                                        name: event.target.value,
-                                                      }
-                                                    : item,
-                                                ),
-                                            }),
-                                          )
-                                        }
-                                        required
-                                        maxLength={200}
-                                        disabled={pending}
-                                        className={fieldClassName}
-                                      />
-                                    </div>
-                                    <IconButton
-                                      onClick={() =>
-                                        updateEvangelismRecord(
-                                          record.key,
-                                          (current) => ({
-                                            ...current,
-                                            participants:
-                                              current.participants.filter(
-                                                (item) =>
-                                                  item.key !== participant.key,
-                                              ),
-                                          }),
-                                        )
-                                      }
-                                      disabled={pending}
-                                      aria-label={`Remover integrante ${index + 1}`}
-                                      title="Remover integrante"
-                                      className="text-danger"
-                                    >
-                                      <Trash2 aria-hidden="true" className="h-4 w-4" />
-                                    </IconButton>
-                                  </div>
-                                ))}
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() =>
+                              <ManualNameListInput
+                                id={`participants-${record.key}`}
+                                participants={record.participants}
+                                disabled={pending}
+                                createKey={newKey}
+                                onChange={(participants) =>
                                   updateEvangelismRecord(record.key, (current) => ({
                                     ...current,
-                                    participants: [
-                                      ...current.participants,
-                                      { key: newKey(), name: "" },
-                                    ],
+                                    participants,
                                   }))
                                 }
-                                disabled={
-                                  pending || record.participants.length >= 100
-                                }
-                                className="mt-3 min-h-11 w-full rounded-xl border border-app-border bg-surface px-4 font-semibold text-app-foreground hover:bg-surface-muted sm:w-auto"
-                              >
-                                + Adicionar outro integrante
-                              </button>
-                            </section>
+                              />
+                            </div>
 
                             <div>
                               <label
                                 htmlFor={`comments-${record.key}`}
                                 className="font-semibold text-app-foreground"
                               >
-                                Comentários
+                                Como foi?
                                 <RequiredMark />
                               </label>
                               <textarea
@@ -2335,6 +2354,7 @@ export function ReportForm({
                                 }
                                 required
                                 maxLength={4000}
+                                placeholder="Conte brevemente como foi o evangelismo."
                                 disabled={pending}
                                 className={`${fieldClassName} py-3`}
                               />

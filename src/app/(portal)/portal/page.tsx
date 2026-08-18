@@ -1,4 +1,5 @@
 import {
+  ChartNoAxesCombined,
   Check,
   ClipboardCheck,
   FilePlus2,
@@ -13,7 +14,10 @@ import { PageContainer } from "@/components/ui/page-container";
 import { PageHeader } from "@/components/ui/page-header";
 import { SectionHeader } from "@/components/ui/section-header";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { getCurrentUser } from "@/lib/auth/current-user";
+import {
+  canAccessPastoralDashboard,
+  getCurrentUser,
+} from "@/lib/auth/current-user";
 import { getCellReportDraftKey } from "@/lib/cell-report-draft";
 import {
   getCellReportFormContext,
@@ -23,6 +27,7 @@ import { getInstitutionMonthlyIndicator } from "@/lib/data/institution-dashboard
 import { getWeeklyChecklistData } from "@/lib/data/weekly-checklist";
 import { logout } from "./actions";
 import { ClearCellReportDraft } from "./clear-cell-report-draft";
+import { ReportTutorialCard } from "./report-tutorial";
 
 type PortalPageProps = {
   searchParams: Promise<{ status?: string | string[] }>;
@@ -84,6 +89,7 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
       !checklistWasAnswered,
   );
   const firstName = user.fullName?.trim().split(/\s+/)[0] ?? "usuário";
+  const canViewPastoralDashboard = canAccessPastoralDashboard(user);
 
   return (
     <main>
@@ -145,7 +151,7 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
 
         <section className="mt-8" aria-labelledby="portal-now-title">
           <SectionHeader id="portal-now-title" title="Para você" />
-          {checklistIsVisible || reportContext ? (
+          {checklistIsVisible || reportContext || canViewPastoralDashboard ? (
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               {checklistIsVisible && weeklyChecklist ? (
                 <ActionCard
@@ -196,6 +202,15 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
                   }
                 />
               ) : null}
+
+              {canViewPastoralDashboard ? (
+                <ActionCard
+                  href="/portal/supervisao"
+                  title="Painel pastoral"
+                  description="Acompanhar células e lideranças"
+                  icon={<ChartNoAxesCombined size={22} strokeWidth={1.8} />}
+                />
+              ) : null}
             </div>
           ) : (
             <EmptyState
@@ -206,6 +221,8 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
             />
           )}
         </section>
+
+        {reportContext ? <ReportTutorialCard /> : null}
       </PageContainer>
     </main>
   );

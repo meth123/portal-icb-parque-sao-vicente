@@ -1,10 +1,10 @@
 "use client";
 
+import { AlertTriangle, ChevronDown } from "lucide-react";
 import { useActionState } from "react";
-import {
-  deactivateCell,
-  type DeactivateCellState,
-} from "./actions";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { deactivateCell, type DeactivateCellState } from "./actions";
 
 const initialState: DeactivateCellState = { message: "" };
 
@@ -27,13 +27,20 @@ export function DeactivateCellForm({
   );
 
   return (
-    <details className="mt-8 rounded-2xl border border-red-200 bg-red-50">
-      <summary className="cursor-pointer px-5 py-4 font-semibold text-red-900">
-        Desativar célula
+    <details className="group mt-6 overflow-hidden rounded-2xl border border-danger/20 bg-danger-soft">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-semibold text-danger focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus">
+        <span className="flex items-center gap-3">
+          <AlertTriangle aria-hidden="true" className="size-5" />
+          Desativar célula
+        </span>
+        <ChevronDown
+          aria-hidden="true"
+          className="size-5 transition-transform group-open:rotate-180"
+        />
       </summary>
       <form
         action={formAction}
-        className="border-t border-red-200 p-5"
+        className="border-t border-danger/20 bg-surface p-5"
         onSubmit={(event) => {
           const confirmation = window.prompt(
             `Digite o nome da célula para confirmar: ${cellName}`,
@@ -47,43 +54,40 @@ export function DeactivateCellForm({
       >
         <input type="hidden" name="cellId" value={cellId} />
 
-        <p className="text-sm leading-6 text-red-900">
-          A célula deixará de aparecer como ativa. Fichas e históricos serão
-          preservados.
+        <p className="max-w-2xl text-sm leading-6 text-app-secondary">
+          A célula deixará de aparecer como ativa. Fichas, vínculos e históricos
+          serão preservados.
         </p>
 
-        <div className="mt-4 max-w-xs">
-          <label htmlFor="endedOn" className="font-semibold text-red-950">
+        <label className="mt-5 block max-w-xs">
+          <span className="font-semibold text-app-foreground">
             Data de encerramento
-          </label>
+          </span>
           <input
-            id="endedOn"
             name="endedOn"
             type="date"
             defaultValue={defaultDate}
             min={minimumDate}
             max={defaultDate}
             required
-            className="mt-2 min-h-12 w-full rounded-xl border border-red-300 bg-white px-4 text-zinc-950 outline-none focus:border-red-700 focus:ring-2 focus:ring-red-200"
+            className="mt-2 min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none focus:border-danger focus:ring-2 focus:ring-danger-soft"
           />
-        </div>
+        </label>
 
         {state.message ? (
-          <p
-            role="alert"
-            className="mt-4 rounded-xl border border-red-300 bg-white px-4 py-3 text-sm text-red-800"
-          >
+          <Alert tone="danger" className="mt-4">
             {state.message}
-          </p>
+          </Alert>
         ) : null}
 
-        <button
+        <Button
           type="submit"
+          variant="danger"
           disabled={pending}
-          className="mt-5 min-h-12 rounded-xl bg-red-700 px-5 font-semibold text-white hover:bg-red-800 disabled:cursor-wait disabled:bg-red-400"
+          className="mt-5 w-full sm:w-auto"
         >
           {pending ? "Desativando..." : "Confirmar desativação"}
-        </button>
+        </Button>
       </form>
     </details>
   );

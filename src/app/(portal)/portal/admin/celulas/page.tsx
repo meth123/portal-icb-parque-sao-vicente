@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Plus, UsersRound } from "lucide-react";
+import { Alert } from "@/components/ui/alert";
+import { buttonClassName } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageContainer } from "@/components/ui/page-container";
+import { PageHeader } from "@/components/ui/page-header";
 import {
   canManageCellAdministration,
   getCurrentUser,
@@ -29,79 +35,59 @@ export default async function ManagedCellsPage({
     getManagedCells(),
     searchParams,
   ]);
-  const returnPath = "/portal/admin";
 
   if (!overview || overview.hasError) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-zinc-100 px-4 py-10">
-        <section className="w-full max-w-lg rounded-3xl border border-zinc-200 bg-white p-6 text-center shadow-sm sm:p-10">
-          <h1 className="text-3xl font-semibold text-zinc-950">
-            Células indisponíveis
-          </h1>
-          <p className="mt-4 leading-7 text-zinc-700">
-            Não foi possível carregar as células ativas.
-          </p>
-          <Link
-            href={returnPath}
-            className="mt-7 flex min-h-12 items-center justify-center rounded-xl border border-zinc-300 px-5 font-semibold text-zinc-900"
-          >
-            Voltar
-          </Link>
-        </section>
+      <main className="min-h-full bg-app-background py-6 sm:py-8">
+        <PageContainer width="narrow">
+          <EmptyState
+            icon={<UsersRound className="size-8" />}
+            title="Células indisponíveis"
+            description="Não foi possível carregar as células cadastradas."
+            action={
+              <Link
+                href="/portal/admin"
+                className={buttonClassName({ variant: "secondary" })}
+              >
+                Voltar à administração
+              </Link>
+            }
+          />
+        </PageContainer>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-zinc-100 px-4 py-10 sm:px-6">
-      <section className="mx-auto w-full max-w-5xl rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-600">
-          Gestão de células
-        </p>
-        <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-zinc-950 sm:text-4xl">
-              Células
-            </h1>
-            <p className="mt-3 max-w-2xl leading-7 text-zinc-700">
-              Atualize o nome e os vínculos atuais sem apagar o histórico.
-            </p>
-          </div>
-          <Link
-            href="/portal/admin/celulas/nova"
-            className="flex min-h-12 items-center justify-center rounded-xl bg-zinc-950 px-5 font-semibold text-white hover:bg-zinc-800"
-          >
-            Cadastrar célula
-          </Link>
-        </div>
+    <main className="min-h-full bg-app-background py-6 sm:py-8">
+      <PageContainer width="wide" className="space-y-6 sm:space-y-8">
+        <PageHeader
+          eyebrow="Gestão de células"
+          title="Células"
+          description="Atualize configurações e vínculos sem apagar o histórico."
+          actions={
+            <Link
+              href="/portal/admin/celulas/nova"
+              className={buttonClassName({ size: "compact" })}
+            >
+              <Plus aria-hidden="true" className="size-4" />
+              Cadastrar célula
+            </Link>
+          }
+        />
 
         {resolvedSearchParams.status === "atualizada" ? (
-          <p
-            role="status"
-            className="mt-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-green-900"
-          >
-            Célula atualizada com sucesso.
-          </p>
+          <Alert tone="success">Célula atualizada com sucesso.</Alert>
         ) : null}
 
         {resolvedSearchParams.status === "desativada" ? (
-          <p
-            role="status"
-            className="mt-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-green-900"
-          >
+          <Alert tone="success">
             Célula desativada. O histórico foi preservado.
-          </p>
+          </Alert>
         ) : null}
 
         <ManagedCellDirectory cells={overview.cells} />
-
-        <Link
-          href={returnPath}
-          className="mt-8 flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 px-5 font-semibold text-zinc-900 hover:bg-zinc-100 sm:w-auto sm:min-w-48"
-        >
-          Voltar
-        </Link>
-      </section>
+      </PageContainer>
     </main>
   );
 }

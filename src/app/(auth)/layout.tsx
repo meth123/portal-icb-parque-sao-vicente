@@ -33,8 +33,8 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
             <Image
               src="/images/icb-parque-sao-vicente.png"
               alt="ICB Parque São Vicente"
-              width={857}
-              height={576}
+              width={160}
+              height={108}
               priority
               className="h-16 w-auto brightness-0 sm:h-20"
             />

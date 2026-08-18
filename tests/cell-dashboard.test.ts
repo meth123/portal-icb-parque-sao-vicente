@@ -165,8 +165,8 @@ test("aceita somente os períodos pastorais de 3, 6 ou 12 meses", () => {
   assert.equal(normalizePastoralHistoryMonths("3"), 3);
   assert.equal(normalizePastoralHistoryMonths("6"), 6);
   assert.equal(normalizePastoralHistoryMonths("12"), 12);
-  assert.equal(normalizePastoralHistoryMonths("24"), 6);
-  assert.equal(normalizePastoralHistoryMonths(undefined), 6);
+  assert.equal(normalizePastoralHistoryMonths("24"), 3);
+  assert.equal(normalizePastoralHistoryMonths(undefined), 3);
 });
 
 test("considera a Ficha atrasada somente depois do domingo", () => {

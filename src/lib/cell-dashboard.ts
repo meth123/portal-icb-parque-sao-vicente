@@ -158,11 +158,11 @@ export function calculateOverdueCellWeeks(
 export function normalizePastoralHistoryMonths(
   value: string | undefined,
 ): PastoralHistoryMonths {
-  if (value === "3" || value === "12") {
+  if (value === "3" || value === "6" || value === "12") {
     return Number(value) as PastoralHistoryMonths;
   }
 
-  return 6;
+  return 3;
 }
 
 export function calculatePastoralFirstTimeHistory(

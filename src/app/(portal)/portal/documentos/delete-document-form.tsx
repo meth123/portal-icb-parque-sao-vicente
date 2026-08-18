@@ -1,28 +1,26 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import {
-  deleteDocumentPublication,
-  type DeleteDocumentPublicationState,
-} from "./actions";
+import { IconButton } from "@/components/ui/icon-button";
+import { deleteDocumentPublication, type DeleteDocumentPublicationState } from "./actions";
 
-const initialState: DeleteDocumentPublicationState = {
-  message: "",
-  success: false,
-};
+const initialState: DeleteDocumentPublicationState = { message: "", success: false };
 
 function DeleteButton() {
   const { pending } = useFormStatus();
-
   return (
-    <button
+    <IconButton
       type="submit"
+      size="compact"
       disabled={pending}
-      className="flex min-h-12 w-full items-center justify-center rounded-xl border border-red-200 bg-white px-5 font-semibold text-red-800 transition-colors hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-red-800 disabled:cursor-wait disabled:opacity-60"
+      aria-label={pending ? "Excluindo documento" : "Excluir documento"}
+      title="Excluir documento"
+      className="text-danger hover:border-danger/30 hover:bg-danger-soft"
     >
-      {pending ? "Excluindo…" : "Excluir documento"}
-    </button>
+      <Trash2 aria-hidden="true" className="size-4" />
+    </IconButton>
   );
 }
 
@@ -33,27 +31,16 @@ export function DeleteDocumentForm({ publicationId }: { publicationId: string })
   return (
     <form
       action={formAction}
-      className="mt-3"
+      className="shrink-0"
       onSubmit={(event) => {
-        if (
-          !window.confirm(
-            "Excluir este documento e seu arquivo PDF? Esta ação não poderá ser desfeita.",
-          )
-        ) {
+        if (!window.confirm("Excluir este documento e seu arquivo PDF? Esta ação não poderá ser desfeita.")) {
           event.preventDefault();
         }
       }}
     >
       <DeleteButton />
       {state.message ? (
-        <p
-          role={state.success ? "status" : "alert"}
-          className={`mt-3 rounded-xl px-3 py-2 text-sm ${
-            state.success
-              ? "bg-green-50 text-green-800"
-              : "bg-red-50 text-red-800"
-          }`}
-        >
+        <p role={state.success ? "status" : "alert"} className={state.success ? "mt-2 text-sm text-success" : "mt-2 text-sm text-danger"}>
           {state.message}
         </p>
       ) : null}

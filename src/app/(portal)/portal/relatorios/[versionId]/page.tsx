@@ -1,6 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import {
+  ArrowLeft,
+  CalendarDays,
+  CheckCircle2,
+  CircleSlash2,
+  Download,
+  FilePenLine,
+  MessageSquareText,
+  UserRoundCheck,
+  UserRoundPlus,
+  Users,
+} from "lucide-react";
+import { Alert } from "@/components/ui/alert";
+import { buttonClassName } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { MetricCard } from "@/components/ui/metric-card";
+import { PageContainer } from "@/components/ui/page-container";
+import { SectionHeader } from "@/components/ui/section-header";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import {
   getCellReportCorrectionDraftKey,
@@ -94,86 +113,91 @@ export default async function CellReportDetailPage({
   }
 
   return (
-    <main className="min-h-screen bg-zinc-100 px-4 py-8 sm:px-6 sm:py-10">
+    <main className="min-h-full bg-app-background py-6 sm:py-8">
       {wasJustSubmitted ? (
         <ClearSubmittedDraft
           draftKey={submittedDraftKey}
         />
       ) : null}
 
-      <article className="mx-auto w-full max-w-5xl overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
-        <header className="border-b border-zinc-200 px-6 py-7 sm:px-10 sm:py-9">
+      <PageContainer className="space-y-6 sm:space-y-8">
+        <Link
+          href="/portal/relatorios"
+          className={buttonClassName({ variant: "ghost", size: "compact", className: "-ml-3" })}
+        >
+          <ArrowLeft aria-hidden="true" className="size-4" />
+          Histórico
+        </Link>
+
+        <article className="space-y-8">
+          <header className="overflow-hidden rounded-2xl border border-theme-primary-border bg-surface">
+            <div className="h-2 bg-theme-primary" aria-hidden="true" />
+            <div className="p-5 sm:p-7">
           {wasJustSubmitted ? (
-            <p
-              role="status"
-              className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 font-semibold text-emerald-900"
-            >
+                <Alert tone="success" className="mb-6">
               Ficha enviada e registrada com sucesso.
-            </p>
+                </Alert>
           ) : null}
 
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-600">
-                Ficha de Organização
-              </p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950 sm:text-4xl">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-theme-primary">Ficha de Organização</p>
+                  <h1 className="mt-1 text-3xl font-semibold text-app-foreground sm:text-4xl">
                 {detail.cellName}
               </h1>
-              <p className="mt-3 text-lg text-zinc-700">
-                Data da Célula: {formatDate(detail.meetingOn)}
-              </p>
-            </div>
-            <div className="rounded-xl bg-zinc-100 px-4 py-3 text-sm text-zinc-700">
-              <p className="font-semibold text-zinc-950">
-                Versão {detail.versionNumber}
-              </p>
-              <p className="mt-1">
-                {detail.isCurrent ? "Versão atual" : "Versão substituída"}
-              </p>
-            </div>
-          </div>
-        </header>
-
-        <div className="space-y-8 px-6 py-8 sm:px-10 sm:py-10">
-          <section aria-labelledby="summary-heading">
-            <h2 id="summary-heading" className="text-xl font-semibold text-zinc-950">
-              Resumo
-            </h2>
-            <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                ["Formato", detail.meetingFormat === "in_person" ? "Presencial" : "Online"],
-                ["Membros", String(detail.membersCount)],
-                ["Convidados", String(detail.guestsCount)],
-                ["1ª vez", String(detail.firstTimeGuestsCount)],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-2xl bg-zinc-100 p-4">
-                  <dt className="text-sm text-zinc-600">{label}</dt>
-                  <dd className="mt-1 text-xl font-semibold text-zinc-950">{value}</dd>
+                  <p className="mt-3 flex items-center gap-2 text-app-secondary">
+                    <CalendarDays aria-hidden="true" className="size-5 text-theme-primary" />
+                    {formatDate(detail.meetingOn)}
+                  </p>
                 </div>
-              ))}
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusBadge tone={detail.isCurrent ? "success" : "neutral"}>
+                    {detail.isCurrent ? "Versão atual" : "Substituída"}
+                  </StatusBadge>
+                  <StatusBadge tone="theme">v{detail.versionNumber}</StatusBadge>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <section aria-labelledby="summary-heading">
+            <SectionHeader id="summary-heading" title="Resumo da reunião" />
+            <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <MetricCard
+                label="Formato"
+                value={detail.meetingFormat === "in_person" ? "Presencial" : "Online"}
+                icon={<CalendarDays className="size-5" />}
+              />
+              <MetricCard label="Membros" value={detail.membersCount} icon={<Users className="size-5" />} />
+              <MetricCard
+                label="Convidados"
+                value={detail.guestsCount}
+                icon={<UserRoundPlus className="size-5" />}
+              />
+              <MetricCard label="Primeira vez" value={detail.firstTimeGuestsCount} tone="theme" />
             </dl>
-            <p className="mt-4 text-lg font-semibold text-zinc-950">
-              Geral: {detail.membersCount + detail.guestsCount}
+            <p className="mt-3 text-sm text-app-secondary">
+              Total presente: <strong className="text-app-foreground">{detail.membersCount + detail.guestsCount}</strong>
             </p>
           </section>
 
-          <section aria-labelledby="leadership-heading" className="border-t border-zinc-200 pt-8">
-            <h2 id="leadership-heading" className="text-xl font-semibold text-zinc-950">
-              Presença da liderança
-            </h2>
-            <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-zinc-200 p-5">
-                <dt className="font-semibold text-zinc-950">Líder</dt>
-                <dd className="mt-2 text-zinc-700">
-                  {detail.leaderName} — {detail.leaderWasPresent ? "Presente" : "Ausente"}
+          <section aria-labelledby="leadership-heading" className="border-t border-app-border pt-8">
+            <SectionHeader id="leadership-heading" title="Presença da liderança" />
+            <dl className="mt-4 overflow-hidden rounded-2xl border border-app-border bg-surface sm:grid sm:grid-cols-2">
+              <div className="p-5 sm:border-r sm:border-app-border">
+                <dt className="text-sm font-medium text-app-secondary">Líder</dt>
+                <dd className="mt-2 flex items-center justify-between gap-3 text-app-foreground">
+                  <span className="font-semibold">{detail.leaderName}</span>
+                  <StatusBadge tone={detail.leaderWasPresent ? "success" : "neutral"}>
+                    {detail.leaderWasPresent ? "Presente" : "Ausente"}
+                  </StatusBadge>
                 </dd>
               </div>
-              <div className="rounded-2xl border border-zinc-200 p-5">
-                <dt className="font-semibold text-zinc-950">Vice-líderes</dt>
+              <div className="border-t border-app-border p-5 sm:border-t-0">
+                <dt className="text-sm font-medium text-app-secondary">Vice-líderes</dt>
                 <dd className="mt-3">
                   {detail.leadership.some((person) => person.role === "vice_leader") ? (
-                    <ul className="space-y-2">
+                    <ul className="space-y-3">
                       {detail.leadership
                         .filter((person) => person.role === "vice_leader")
                         .map((person) => {
@@ -182,59 +206,70 @@ export default async function CellReportDetailPage({
                           );
 
                           return (
-                            <li key={person.leadershipId} className="flex flex-wrap items-center justify-between gap-2 text-zinc-700">
-                              <span>{person.name}</span>
-                              <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${wasPresent ? "bg-emerald-100 text-emerald-900" : "bg-zinc-100 text-zinc-700"}`}>
+                            <li key={person.leadershipId} className="flex items-center justify-between gap-3 text-app-foreground">
+                              <span className="min-w-0 truncate font-semibold">{person.name}</span>
+                              <StatusBadge tone={wasPresent ? "success" : "neutral"}>
                                 {wasPresent ? "Presente" : "Ausente"}
-                              </span>
+                              </StatusBadge>
                             </li>
                           );
                         })}
                     </ul>
                   ) : (
-                    <span className="text-zinc-700">Nenhum vinculado à célula</span>
+                    <span className="text-app-secondary">Nenhum vinculado à célula</span>
                   )}
                 </dd>
               </div>
             </dl>
           </section>
 
-          <section aria-labelledby="members-heading" className="border-t border-zinc-200 pt-8">
-            <h2 id="members-heading" className="text-xl font-semibold text-zinc-950">
-              Membros
-            </h2>
+          <section aria-labelledby="members-heading" className="border-t border-app-border pt-8">
+            <SectionHeader
+              id="members-heading"
+              title="Membros presentes"
+              description={`${detail.members.length} ${detail.members.length === 1 ? "membro" : "membros"}`}
+            />
             {detail.members.length > 0 ? (
-              <ol className="mt-4 grid gap-2 sm:grid-cols-2">
+              <ol className="mt-4 grid overflow-hidden rounded-2xl border border-app-border bg-surface sm:grid-cols-2">
                 {detail.members.map((member) => (
-                  <li key={member.position} className="rounded-xl bg-zinc-100 px-4 py-3 text-zinc-800">
-                    {member.position}. {member.name}
+                  <li key={member.position} className="flex min-h-12 items-center gap-3 border-b border-app-border px-4 py-3 text-app-foreground last:border-b-0 sm:[&:nth-last-child(2):nth-child(odd)]:border-b-0 sm:[&:nth-child(odd)]:border-r">
+                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-theme-primary-soft text-xs font-semibold text-theme-primary-active">
+                      {member.position}
+                    </span>
+                    <span className="min-w-0 truncate">{member.name}</span>
                   </li>
                 ))}
               </ol>
             ) : (
-              <p className="mt-3 text-zinc-700">Membros presentes: Nenhum</p>
+              <p className="mt-3 text-app-secondary">Nenhum membro registrado.</p>
             )}
           </section>
 
-          <section aria-labelledby="guests-heading" className="border-t border-zinc-200 pt-8">
-            <h2 id="guests-heading" className="text-xl font-semibold text-zinc-950">
-              Convidados
-            </h2>
+          <section aria-labelledby="guests-heading" className="border-t border-app-border pt-8">
+            <SectionHeader
+              id="guests-heading"
+              title="Convidados"
+              description={`${groupedGuests.size} ${groupedGuests.size === 1 ? "responsável" : "responsáveis"}`}
+            />
             {groupedGuests.size > 0 ? (
               <div className="mt-4 grid gap-4 lg:grid-cols-2">
                 {[...groupedGuests.entries()].map(([responsibleName, guests]) => (
-                  <section key={responsibleName} className="rounded-2xl border border-zinc-200 p-5">
-                    <h3 className="font-semibold text-zinc-950">
-                      Responsável: {responsibleName}
-                    </h3>
-                    <ul className="mt-3 space-y-2">
+                  <section key={responsibleName} className="rounded-2xl border border-app-border bg-surface p-5">
+                    <div className="flex items-center gap-3">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-theme-primary-soft text-theme-primary-active">
+                        <UserRoundCheck aria-hidden="true" className="size-5" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-xs text-app-secondary">Responsável</p>
+                        <h3 className="truncate font-semibold text-app-foreground">{responsibleName}</h3>
+                      </div>
+                    </div>
+                    <ul className="mt-4 divide-y divide-app-border border-t border-app-border">
                       {guests.map((guest) => (
-                        <li key={guest.position} className="text-zinc-700">
-                          {guest.name}
+                        <li key={guest.position} className="flex min-h-11 items-center justify-between gap-3 py-2.5 text-app-foreground">
+                          <span className="min-w-0 truncate">{guest.name}</span>
                           {guest.isFirstTime ? (
-                            <span className="ml-2 rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-900">
-                              1ª vez
-                            </span>
+                            <StatusBadge tone="success">1ª vez</StatusBadge>
                           ) : null}
                         </li>
                       ))}
@@ -243,97 +278,114 @@ export default async function CellReportDetailPage({
                 ))}
               </div>
             ) : (
-              <p className="mt-3 text-zinc-700">Convidados: Nenhum</p>
+              <p className="mt-3 text-app-secondary">Nenhum convidado registrado.</p>
             )}
           </section>
 
-          <section aria-labelledby="evangelism-heading" className="border-t border-zinc-200 pt-8">
-            <h2 id="evangelism-heading" className="text-xl font-semibold text-zinc-950">
-              Relatório de Evangelismo
-            </h2>
-            <div className="mt-4 space-y-4">
+          <section aria-labelledby="evangelism-heading" className="border-t border-app-border pt-8">
+            <SectionHeader
+              id="evangelism-heading"
+              title="Evangelismo"
+              description="Registros vinculados a esta reunião"
+            />
+            {detail.evangelismEntries.length > 0 ? (
+              <div className="mt-4 grid gap-4 lg:grid-cols-2">
               {detail.evangelismEntries.map((entry, index) => (
-                <section key={entry.id} className="rounded-2xl border border-zinc-200 p-5 sm:p-6">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <h3 className="font-semibold text-zinc-950">
+                  <section key={entry.id} className="overflow-hidden rounded-2xl border border-app-border bg-surface">
+                    <div className={`h-1.5 ${entry.didEvangelize ? "bg-success" : "bg-app-border"}`} aria-hidden="true" />
+                    <div className="p-5 sm:p-6">
+                  <div className="flex items-start justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${entry.didEvangelize ? "bg-success-soft text-success" : "bg-surface-muted text-app-secondary"}`}>
+                            {entry.didEvangelize ? <CheckCircle2 aria-hidden="true" className="size-5" /> : <CircleSlash2 aria-hidden="true" className="size-5" />}
+                          </span>
+                          <h3 className="min-w-0 truncate font-semibold text-app-foreground">
                       {entry.didEvangelize
                         ? `Evangelismo ${index + 1}`
                         : entry.registeredByName}
                     </h3>
-                    <span className={`text-sm font-semibold ${entry.didEvangelize ? "text-emerald-800" : "text-zinc-700"}`}>
-                      {entry.didEvangelize ? "Evangelizou" : "Não evangelizou"}
-                    </span>
+                        </div>
+                        <StatusBadge tone={entry.didEvangelize ? "success" : "neutral"}>
+                          {entry.didEvangelize ? "Realizado" : "Não realizado"}
+                        </StatusBadge>
                   </div>
 
                   {entry.didEvangelize ? (
-                    <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+                        <dl className="mt-5 grid gap-4 border-t border-app-border pt-5 sm:grid-cols-2">
                       <div>
-                        <dt className="text-sm font-semibold text-zinc-600">Liderança</dt>
-                        <dd className="mt-1 text-zinc-800">
+                            <dt className="text-xs font-medium text-app-secondary">Equipe</dt>
+                            <dd className="mt-1 text-sm text-app-foreground">
                           {entry.leadershipNames.join(", ") || entry.registeredByName}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-sm font-semibold text-zinc-600">Quem registrou</dt>
-                        <dd className="mt-1 text-zinc-800">{entry.registeredByName}</dd>
+                            <dt className="text-xs font-medium text-app-secondary">Registrado por</dt>
+                            <dd className="mt-1 text-sm text-app-foreground">{entry.registeredByName}</dd>
                       </div>
                       <div>
-                        <dt className="text-sm font-semibold text-zinc-600">Data</dt>
-                        <dd className="mt-1 text-zinc-800">
+                            <dt className="text-xs font-medium text-app-secondary">Data</dt>
+                            <dd className="mt-1 text-sm text-app-foreground">
                           {entry.evangelismOn ? formatDate(entry.evangelismOn) : "Não informada"}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-sm font-semibold text-zinc-600">Tempo</dt>
-                        <dd className="mt-1 text-zinc-800">{entry.durationText ?? "Não informado"}</dd>
+                            <dt className="text-xs font-medium text-app-secondary">Duração</dt>
+                            <dd className="mt-1 text-sm text-app-foreground">{entry.durationText ?? "Não informada"}</dd>
                       </div>
                       <div className="sm:col-span-2">
-                        <dt className="text-sm font-semibold text-zinc-600">Integrantes</dt>
-                        <dd className="mt-1 text-zinc-800">
+                            <dt className="text-xs font-medium text-app-secondary">Outros integrantes</dt>
+                            <dd className="mt-1 text-sm text-app-foreground">
                           {entry.participantNames.length > 0 ? entry.participantNames.join(", ") : "Nenhum"}
                         </dd>
                       </div>
                     </dl>
                   ) : null}
 
-                  <div className="mt-4 rounded-xl bg-zinc-100 p-4">
-                    <p className="text-sm font-semibold text-zinc-600">Comentários</p>
-                    <p className="mt-1 whitespace-pre-wrap text-zinc-800">{entry.comments}</p>
-                  </div>
+                      <div className="mt-5 flex items-start gap-3 rounded-xl bg-surface-muted p-4">
+                        <MessageSquareText aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-theme-primary" />
+                        <div>
+                          <p className="text-xs font-medium text-app-secondary">Relato</p>
+                          <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-app-foreground">{entry.comments}</p>
+                        </div>
+                      </div>
+                    </div>
                 </section>
               ))}
             </div>
+            ) : (
+              <EmptyState
+                className="mt-4"
+                icon={<MessageSquareText className="size-8" />}
+                title="Nenhum registro de evangelismo"
+              />
+            )}
           </section>
 
-          <footer className="border-t border-zinc-200 pt-8">
-            <p className="text-sm leading-6 text-zinc-600">
+          <footer className="border-t border-app-border pt-8">
+            <p className="text-sm leading-6 text-app-secondary">
               Enviada por {detail.submittedByName} em {formatDateTime(detail.submittedAt)}.
             </p>
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               {canCorrect ? (
                 <Link
                   href={`/portal/relatorios/${detail.id}/corrigir`}
-                  className="flex min-h-12 w-full items-center justify-center rounded-xl bg-zinc-950 px-5 font-semibold text-white hover:bg-zinc-800 sm:w-auto sm:min-w-52"
+                  className={buttonClassName({ className: "w-full sm:w-auto" })}
                 >
+                  <FilePenLine aria-hidden="true" className="size-5" />
                   Corrigir Ficha
                 </Link>
               ) : null}
               <a
                 href={`/portal/relatorios/${detail.id}/pdf`}
-                className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 font-semibold text-zinc-900 hover:bg-zinc-100 sm:w-auto sm:min-w-52"
+                className={buttonClassName({ variant: "secondary", className: "w-full sm:w-auto" })}
               >
+                <Download aria-hidden="true" className="size-5" />
                 Baixar PDF
               </a>
-              <Link
-                href="/portal/relatorios"
-                className="flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 font-semibold text-zinc-900 hover:bg-zinc-100 sm:w-auto sm:min-w-52"
-              >
-                Voltar ao histórico
-              </Link>
             </div>
           </footer>
-        </div>
-      </article>
+        </article>
+      </PageContainer>
     </main>
   );
 }

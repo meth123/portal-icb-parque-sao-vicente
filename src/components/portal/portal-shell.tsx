@@ -27,6 +27,12 @@ export function PortalShell({
 }: PortalShellProps) {
   return (
     <div className="min-h-dvh bg-app-background text-app-foreground">
+      <a
+        href="#portal-content"
+        className="fixed left-4 top-4 z-[100] -translate-y-24 rounded-xl bg-theme-primary px-4 py-3 font-semibold text-theme-primary-foreground focus:translate-y-0 focus:outline-2 focus:outline-offset-2 focus:outline-focus"
+      >
+        Pular para o conteúdo
+      </a>
       <Suspense
         fallback={
           <PortalNavigationFallback
@@ -48,7 +54,11 @@ export function PortalShell({
           user={user}
         />
       </Suspense>
-      <div className="min-h-dvh pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pl-72 lg:pb-0">
+      <div
+        id="portal-content"
+        tabIndex={-1}
+        className="min-h-dvh pb-[calc(5rem+env(safe-area-inset-bottom))] focus:outline-none lg:pl-72 lg:pb-0"
+      >
         {children}
       </div>
     </div>

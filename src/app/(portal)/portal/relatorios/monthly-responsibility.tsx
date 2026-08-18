@@ -1,6 +1,9 @@
 "use client";
 
+import { ClipboardCheck } from "lucide-react";
 import { useActionState } from "react";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import {
   assignMonthlyReportResponsibility,
   type MonthlyResponsibilityState,
@@ -31,6 +34,7 @@ export function MonthlyResponsibility({
   currentUserRole,
   leadership,
   responsibleLeadershipId,
+  responsibleName,
   hasError,
 }: MonthlyResponsibilityProps) {
   const action = assignMonthlyReportResponsibility.bind(null, cellId);
@@ -39,15 +43,27 @@ export function MonthlyResponsibility({
   return (
     <section
       aria-labelledby="monthly-responsibility-heading"
-      className="mt-8 rounded-2xl border border-zinc-200 bg-zinc-50 p-5 sm:p-6"
+      className="rounded-2xl border border-theme-primary-border bg-theme-primary-subtle p-5 sm:p-6"
     >
-      <p className="text-sm font-semibold text-zinc-600">{monthLabel}</p>
-      <h2
-        id="monthly-responsibility-heading"
-        className="mt-1 text-xl font-semibold text-zinc-950"
-      >
-        Responsável do mês
-      </h2>
+      <div className="flex items-start gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface text-theme-primary-active">
+          <ClipboardCheck aria-hidden="true" className="size-5" />
+        </span>
+        <div>
+          <p className="text-sm font-semibold text-theme-primary-active">{monthLabel}</p>
+          <h2
+            id="monthly-responsibility-heading"
+            className="mt-0.5 text-lg font-semibold text-app-foreground"
+          >
+            Responsável pela Ficha do mês
+          </h2>
+          {currentUserRole !== "leader" ? (
+            <p className="mt-1 text-sm text-app-secondary">
+              {responsibleName ?? "Ainda não definido"}
+            </p>
+          ) : null}
+        </div>
+      </div>
       {currentUserRole === "leader" ? (
         leadership.length > 0 ? (
           <form action={formAction} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -58,7 +74,7 @@ export function MonthlyResponsibility({
                 aria-label="Responsável do mês"
                 defaultValue={responsibleLeadershipId ?? ""}
                 disabled={pending || hasError}
-                className="min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 disabled:opacity-60"
+                className="min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-soft disabled:opacity-60"
               >
                 <option value="">Selecionar responsável</option>
                 {leadership.map((person) => (
@@ -66,37 +82,30 @@ export function MonthlyResponsibility({
                     key={person.leadershipId}
                     value={person.leadershipId}
                   >
-                    {person.name} — {person.role === "leader" ? "Líder" : "Vice-líder"}
+                    {person.name}
                   </option>
                 ))}
               </select>
             </div>
-            <button
+            <Button
               type="submit"
               disabled={pending || hasError}
-              className="min-h-12 rounded-xl bg-zinc-950 px-5 font-semibold text-white hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900 disabled:cursor-wait disabled:opacity-60"
+              className="sm:min-w-28"
             >
               {pending ? "Salvando…" : "Salvar"}
-            </button>
+            </Button>
           </form>
         ) : (
-          <p className="mt-4 text-sm text-zinc-600">
+          <p className="mt-4 text-sm text-app-secondary">
             A célula ainda não possui liderança disponível para essa indicação.
           </p>
         )
       ) : null}
 
       {state.message ? (
-        <p
-          role={state.success ? "status" : "alert"}
-          className={`mt-4 rounded-xl px-4 py-3 text-sm ${
-            state.success
-              ? "border border-green-200 bg-green-50 text-green-800"
-              : "border border-red-200 bg-red-50 text-red-800"
-          }`}
-        >
+        <Alert tone={state.success ? "success" : "danger"} className="mt-4">
           {state.message}
-        </p>
+        </Alert>
       ) : null}
     </section>
   );

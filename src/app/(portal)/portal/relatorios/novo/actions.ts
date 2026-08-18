@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { normalizeLettersAndSpacesName } from "@/lib/cell-report-form";
 import { createClient } from "@/lib/supabase/server";
 
 export type SubmitCellReportState = {
@@ -74,11 +75,12 @@ function normalizeManualNames(value: unknown[], limit: number) {
       return null;
     }
 
-    const name = "name" in item && typeof item.name === "string"
-      ? item.name.trim()
+    const rawName = "name" in item && typeof item.name === "string"
+      ? item.name
       : "";
+    const name = normalizeLettersAndSpacesName(rawName);
 
-    if (name.length < 1 || name.length > 200) {
+    if (name === null || name.length > 200) {
       return null;
     }
 
@@ -100,22 +102,24 @@ function normalizeGuests(value: unknown[]) {
       return null;
     }
 
-    const name = "name" in item && typeof item.name === "string"
-      ? item.name.trim()
+    const rawName = "name" in item && typeof item.name === "string"
+      ? item.name
       : "";
-    const responsibleName =
+    const rawResponsibleName =
       "responsibleName" in item && typeof item.responsibleName === "string"
-        ? item.responsibleName.trim()
+        ? item.responsibleName
         : "";
+    const name = normalizeLettersAndSpacesName(rawName);
+    const responsibleName = normalizeLettersAndSpacesName(rawResponsibleName);
     const isFirstTime =
       "isFirstTime" in item && typeof item.isFirstTime === "boolean"
         ? item.isFirstTime
         : null;
 
     if (
-      name.length < 1 ||
+      name === null ||
       name.length > 200 ||
-      responsibleName.length < 1 ||
+      responsibleName === null ||
       responsibleName.length > 200 ||
       isFirstTime === null
     ) {

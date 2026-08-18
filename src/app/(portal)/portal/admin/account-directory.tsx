@@ -1,6 +1,11 @@
 "use client";
 
+import { Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { FilterPanel } from "@/components/ui/filter-panel";
+import { StatusBadge } from "@/components/ui/status-badge";
 import type { AdministrationProfile } from "@/lib/data/cell-administration";
 import { AccountAccessForm } from "./account-access-form";
 
@@ -8,6 +13,9 @@ type AccountDirectoryProps = {
   profiles: AdministrationProfile[];
   currentUserId: string;
 };
+
+const fieldClassName =
+  "min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-subtle";
 
 export function AccountDirectory({
   profiles,
@@ -17,8 +25,6 @@ export function AccountDirectory({
   const [status, setStatus] = useState("all");
   const [networkId, setNetworkId] = useState("all");
   const [cellTypeId, setCellTypeId] = useState("all");
-  const fieldClassName =
-    "min-h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-zinc-700 focus:ring-2 focus:ring-zinc-200";
 
   const networks = useMemo(
     () =>
@@ -78,10 +84,14 @@ export function AccountDirectory({
     const matchesCellType =
       cellTypeId === "all" || profile.current_cell_type_id === cellTypeId;
 
-    return (
-      matchesSearch && matchesStatus && matchesNetwork && matchesCellType
-    );
+    return matchesSearch && matchesStatus && matchesNetwork && matchesCellType;
   });
+  const activeFilters = [
+    search.trim(),
+    status === "all" ? "" : status,
+    networkId === "all" ? "" : networkId,
+    cellTypeId === "all" ? "" : cellTypeId,
+  ].filter(Boolean).length;
 
   function clearFilters() {
     setSearch("");
@@ -91,92 +101,115 @@ export function AccountDirectory({
   }
 
   return (
-    <>
-      <div className="mt-5 grid gap-3 rounded-2xl bg-zinc-100 p-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="sm:col-span-2 lg:col-span-4">
-          <label htmlFor="account-search" className="sr-only">
-            Buscar conta
+    <div className="mt-4">
+      <FilterPanel activeFilters={activeFilters} title="Filtrar contas">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <label className="min-w-0 sm:col-span-2 lg:col-span-4">
+            <span className="sr-only">Buscar conta</span>
+            <span className="relative block">
+              <Search
+                aria-hidden="true"
+                className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-app-secondary"
+              />
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Buscar por nome, e-mail ou célula"
+                className={`${fieldClassName} pl-12`}
+              />
+            </span>
           </label>
-          <input
-            id="account-search"
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar por nome, e-mail ou célula"
-            className={fieldClassName}
-          />
+
+          <label className="min-w-0">
+            <span className="text-sm font-semibold text-app-foreground">Status</span>
+            <select
+              value={status}
+              onChange={(event) => setStatus(event.target.value)}
+              className={`${fieldClassName} mt-2`}
+            >
+              <option value="all">Todas as contas</option>
+              <option value="active">Ativas</option>
+              <option value="inactive">Inativas</option>
+            </select>
+          </label>
+
+          <label className="min-w-0">
+            <span className="text-sm font-semibold text-app-foreground">Rede</span>
+            <select
+              value={networkId}
+              onChange={(event) => {
+                setNetworkId(event.target.value);
+                setCellTypeId("all");
+              }}
+              className={`${fieldClassName} mt-2`}
+            >
+              <option value="all">Todas as Redes</option>
+              {networks.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="min-w-0">
+            <span className="text-sm font-semibold text-app-foreground">Tipo</span>
+            <select
+              value={cellTypeId}
+              onChange={(event) => setCellTypeId(event.target.value)}
+              className={`${fieldClassName} mt-2`}
+            >
+              <option value="all">Todos os tipos</option>
+              {cellTypes.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="flex items-end">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={clearFilters}
+              disabled={activeFilters === 0}
+              className="w-full"
+            >
+              <X aria-hidden="true" className="size-4" />
+              Limpar
+            </Button>
+          </div>
         </div>
+      </FilterPanel>
 
-        <select
-          aria-label="Filtrar por status"
-          value={status}
-          onChange={(event) => setStatus(event.target.value)}
-          className={fieldClassName}
-        >
-          <option value="all">Todas as contas</option>
-          <option value="active">Ativas</option>
-          <option value="inactive">Desativadas</option>
-        </select>
-
-        <select
-          aria-label="Filtrar por Rede"
-          value={networkId}
-          onChange={(event) => {
-            setNetworkId(event.target.value);
-            setCellTypeId("all");
-          }}
-          className={fieldClassName}
-        >
-          <option value="all">Todas as Redes</option>
-          {networks.map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-
-        <select
-          aria-label="Filtrar por tipo de célula"
-          value={cellTypeId}
-          onChange={(event) => setCellTypeId(event.target.value)}
-          className={fieldClassName}
-        >
-          <option value="all">Todos os tipos</option>
-          {cellTypes.map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-
-        <button
-          type="button"
-          onClick={clearFilters}
-          className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
-        >
-          Limpar filtros
-        </button>
+      <div className="mt-4 flex items-center justify-between gap-4">
+        <p className="text-sm text-app-secondary">Resultado da consulta</p>
+        <StatusBadge tone="neutral">
+          {filteredProfiles.length}{" "}
+          {filteredProfiles.length === 1 ? "conta" : "contas"}
+        </StatusBadge>
       </div>
 
-      <p className="mt-4 text-sm text-zinc-600">
-        {filteredProfiles.length}{" "}
-        {filteredProfiles.length === 1 ? "conta encontrada" : "contas encontradas"}
-      </p>
-
-      <div className="mt-3 space-y-3">
-        {filteredProfiles.map((profile) => (
-          <AccountAccessForm
-            key={profile.profile_id}
-            profile={profile}
-            isOwnAccount={profile.profile_id === currentUserId}
-          />
-        ))}
-        {filteredProfiles.length === 0 ? (
-          <p className="rounded-xl border border-zinc-200 px-4 py-6 text-center text-zinc-600">
-            Nenhuma conta encontrada com esses filtros.
-          </p>
-        ) : null}
-      </div>
-    </>
+      {filteredProfiles.length > 0 ? (
+        <div className="mt-3 space-y-3">
+          {filteredProfiles.map((profile) => (
+            <AccountAccessForm
+              key={profile.profile_id}
+              profile={profile}
+              isOwnAccount={profile.profile_id === currentUserId}
+            />
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          className="mt-3"
+          icon={<Search className="size-8" />}
+          title="Nenhuma conta encontrada"
+          description="Ajuste ou limpe os filtros para ampliar a consulta."
+        />
+      )}
+    </div>
   );
 }

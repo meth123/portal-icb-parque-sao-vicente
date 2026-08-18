@@ -109,3 +109,19 @@ export function parsePastedNames(value: string) {
     .map((name) => name.trim())
     .filter((name) => name.length > 0);
 }
+
+export function filterLettersAndSpaces(value: string) {
+  return value.replace(/[^\p{L} ]/gu, "");
+}
+
+export function filterNameListInput(value: string) {
+  return value.replace(/[^\p{L}\r\n ]/gu, "");
+}
+
+export function normalizeLettersAndSpacesName(value: string) {
+  const normalized = value.trim().replace(/\s+/g, " ");
+
+  return normalized.length > 0 && /^[\p{L}]+(?: [\p{L}]+)*$/u.test(normalized)
+    ? normalized
+    : null;
+}

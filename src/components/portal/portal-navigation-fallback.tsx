@@ -154,8 +154,8 @@ function Brand({
       <Image
         src="/images/icb-parque-sao-vicente.png"
         alt=""
-        width={857}
-        height={576}
+        width={160}
+        height={108}
         priority
         className={compact ? "h-11 w-auto brightness-0" : "h-14 w-auto brightness-0"}
       />

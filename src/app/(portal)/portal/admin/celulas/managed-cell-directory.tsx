@@ -1,16 +1,23 @@
 "use client";
 
 import Link from "next/link";
+import { House, Search, UserRound, UsersRound, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Button, buttonClassName } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { FilterPanel } from "@/components/ui/filter-panel";
+import { SectionHeader } from "@/components/ui/section-header";
+import { StatusBadge } from "@/components/ui/status-badge";
 import type { ManagedCellSummary } from "@/lib/data/cell-administration";
+
+const fieldClassName =
+  "min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-subtle";
 
 export function ManagedCellDirectory({ cells }: { cells: ManagedCellSummary[] }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [networkId, setNetworkId] = useState("all");
   const [cellTypeId, setCellTypeId] = useState("all");
-  const fieldClassName =
-    "min-h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-zinc-700 focus:ring-2 focus:ring-zinc-200";
 
   const networks = useMemo(
     () =>
@@ -25,8 +32,7 @@ export function ManagedCellDirectory({ cells }: { cells: ManagedCellSummary[] })
         new Map(
           cells
             .filter(
-              (cell) =>
-                networkId === "all" || cell.networkId === networkId,
+              (cell) => networkId === "all" || cell.networkId === networkId,
             )
             .map((cell) => [cell.cellTypeId, cell.cellTypeName]),
         ),
@@ -39,143 +45,201 @@ export function ManagedCellDirectory({ cells }: { cells: ManagedCellSummary[] })
     (cell) =>
       (normalizedSearch.length === 0 ||
         cell.name.toLocaleLowerCase("pt-BR").includes(normalizedSearch) ||
-        cell.leaderName
-          .toLocaleLowerCase("pt-BR")
-          .includes(normalizedSearch)) &&
+        cell.leaderName.toLocaleLowerCase("pt-BR").includes(normalizedSearch)) &&
       (status === "all" ||
         (status === "active" ? cell.isActive : !cell.isActive)) &&
       (networkId === "all" || cell.networkId === networkId) &&
       (cellTypeId === "all" || cell.cellTypeId === cellTypeId),
   );
+  const activeFilters = [
+    search.trim(),
+    status === "all" ? "" : status,
+    networkId === "all" ? "" : networkId,
+    cellTypeId === "all" ? "" : cellTypeId,
+  ].filter(Boolean).length;
+
+  function clearFilters() {
+    setSearch("");
+    setStatus("all");
+    setNetworkId("all");
+    setCellTypeId("all");
+  }
 
   return (
-    <>
-      <div className="mt-8 grid gap-3 rounded-2xl bg-zinc-100 p-3 sm:grid-cols-2 lg:grid-cols-5">
-        <input
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Buscar célula ou Líder"
-          aria-label="Buscar célula ou Líder"
-          className={fieldClassName}
-        />
-        <select
-          aria-label="Filtrar por status"
-          value={status}
-          onChange={(event) => setStatus(event.target.value)}
-          className={fieldClassName}
-        >
-          <option value="all">Todas as células</option>
-          <option value="active">Ativas</option>
-          <option value="inactive">Desativadas</option>
-        </select>
-        <select
-          aria-label="Filtrar por Rede"
-          value={networkId}
-          onChange={(event) => {
-            setNetworkId(event.target.value);
-            setCellTypeId("all");
-          }}
-          className={fieldClassName}
-        >
-          <option value="all">Todas as Redes</option>
-          {networks.map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <select
-          aria-label="Filtrar por tipo"
-          value={cellTypeId}
-          onChange={(event) => setCellTypeId(event.target.value)}
-          className={fieldClassName}
-        >
-          <option value="all">Todos os tipos</option>
-          {cellTypes.map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          onClick={() => {
-            setSearch("");
-            setStatus("all");
-            setNetworkId("all");
-            setCellTypeId("all");
-          }}
-          className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
-        >
-          Limpar filtros
-        </button>
-      </div>
+    <section aria-labelledby="managed-cells-heading">
+      <SectionHeader
+        id="managed-cells-heading"
+        title="Células cadastradas"
+        action={
+          <StatusBadge tone="theme">
+            {cells.length} {cells.length === 1 ? "célula" : "células"}
+          </StatusBadge>
+        }
+      />
 
-      <p className="mt-4 text-sm text-zinc-600">
-        {filteredCells.length}{" "}
-        {filteredCells.length === 1 ? "célula encontrada" : "células encontradas"}
-      </p>
+      <FilterPanel
+        activeFilters={activeFilters}
+        title="Filtrar células"
+        className="mt-4"
+      >
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <label className="min-w-0 sm:col-span-2 lg:col-span-1">
+            <span className="sr-only">Buscar célula ou Líder</span>
+            <span className="relative block">
+              <Search
+                aria-hidden="true"
+                className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-app-secondary"
+              />
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Célula ou Líder"
+                className={`${fieldClassName} pl-12`}
+              />
+            </span>
+          </label>
 
-      <div className="mt-3 space-y-3">
-        {filteredCells.map((cell) => (
-          <article
-            key={cell.id}
-            className="rounded-2xl border border-zinc-200 bg-white p-5"
+          <select
+            aria-label="Filtrar por status"
+            value={status}
+            onChange={(event) => setStatus(event.target.value)}
+            className={fieldClassName}
           >
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-xl font-semibold text-zinc-950">
-                    {cell.name}
-                  </h2>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                      cell.isActive
-                        ? "bg-emerald-50 text-emerald-800"
-                        : "bg-zinc-200 text-zinc-700"
-                    }`}
-                  >
-                    {cell.isActive ? "Ativa" : "Desativada"}
-                  </span>
-                </div>
-                <p className="mt-1 text-sm text-zinc-600">
-                  {cell.networkName} · {cell.cellTypeName}
-                </p>
-                <p className="mt-2 text-sm text-zinc-700">
-                  <strong>Líder:</strong> {cell.leaderName}
-                </p>
-                <p className="mt-1 text-sm text-zinc-600">
-                  <strong>Vices:</strong>{" "}
-                  {cell.viceLeaderNames.length > 0
-                    ? cell.viceLeaderNames.join(", ")
-                    : "Nenhum"}
-                </p>
-              </div>
-              {cell.isActive ? (
-                <Link
-                  href={`/portal/admin/celulas/${cell.id}`}
-                  className="flex min-h-11 shrink-0 items-center justify-center rounded-xl border border-zinc-300 px-5 font-semibold text-zinc-900 hover:bg-zinc-100"
-                >
-                  Editar
-                </Link>
-              ) : (
-                <Link
-                  href={`/portal/admin/celulas/${cell.id}`}
-                  className="flex min-h-11 shrink-0 items-center justify-center rounded-xl border border-zinc-300 px-5 font-semibold text-zinc-900 hover:bg-zinc-100"
-                >
-                  Reativar
-                </Link>
-              )}
-            </div>
-          </article>
-        ))}
-        {filteredCells.length === 0 ? (
-          <p className="rounded-xl border border-zinc-200 px-4 py-6 text-center text-zinc-600">
-            Nenhuma célula encontrada com esses filtros.
-          </p>
-        ) : null}
+            <option value="all">Todas as células</option>
+            <option value="active">Ativas</option>
+            <option value="inactive">Desativadas</option>
+          </select>
+
+          <select
+            aria-label="Filtrar por Rede"
+            value={networkId}
+            onChange={(event) => {
+              setNetworkId(event.target.value);
+              setCellTypeId("all");
+            }}
+            className={fieldClassName}
+          >
+            <option value="all">Todas as Redes</option>
+            {networks.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+
+          <select
+            aria-label="Filtrar por tipo"
+            value={cellTypeId}
+            onChange={(event) => setCellTypeId(event.target.value)}
+            className={fieldClassName}
+          >
+            <option value="all">Todos os tipos</option>
+            {cellTypes.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={clearFilters}
+            disabled={activeFilters === 0}
+          >
+            <X aria-hidden="true" className="size-4" />
+            Limpar
+          </Button>
+        </div>
+      </FilterPanel>
+
+      <div className="mt-4 flex items-center justify-between gap-4">
+        <p className="text-sm text-app-secondary">Resultado da consulta</p>
+        <StatusBadge tone="neutral">
+          {filteredCells.length}{" "}
+          {filteredCells.length === 1 ? "resultado" : "resultados"}
+        </StatusBadge>
       </div>
-    </>
+
+      {filteredCells.length > 0 ? (
+        <div className="mt-3 grid gap-4 xl:grid-cols-2">
+          {filteredCells.map((cell) => (
+            <article
+              key={cell.id}
+              className="flex h-full flex-col rounded-2xl border border-app-border bg-surface p-5 sm:p-6"
+            >
+              <div className="flex items-start gap-3">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-theme-primary-soft text-theme-primary-active">
+                  <House aria-hidden="true" className="size-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-col items-start gap-2 sm:flex-row sm:justify-between">
+                    <div className="min-w-0">
+                      <h2 className="text-lg font-semibold leading-6 text-app-foreground">
+                        {cell.name}
+                      </h2>
+                      <p className="mt-1 text-sm leading-5 text-app-secondary">
+                        {cell.networkName} · {cell.cellTypeName}
+                      </p>
+                    </div>
+                    <StatusBadge tone={cell.isActive ? "success" : "neutral"}>
+                      {cell.isActive ? "Ativa" : "Desativada"}
+                    </StatusBadge>
+                  </div>
+                </div>
+              </div>
+
+              <dl className="mt-5 grid gap-4 border-t border-app-border pt-5 sm:grid-cols-2">
+                <div className="flex min-w-0 gap-3">
+                  <UserRound
+                    aria-hidden="true"
+                    className="mt-0.5 size-5 shrink-0 text-theme-primary"
+                  />
+                  <div className="min-w-0">
+                    <dt className="text-sm text-app-secondary">Líder</dt>
+                    <dd className="mt-1 font-semibold text-app-foreground">
+                      {cell.leaderName}
+                    </dd>
+                  </div>
+                </div>
+                <div className="flex min-w-0 gap-3">
+                  <UsersRound
+                    aria-hidden="true"
+                    className="mt-0.5 size-5 shrink-0 text-theme-primary"
+                  />
+                  <div className="min-w-0">
+                    <dt className="text-sm text-app-secondary">Vice-liderança</dt>
+                    <dd className="mt-1 leading-6 text-app-foreground">
+                      {cell.viceLeaderNames.length > 0
+                        ? cell.viceLeaderNames.join(", ")
+                        : "Nenhuma"}
+                    </dd>
+                  </div>
+                </div>
+              </dl>
+
+              <Link
+                href={`/portal/admin/celulas/${cell.id}`}
+                className={buttonClassName({
+                  variant: "secondary",
+                  size: "compact",
+                  className: "mt-5 w-full sm:ml-auto sm:w-auto",
+                })}
+              >
+                {cell.isActive ? "Editar célula" : "Reativar célula"}
+              </Link>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          className="mt-3"
+          icon={<Search className="size-8" />}
+          title="Nenhuma célula encontrada"
+          description="Ajuste ou limpe os filtros para ampliar a consulta."
+        />
+      )}
+    </section>
   );
 }

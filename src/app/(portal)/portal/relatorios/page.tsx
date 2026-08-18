@@ -1,6 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import {
+  CalendarDays,
+  Download,
+  Eye,
+  FilePlus2,
+  Files,
+  Search,
+  Users,
+  X,
+} from "lucide-react";
+import { Alert } from "@/components/ui/alert";
+import { buttonClassName } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { FilterPanel } from "@/components/ui/filter-panel";
+import { PageContainer } from "@/components/ui/page-container";
+import { PageHeader } from "@/components/ui/page-header";
+import { SectionHeader } from "@/components/ui/section-header";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getCellReportHistory } from "@/lib/data/cell-report-history";
 import {
@@ -80,195 +98,194 @@ export default async function CellReportsPage({
     redirect("/portal");
   }
 
+  const activeFilters = [
+    selectedCellId,
+    dateFrom,
+    dateTo,
+    selectedNetworkId,
+    selectedCellTypeId,
+  ].filter(Boolean).length;
+
   return (
-    <main className="min-h-screen bg-zinc-100 px-4 py-8 sm:px-6 sm:py-10">
-      <section className="mx-auto w-full max-w-6xl rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-600">
-          Área interna · Fase 5
-        </p>
-        <div className="mt-3 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-zinc-950 sm:text-4xl">
-              Histórico de Fichas
-            </h1>
-            <p className="mt-4 max-w-3xl leading-7 text-zinc-700">
-              Consulte as versões atuais das Fichas de Organização que sua conta
-              possui permissão para visualizar.
-            </p>
-          </div>
-          {reportContext ? (
-            <Link
-              href="/portal/relatorios/novo"
-              className="flex min-h-12 w-full shrink-0 items-center justify-center rounded-xl bg-zinc-950 px-5 font-semibold text-white hover:bg-zinc-800 sm:w-auto"
-            >
-              Preencher nova Ficha
-            </Link>
-          ) : null}
-        </div>
+    <main className="min-h-full bg-app-background py-6 sm:py-8">
+      <PageContainer width="wide" className="space-y-6 sm:space-y-8">
+        <PageHeader
+          eyebrow="Fichas"
+          title="Histórico"
+          description="Encontre uma reunião, confira os dados registrados ou baixe o PDF."
+          actions={
+            reportContext ? (
+              <Link
+                href="/portal/relatorios/novo"
+                className={buttonClassName({ className: "w-full sm:w-auto" })}
+              >
+                <FilePlus2 aria-hidden="true" className="size-5" />
+                Nova Ficha
+              </Link>
+            ) : null
+          }
+        />
 
         {monthlyResponsibility ? (
           <MonthlyResponsibility {...monthlyResponsibility} />
         ) : null}
 
-        <form
-          method="get"
-          className="mt-8 grid gap-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-5 md:grid-cols-4"
-        >
-          {history.canUseOrganizationFilters ? (
-            <>
-              <label className="md:col-span-2">
-                <span className="font-semibold text-zinc-900">Rede</span>
-                <select
-                  name="rede"
-                  defaultValue={selectedNetworkId}
-                  className="mt-2 min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-zinc-950"
+        <FilterPanel activeFilters={activeFilters}>
+          <form method="get" className="grid gap-4 md:grid-cols-4">
+            {history.canUseOrganizationFilters ? (
+              <>
+                <label className="md:col-span-2">
+                  <span className="text-sm font-semibold text-app-foreground">Rede</span>
+                  <select
+                    name="rede"
+                    defaultValue={selectedNetworkId}
+                    className="mt-2 min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-subtle"
+                  >
+                    <option value="">Todas as Redes</option>
+                    {history.networks.map((network) => (
+                      <option key={network.id} value={network.id}>
+                        {network.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="md:col-span-2">
+                  <span className="text-sm font-semibold text-app-foreground">Tipo</span>
+                  <select
+                    name="tipo"
+                    defaultValue={selectedCellTypeId}
+                    className="mt-2 min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-subtle"
+                  >
+                    <option value="">Todos os tipos</option>
+                    {history.cellTypes.map((cellType) => (
+                      <option key={cellType.id} value={cellType.id}>
+                        {cellType.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </>
+            ) : null}
+            <label className="md:col-span-2">
+              <span className="text-sm font-semibold text-app-foreground">Célula</span>
+              <select
+                name="celula"
+                defaultValue={selectedCellId}
+                className="mt-2 min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-subtle"
+              >
+                <option value="">Todas as células permitidas</option>
+                {history.cells.map((cell) => (
+                  <option key={cell.id} value={cell.id}>
+                    {cell.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span className="text-sm font-semibold text-app-foreground">De</span>
+              <input
+                type="date"
+                name="inicio"
+                defaultValue={dateFrom}
+                className="mt-2 min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-subtle"
+              />
+            </label>
+            <label>
+              <span className="text-sm font-semibold text-app-foreground">Até</span>
+              <input
+                type="date"
+                name="fim"
+                defaultValue={dateTo}
+                className="mt-2 min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-subtle"
+              />
+            </label>
+            <div className="flex flex-col gap-3 md:col-span-4 sm:flex-row">
+              <button type="submit" className={buttonClassName({ size: "compact" })}>
+                <Search aria-hidden="true" className="size-4" />
+                Buscar
+              </button>
+              {activeFilters > 0 ? (
+                <Link
+                  href="/portal/relatorios"
+                  className={buttonClassName({ variant: "secondary", size: "compact" })}
                 >
-                  <option value="">Todas as Redes</option>
-                  {history.networks.map((network) => (
-                    <option key={network.id} value={network.id}>
-                      {network.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="md:col-span-2">
-                <span className="font-semibold text-zinc-900">Tipo de célula</span>
-                <select
-                  name="tipo"
-                  defaultValue={selectedCellTypeId}
-                  className="mt-2 min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-zinc-950"
-                >
-                  <option value="">Todos os tipos</option>
-                  {history.cellTypes.map((cellType) => (
-                    <option key={cellType.id} value={cellType.id}>
-                      {cellType.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </>
-          ) : null}
-          <label className="md:col-span-2">
-            <span className="font-semibold text-zinc-900">Célula</span>
-            <select
-              name="celula"
-              defaultValue={selectedCellId}
-              className="mt-2 min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-zinc-950"
-            >
-              <option value="">Todas as células permitidas</option>
-              {history.cells.map((cell) => (
-                <option key={cell.id} value={cell.id}>
-                  {cell.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span className="font-semibold text-zinc-900">Data inicial</span>
-            <input
-              type="date"
-              name="inicio"
-              defaultValue={dateFrom}
-              className="mt-2 min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-zinc-950"
-            />
-          </label>
-          <label>
-            <span className="font-semibold text-zinc-900">Data final</span>
-            <input
-              type="date"
-              name="fim"
-              defaultValue={dateTo}
-              className="mt-2 min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-zinc-950"
-            />
-          </label>
-          <div className="flex flex-col gap-3 md:col-span-4 sm:flex-row">
-            <button
-              type="submit"
-              className="min-h-12 rounded-xl bg-zinc-950 px-6 font-semibold text-white hover:bg-zinc-800"
-            >
-              Aplicar filtros
-            </button>
-            <Link
-              href="/portal/relatorios"
-              className="flex min-h-12 items-center justify-center rounded-xl border border-zinc-300 bg-white px-6 font-semibold text-zinc-900 hover:bg-zinc-100"
-            >
-              Limpar filtros
-            </Link>
-          </div>
-        </form>
+                  <X aria-hidden="true" className="size-4" />
+                  Limpar
+                </Link>
+              ) : null}
+            </div>
+          </form>
+        </FilterPanel>
 
         {history.hasError ? (
-          <p
-            role="alert"
-            className="mt-8 rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-red-800"
-          >
+          <Alert tone="danger">
             Não foi possível carregar as Fichas. Tente novamente mais tarde.
-          </p>
+          </Alert>
         ) : history.reports.length > 0 ? (
-          <section aria-labelledby="reports-heading" className="mt-8">
-            <div className="flex flex-wrap items-baseline justify-between gap-3">
-              <h2 id="reports-heading" className="text-xl font-semibold text-zinc-950">
-                Fichas encontradas
-              </h2>
-              <p className="text-sm text-zinc-600">
-                {history.reports.length} {history.reports.length === 1 ? "Ficha" : "Fichas"}
-              </p>
-            </div>
-            <ul className="mt-4 grid gap-4 lg:grid-cols-2">
+          <section aria-labelledby="reports-heading">
+            <SectionHeader
+              id="reports-heading"
+              title="Fichas encontradas"
+              description={`${history.reports.length} ${history.reports.length === 1 ? "registro" : "registros"}`}
+            />
+            <ul className="mt-4 grid gap-4 xl:grid-cols-2">
               {history.reports.map((report) => (
                 <li
                   key={report.versionId}
-                  className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 sm:p-6"
+                  className="rounded-2xl border border-app-border bg-surface p-5 transition-colors hover:border-theme-primary-border sm:p-6"
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-zinc-600">
-                        Data da Célula: {formatDate(report.meetingOn)}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="flex items-center gap-2 text-sm font-medium text-app-secondary">
+                        <CalendarDays aria-hidden="true" className="size-4 text-theme-primary" />
+                        {formatDate(report.meetingOn)}
                       </p>
-                      <h3 className="mt-1 text-xl font-semibold text-zinc-950">
+                      <h3 className="mt-2 truncate text-xl font-semibold text-app-foreground">
                         {report.cellName}
                       </h3>
                     </div>
-                    <span className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-zinc-700 ring-1 ring-zinc-200">
-                      Versão {report.versionNumber}
-                    </span>
+                    <StatusBadge tone={report.versionNumber > 1 ? "theme" : "neutral"}>
+                      v{report.versionNumber}
+                    </StatusBadge>
                   </div>
-                  <dl className="mt-5 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-                    <div>
-                      <dt className="text-zinc-600">Formato</dt>
-                      <dd className="mt-1 font-semibold text-zinc-900">
-                        {report.meetingFormat === "in_person" ? "Presencial" : "Online"}
-                      </dd>
+                  <dl className="mt-5 grid grid-cols-3 gap-3 border-y border-app-border py-4 text-center">
+                    <div className="min-w-0">
+                      <dt className="text-xs text-app-secondary">Membros</dt>
+                      <dd className="mt-1 text-lg font-semibold text-app-foreground">{report.membersCount}</dd>
                     </div>
-                    <div>
-                      <dt className="text-zinc-600">Membros</dt>
-                      <dd className="mt-1 font-semibold text-zinc-900">{report.membersCount}</dd>
+                    <div className="min-w-0 border-x border-app-border px-2">
+                      <dt className="text-xs text-app-secondary">Convidados</dt>
+                      <dd className="mt-1 text-lg font-semibold text-app-foreground">{report.guestsCount}</dd>
                     </div>
-                    <div>
-                      <dt className="text-zinc-600">Convidados</dt>
-                      <dd className="mt-1 font-semibold text-zinc-900">{report.guestsCount}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-zinc-600">1ª vez</dt>
-                      <dd className="mt-1 font-semibold text-zinc-900">
-                        {report.firstTimeGuestsCount}
-                      </dd>
+                    <div className="min-w-0">
+                      <dt className="text-xs text-app-secondary">1ª vez</dt>
+                      <dd className="mt-1 text-lg font-semibold text-app-foreground">{report.firstTimeGuestsCount}</dd>
                     </div>
                   </dl>
-                  <p className="mt-4 text-sm text-zinc-600">
-                    Enviada em {formatDateTime(report.submittedAt)}
-                  </p>
-                  <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm text-app-secondary">
+                    <span className="inline-flex items-center gap-2">
+                      <Users aria-hidden="true" className="size-4" />
+                      {report.meetingFormat === "in_person" ? "Presencial" : "Online"}
+                    </span>
+                    <span>Enviada em {formatDateTime(report.submittedAt)}</span>
+                  </div>
+                  <div className="mt-5 flex gap-3">
                     <Link
                       href={`/portal/relatorios/${report.versionId}`}
-                      className="flex min-h-12 flex-1 items-center justify-center rounded-xl bg-zinc-950 px-5 font-semibold text-white hover:bg-zinc-800"
+                      className={buttonClassName({ className: "flex-1" })}
                     >
-                      Abrir Ficha
+                      <Eye aria-hidden="true" className="size-5" />
+                      Ver Ficha
                     </Link>
                     <a
                       href={`/portal/relatorios/${report.versionId}/pdf`}
-                      className="flex min-h-12 flex-1 items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 font-semibold text-zinc-900 hover:bg-zinc-100"
+                      className={buttonClassName({
+                        variant: "secondary",
+                        className: "flex-1",
+                      })}
+                      aria-label={`Baixar PDF da Ficha de ${report.cellName} em ${formatDate(report.meetingOn)}`}
                     >
+                      <Download aria-hidden="true" className="size-5" />
                       Baixar PDF
                     </a>
                   </div>
@@ -277,23 +294,24 @@ export default async function CellReportsPage({
             </ul>
           </section>
         ) : (
-          <div className="mt-8 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center">
-            <h2 className="text-xl font-semibold text-zinc-950">
-              Nenhuma Ficha encontrada
-            </h2>
-            <p className="mt-2 leading-7 text-zinc-600">
-              Ajuste os filtros ou preencha a primeira Ficha deste período.
-            </p>
-          </div>
+          <EmptyState
+            icon={<Files className="size-8" />}
+            title="Nenhuma Ficha encontrada"
+            description="Ajuste os filtros ou registre uma nova reunião."
+          />
         )}
 
         <Link
           href="/portal"
-          className="mt-8 flex min-h-12 w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 font-semibold text-zinc-900 hover:bg-zinc-100 sm:w-auto sm:min-w-52"
+          className={buttonClassName({
+            variant: "ghost",
+            size: "compact",
+            className: "w-full sm:w-auto",
+          })}
         >
           Voltar ao ICB Conecta
         </Link>
-      </section>
+      </PageContainer>
     </main>
   );
 }

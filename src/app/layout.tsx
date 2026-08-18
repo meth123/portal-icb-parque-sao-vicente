@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { CSSProperties } from "react";
 import { annualTheme } from "@/config/annual-theme";
@@ -18,6 +18,12 @@ export const metadata: Metadata = {
   title: "ICB Conecta | Parque São Vicente",
   description: "Acesso e gestão da ICB Parque São Vicente.",
   applicationName: "ICB Conecta",
+};
+
+export const viewport: Viewport = {
+  colorScheme: "light",
+  themeColor: annualTheme.colors.primary,
+  viewportFit: "cover",
 };
 
 type ThemeStyle = CSSProperties & Record<`--${string}`, string>;
