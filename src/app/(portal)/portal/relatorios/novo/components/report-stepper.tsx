@@ -6,7 +6,7 @@ import type { ReportStep } from "../types";
 
 const steps = [
   { value: 1, label: "Reunião" },
-  { value: 2, label: "Participantes" },
+  { value: 2, label: "Membros" },
   { value: 3, label: "Convidados" },
   { value: 4, label: "Evangelismo" },
 ] as const;

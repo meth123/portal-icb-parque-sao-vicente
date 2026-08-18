@@ -47,29 +47,32 @@ export default async function NewCellReportPage() {
     <main>
       <PageContainer className="py-6 sm:py-8 lg:py-10">
         <PageHeader
-          eyebrow="Relatórios"
           title="Ficha de Organização"
-          description="Registre a reunião em quatro etapas."
+          description={reportContext.cellName}
         />
+
+        <blockquote className="mt-3 text-sm leading-6 text-app-secondary">
+          <p>“Tudo, porém, seja feito com decência e ordem.”</p>
+          <cite className="not-italic">I Co 14:40</cite>
+        </blockquote>
 
         <ThemeArtwork
           decorative
           priority
-          className="mt-6 min-h-24 sm:min-h-32"
+          className="mt-5 aspect-[16/7] !min-h-0 sm:aspect-[16/6] lg:aspect-[16/7]"
           imageClassName="scale-[1.35] object-center lg:scale-100"
           sizes="(max-width: 1024px) 100vw, 896px"
         />
 
         <Surface className="mt-5 p-4 sm:p-7 lg:p-8">
-        <ReportForm
-          cellId={reportContext.cellId}
-          cellName={reportContext.cellName}
-          defaultDate={defaultDate}
-          draftKey={getCellReportDraftKey(user.id, reportContext.cellId)}
-          leader={reportContext.leader}
-          viceLeaders={reportContext.viceLeaders}
-          leadership={reportContext.leadership}
-        />
+          <ReportForm
+            cellId={reportContext.cellId}
+            defaultDate={defaultDate}
+            draftKey={getCellReportDraftKey(user.id, reportContext.cellId)}
+            leader={reportContext.leader}
+            viceLeaders={reportContext.viceLeaders}
+            leadership={reportContext.leadership}
+          />
         </Surface>
 
         <Link

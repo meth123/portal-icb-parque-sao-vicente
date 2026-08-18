@@ -123,43 +123,42 @@ export default async function CorrectCellReportPage({
     <main>
       <PageContainer className="py-6 sm:py-8 lg:py-10">
         <PageHeader
-          eyebrow="Relatórios"
           title="Corrigir ficha"
           description={detail.cellName}
         />
 
+        <blockquote className="mt-3 text-sm leading-6 text-app-secondary">
+          <p>“Tudo, porém, seja feito com decência e ordem.”</p>
+          <cite className="not-italic">I Co 14:40</cite>
+        </blockquote>
+
         <ThemeArtwork
           decorative
-          className="mt-6 min-h-24 sm:min-h-32"
+          className="mt-5 aspect-[16/7] !min-h-0 sm:aspect-[16/6] lg:aspect-[16/7]"
           imageClassName="scale-[1.35] object-center lg:scale-100"
           sizes="(max-width: 1024px) 100vw, 896px"
         />
 
         <Alert tone="warning" className="mt-5">
-          <p className="font-semibold">
-            Você está corrigindo a versão {detail.versionNumber} de {detail.cellName}.
-          </p>
-          <p className="mt-1">
-            O envio cria uma nova versão e preserva a anterior no histórico.
-          </p>
+          Corrigindo a versão {detail.versionNumber}. O envio cria uma nova
+          versão e preserva a anterior.
         </Alert>
 
         <Surface className="mt-5 p-4 sm:p-7 lg:p-8">
-        <ReportForm
-          cellId={detail.cellId}
-          cellName={detail.cellName}
-          defaultDate={detail.meetingOn}
-          draftKey={getCellReportCorrectionDraftKey(
-            user.id,
-            detail.cellId,
-            detail.id,
-          )}
-          leader={leader}
-          viceLeaders={viceLeaders}
-          leadership={detail.leadership}
-          initialData={initialData}
-          correctionSourceVersionId={detail.id}
-        />
+          <ReportForm
+            cellId={detail.cellId}
+            defaultDate={detail.meetingOn}
+            draftKey={getCellReportCorrectionDraftKey(
+              user.id,
+              detail.cellId,
+              detail.id,
+            )}
+            leader={leader}
+            viceLeaders={viceLeaders}
+            leadership={detail.leadership}
+            initialData={initialData}
+            correctionSourceVersionId={detail.id}
+          />
         </Surface>
 
         <Link

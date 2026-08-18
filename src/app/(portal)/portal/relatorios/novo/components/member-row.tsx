@@ -26,7 +26,7 @@ export function MemberRow({
           htmlFor={`member-${member.key}`}
           className="font-medium text-app-foreground"
         >
-          Participante {index + 1}
+          Membro {index + 1}
           <span aria-hidden="true" className="ml-1 text-danger">
             *
           </span>
@@ -45,8 +45,8 @@ export function MemberRow({
       <IconButton
         onClick={onRemove}
         disabled={disabled}
-        aria-label={`Remover participante ${index + 1}`}
-        title="Remover participante"
+        aria-label={`Remover membro ${index + 1}`}
+        title="Remover membro"
         className="text-danger"
       >
         <Trash2 aria-hidden="true" className="h-4 w-4" />

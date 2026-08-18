@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useActionState, useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import {
@@ -7,7 +8,9 @@ import {
   ArrowRight,
   CalendarDays,
   CheckCircle2,
+  CircleMinus,
   CloudCheck,
+  Clock3,
   Info,
   LoaderCircle,
   Plus,
@@ -48,7 +51,6 @@ const initialState: SubmitCellReportState = { message: "" };
 
 type ReportFormProps = {
   cellId: string;
-  cellName: string;
   defaultDate: string;
   draftKey: string;
   leader: CellReportLeadershipOption;
@@ -205,7 +207,6 @@ function RequiredMark() {
 
 export function ReportForm({
   cellId,
-  cellName,
   defaultDate,
   draftKey,
   leader,
@@ -780,7 +781,7 @@ export function ReportForm({
 
   function finishNotEvangelizedComment(leadershipId: string) {
     if (!notEvangelized[leadershipId]?.trim()) {
-      setLocalMessage("Preencha os Comentários de quem não evangelizou.");
+      setLocalMessage("Preencha o motivo de quem não evangelizou.");
       return;
     }
 
@@ -1125,13 +1126,14 @@ export function ReportForm({
         participants: [] as Array<{ name: string }>,
       })),
   ];
+  const draftSaveFailed = draftMessage.startsWith("Não foi possível");
 
   return (
     <form
       ref={formRef}
       action={formAction}
       onSubmit={handleSubmit}
-      className="mt-7 space-y-6"
+      className="mt-6 space-y-5"
     >
       <input type="hidden" name="cellId" value={cellId} />
       {correctionSourceVersionId ? (
@@ -1186,23 +1188,26 @@ export function ReportForm({
         </Alert>
       ) : null}
 
-      <div className="flex flex-col gap-3 border-y border-app-border py-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase text-app-secondary">
-            Célula
-          </p>
-          <p className="mt-1 truncate font-semibold text-app-foreground">
-            {cellName}
-          </p>
-        </div>
-        <div className="flex items-center justify-between gap-3 sm:justify-end">
+      <div className="-mt-2 flex items-center justify-end gap-2">
           <p
             aria-live="polite"
-            className="flex min-w-0 items-center gap-2 text-xs text-app-secondary sm:text-sm"
+            className="sr-only"
           >
-            <CloudCheck aria-hidden="true" className="h-4 w-4 shrink-0 text-success" />
-            <span className="line-clamp-2">{draftMessage}</span>
+            {draftMessage}
           </p>
+          <span
+            aria-hidden="true"
+            title={draftMessage}
+            className={`flex h-9 w-9 items-center justify-center rounded-lg bg-surface ${
+              draftSaveFailed ? "text-danger" : "text-success"
+            }`}
+          >
+            {draftSaveFailed ? (
+              <Info className="h-4 w-4" />
+            ) : (
+              <CloudCheck className="h-4 w-4" />
+            )}
+          </span>
           <IconButton
             type="button"
             onClick={discardDraft}
@@ -1213,19 +1218,14 @@ export function ReportForm({
           >
             <Trash2 aria-hidden="true" className="h-4 w-4" />
           </IconButton>
-        </div>
       </div>
 
       {step === 1 ? (
         <>
           <header>
-            <p className="text-sm font-semibold text-theme-primary">Etapa 1 de 4</p>
-            <h2 className="mt-1 text-2xl font-semibold text-app-foreground">
+            <h2 className="text-2xl font-semibold text-app-foreground">
               Reunião
             </h2>
-            <p className="mt-2 text-sm text-app-secondary">
-              Data, formato e presença da liderança.
-            </p>
           </header>
 
           <div className="grid gap-6 sm:grid-cols-2">
@@ -1279,7 +1279,7 @@ export function ReportForm({
             </fieldset>
           </div>
 
-          <fieldset className="border-t border-app-border pt-6">
+          <fieldset>
             <legend className="font-semibold text-app-foreground">
               {leader.name} esteve presente?
               <RequiredMark />
@@ -1315,7 +1315,7 @@ export function ReportForm({
             </div>
           </fieldset>
 
-          <fieldset className="border-t border-app-border pt-6">
+          <fieldset>
             <legend className="font-semibold text-app-foreground">
               Vice-líderes presentes
               <RequiredMark />
@@ -1372,7 +1372,7 @@ export function ReportForm({
             </label>
           </fieldset>
 
-          <div className="flex justify-end border-t border-app-border pt-5">
+          <div className="flex justify-end pt-1">
             <Button
               type="button"
               onClick={() => advanceToStep(2)}
@@ -1386,31 +1386,18 @@ export function ReportForm({
         </>
       ) : step === 2 ? (
         <>
-          <header>
-            <p className="text-sm font-semibold text-theme-primary">Etapa 2 de 4</p>
-            <h2 className="mt-1 text-2xl font-semibold text-app-foreground">
-              Participantes
+          <header className="flex items-center justify-between gap-3">
+            <h2 className="text-2xl font-semibold text-app-foreground">
+              Membros
             </h2>
-            <p className="mt-2 text-sm text-app-secondary">
-              Adicione quem participou da reunião.
-            </p>
-          </header>
-
-          <section aria-labelledby="members-heading">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h3 id="members-heading" className="font-semibold text-app-foreground">
-                  Lista de participantes
-                </h3>
-                <p className="mt-1 text-sm text-app-secondary">
-                  {members.length === 0
-                    ? "Nenhum nome adicionado."
-                    : `${members.length} ${members.length === 1 ? "nome adicionado" : "nomes adicionados"}.`}
-                </p>
-              </div>
+            <div className="flex items-center gap-2">
               {members.length > 0 ? (
-                <Button
-                  variant="ghost"
+                <span className="rounded-full bg-theme-primary-subtle px-3 py-1 text-sm font-semibold text-theme-primary-active">
+                  {members.length}
+                </span>
+              ) : null}
+              {members.length > 0 ? (
+                <IconButton
                   size="compact"
                   onClick={() => {
                     if (window.confirm("Remover todos os membros adicionados?")) {
@@ -1419,14 +1406,18 @@ export function ReportForm({
                     }
                   }}
                   disabled={pending}
+                  aria-label="Excluir todos os membros"
+                  title="Excluir todos os membros"
                   className="text-danger"
                 >
                   <Trash2 aria-hidden="true" className="h-4 w-4" />
-                  Excluir todos
-                </Button>
+                </IconButton>
               ) : null}
             </div>
-            <div className="mt-5 space-y-4">
+          </header>
+
+          <section aria-label="Membros presentes">
+            <div className="space-y-4">
               {members.map((member, index) => (
                 <MemberRow
                   key={member.key}
@@ -1463,7 +1454,7 @@ export function ReportForm({
                 className="w-full sm:w-auto"
               >
                 <Plus aria-hidden="true" className="h-4 w-4" />
-                Adicionar participante
+                Adicionar membro
               </Button>
               <Button
                 variant="ghost"
@@ -1533,7 +1524,7 @@ export function ReportForm({
             ) : null}
           </section>
 
-          <div className="flex flex-col-reverse gap-3 border-t border-app-border pt-5 sm:flex-row sm:justify-between">
+          <div className="flex flex-col-reverse gap-3 pt-1 sm:flex-row sm:justify-between">
             <Button
               type="button"
               variant="secondary"
@@ -1557,49 +1548,38 @@ export function ReportForm({
         </>
       ) : step === 3 ? (
         <>
-          <header>
-            <p className="text-sm font-semibold text-theme-primary">Etapa 3 de 4</p>
-            <h2 className="mt-1 text-2xl font-semibold text-app-foreground">
+          <header className="flex items-center justify-between gap-3">
+            <h2 className="text-2xl font-semibold text-app-foreground">
               Convidados
             </h2>
-            <p className="mt-2 text-sm text-app-secondary">
-              Organize os convidados por quem os recebeu.
-            </p>
-          </header>
-
-          <section aria-labelledby="guests-heading">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h3 id="guests-heading" className="font-semibold text-app-foreground">
-                  Lista de convidados
-                </h3>
-                <p className="mt-1 text-sm text-app-secondary">
-                  {guests.length === 0
-                    ? "Nenhum convidado adicionado."
-                    : `${guests.length} ${guests.length === 1 ? "convidado" : "convidados"}.`}
-                </p>
-              </div>
+            <div className="flex items-center gap-2">
               {guests.length > 0 ? (
-                <Button
-                  variant="ghost"
+                <span className="rounded-full bg-theme-primary-subtle px-3 py-1 text-sm font-semibold text-theme-primary-active">
+                  {guests.length}
+                </span>
+              ) : null}
+              {guests.length > 0 ? (
+                <IconButton
                   size="compact"
                   onClick={() => {
-                    if (
-                      window.confirm("Remover todos os convidados adicionados?")
-                    ) {
+                    if (window.confirm("Remover todos os convidados adicionados?")) {
                       setGuestGroups([]);
                       closeBulkGuestInput();
                     }
                   }}
                   disabled={pending}
+                  aria-label="Excluir todos os convidados"
+                  title="Excluir todos os convidados"
                   className="text-danger"
                 >
                   <Trash2 aria-hidden="true" className="h-4 w-4" />
-                  Excluir todos
-                </Button>
+                </IconButton>
               ) : null}
             </div>
-            <div className="mt-4 space-y-4">
+          </header>
+
+          <section aria-label="Convidados presentes">
+            <div className="space-y-4">
               {guestGroups.map((group, groupIndex) => (
                 <div
                   key={group.key}
@@ -1819,7 +1799,7 @@ export function ReportForm({
             totalParticipants={totalParticipants}
           />
 
-          <div className="flex flex-col-reverse gap-3 border-t border-app-border pt-5 sm:flex-row sm:justify-between">
+          <div className="flex flex-col-reverse gap-3 pt-1 sm:flex-row sm:justify-between">
             <Button
               type="button"
               variant="secondary"
@@ -1844,22 +1824,39 @@ export function ReportForm({
       ) : (
         <>
           <section aria-labelledby="evangelism-heading">
-            <p className="text-sm font-semibold text-theme-primary">Etapa 4 de 4</p>
             <h2
               id="evangelism-heading"
-              className="mt-1 text-2xl font-semibold text-app-foreground"
+              className="text-2xl font-semibold text-app-foreground"
             >
               Evangelismo
             </h2>
-            <p className="mt-2 text-sm text-app-secondary">
-              Registre o resultado de cada pessoa da liderança.
-            </p>
+
+            <div className="relative mt-4 aspect-[4/3] overflow-hidden rounded-xl sm:aspect-[16/6]">
+              <Image
+                src="/images/evangelism/isaiah-6-8.jpg"
+                alt="Pescador lançando uma rede ao amanhecer"
+                fill
+                sizes="(max-width: 768px) 100vw, 896px"
+                className="object-cover"
+              />
+              <div aria-hidden="true" className="absolute inset-0 bg-black/55" />
+              <blockquote className="relative flex h-full max-w-2xl flex-col justify-end p-5 text-white sm:p-7">
+                <p className="text-sm font-medium leading-6 sm:text-base sm:leading-7">
+                  “Depois disto, ouvi a voz do Senhor, que dizia: A quem
+                  enviarei, e quem há de ir por nós? Eu respondi: Eis-me aqui,
+                  envia-me a mim.”
+                </p>
+                <cite className="mt-2 text-sm not-italic text-white/80">
+                  Is 6:8
+                </cite>
+              </blockquote>
+            </div>
 
             <section
-              className="mt-5 overflow-hidden rounded-2xl border border-app-border bg-surface"
+              className="mt-6"
               aria-label="Preenchimento do evangelismo por pessoa"
             >
-              <div className="divide-y divide-app-border">
+              <div className="space-y-4">
                 {leadership.map((person) => {
                 const personRecords = getLeadershipRecords(
                   validEvangelismRecords,
@@ -1891,35 +1888,43 @@ export function ReportForm({
                 return (
                   <article
                     key={person.leadershipId}
-                    className="px-5 py-4"
+                    className={`rounded-xl border p-5 sm:p-6 ${
+                      hasEvangelized
+                        ? "border-success/20 bg-success-soft"
+                        : hasNegativeStatus
+                          ? "border-app-border bg-surface-muted"
+                          : "border-warning/20 bg-warning-soft"
+                    }`}
                   >
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                      <span className="block font-semibold text-app-foreground">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <span className="block text-lg font-semibold text-app-foreground">
                         {person.name}
                       </span>
                       <span
-                        className={`inline-flex items-center gap-1.5 text-sm font-semibold ${
+                        className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold ${
                           hasEvangelized
-                            ? "text-success"
+                            ? "bg-surface text-success"
                             : hasNegativeStatus
-                              ? "text-app-secondary"
-                              : "text-warning"
+                              ? "bg-surface text-app-secondary"
+                              : "bg-surface text-warning"
                         }`}
                       >
                         {hasEvangelized ? (
                           <CheckCircle2 aria-hidden="true" className="h-4 w-4" />
                         ) : hasNegativeStatus ? (
-                          <Info aria-hidden="true" className="h-4 w-4" />
-                        ) : null}
+                          <CircleMinus aria-hidden="true" className="h-4 w-4" />
+                        ) : (
+                          <Clock3 aria-hidden="true" className="h-4 w-4" />
+                        )}
                         {hasEvangelized
-                          ? `Evangelizou · ${personRecords.length} ${
+                          ? `Missão registrada · ${personRecords.length} ${
                               personRecords.length === 1
                                 ? "registro"
                                 : "registros"
                             }`
                           : hasNegativeStatus
-                            ? "Não evangelizou"
-                            : "Pendente"}
+                            ? "Sem evangelismo nesta semana"
+                            : "Aguardando resposta"}
                       </span>
                     </div>
 
@@ -1931,29 +1936,27 @@ export function ReportForm({
                             {sharedRecordOwner.name}.
                           </p>
                         ) : null}
-                        <button
-                          type="button"
+                        <Button
+                          variant="secondary"
+                          size="compact"
                           onClick={() => addEvangelismRecord(person.leadershipId)}
                           disabled={pending}
-                          className="mt-4 min-h-11 w-full rounded-xl border border-app-border bg-surface px-4 font-semibold text-app-foreground hover:bg-surface-muted sm:w-auto"
+                          className="mt-5 w-full bg-surface sm:w-auto"
                         >
-                          + Registrar outro
-                        </button>
+                          <Plus aria-hidden="true" className="h-4 w-4" />
+                          Registrar outro
+                        </Button>
                       </>
                     ) : hasNegativeStatus ? (
                       isNegativeCommentOpen ? (
-                        <div className="mt-4 rounded-xl bg-surface-muted p-4">
+                        <div className="mt-5 rounded-xl bg-surface p-4">
                           <label
                             htmlFor={`not-evangelized-${person.leadershipId}`}
                             className="font-medium text-app-foreground"
                           >
-                            Comentários
+                            Motivo
                             <RequiredMark />
                           </label>
-                          <p className="mt-1 text-sm text-app-secondary">
-                            Explique brevemente por que não evangelizou nesta
-                            semana.
-                          </p>
                           <textarea
                             id={`not-evangelized-${person.leadershipId}`}
                             rows={3}
@@ -1970,87 +1973,73 @@ export function ReportForm({
                             className={`${fieldClassName} py-3`}
                           />
                           <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-                            <button
-                              type="button"
+                            <Button
+                              size="compact"
                               onClick={() =>
                                 finishNotEvangelizedComment(person.leadershipId)
                               }
                               disabled={pending}
-                              className="min-h-11 rounded-xl bg-theme-primary px-4 font-semibold text-white hover:bg-theme-primary-hover"
                             >
-                              Concluir comentário
-                            </button>
-                            <button
-                              type="button"
+                              Salvar motivo
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="compact"
                               onClick={() =>
                                 addEvangelismRecord(person.leadershipId)
                               }
                               disabled={pending}
-                              className="min-h-11 rounded-xl border border-app-border bg-surface px-4 font-semibold text-app-foreground hover:bg-surface-muted"
                             >
                               Registrar evangelismo
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       ) : (
                         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                          <button
-                            type="button"
+                          <Button
+                            variant="secondary"
+                            size="compact"
                             onClick={() =>
                               setOpenNotEvangelizedLeadershipId(
                                 person.leadershipId,
                               )
                             }
                             disabled={pending}
-                            className="min-h-11 rounded-xl border border-app-border bg-surface px-4 font-semibold text-app-foreground hover:bg-surface-muted"
+                            className="bg-surface"
                           >
-                            Editar comentário
-                          </button>
-                          <button
-                            type="button"
+                            Editar motivo
+                          </Button>
+                          <Button
+                            size="compact"
                             onClick={() =>
                               addEvangelismRecord(person.leadershipId)
                             }
                             disabled={pending}
-                            className="min-h-11 rounded-xl bg-theme-primary px-4 font-semibold text-white hover:bg-theme-primary-hover"
                           >
                             Registrar evangelismo
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setNotEvangelized((current) => {
-                                const next = { ...current };
-                                delete next[person.leadershipId];
-                                return next;
-                              });
-                              setOpenNotEvangelizedLeadershipId(null);
-                            }}
-                            disabled={pending}
-                            className="min-h-11 rounded-xl border border-app-border bg-surface px-4 font-semibold text-app-foreground hover:bg-surface-muted"
-                          >
-                            Desfazer
-                          </button>
+                          </Button>
                         </div>
                       )
                     ) : (
                       <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                        <button
-                          type="button"
+                        <Button
+                          size="compact"
                           onClick={() => addEvangelismRecord(person.leadershipId)}
                           disabled={pending}
-                          className="min-h-11 rounded-xl bg-theme-primary px-4 font-semibold text-white hover:bg-theme-primary-hover"
                         >
+                          <CheckCircle2 aria-hidden="true" className="h-4 w-4" />
                           Registrar evangelismo
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="compact"
                           onClick={() => markNotEvangelized(person.leadershipId)}
                           disabled={pending}
-                          className="min-h-11 rounded-xl border border-app-border bg-surface px-4 font-semibold text-app-foreground hover:bg-surface-muted"
+                          className="bg-surface"
                         >
+                          <CircleMinus aria-hidden="true" className="h-4 w-4" />
                           Não evangelizou
-                        </button>
+                        </Button>
                       </div>
                     )}
                     </article>
@@ -2068,7 +2057,7 @@ export function ReportForm({
                   id="evangelism-records-heading"
                   className="text-xl font-semibold text-app-foreground"
                 >
-                  Evangelismos preenchidos
+                  Registros
                 </h3>
 
                 <div className="mt-4 space-y-3">
@@ -2105,11 +2094,11 @@ export function ReportForm({
                               {primaryPerson?.name ||
                                 `Evangelismo ${recordIndex + 1}`}
                             </span>
-                            <span className="mt-1 block text-sm text-app-secondary">
-                              {companionNames.length > 0
-                                ? `Com ${companionNames.join(", ")}`
-                                : "Sem outro Líder/Vice"}
-                            </span>
+                            {companionNames.length > 0 ? (
+                              <span className="mt-1 block text-sm text-app-secondary">
+                                Com {companionNames.join(", ")}
+                              </span>
+                            ) : null}
                           </span>
                           <span
                             className={`text-sm font-semibold ${
@@ -2123,22 +2112,8 @@ export function ReportForm({
                         {isOpen ? (
                           <div
                             id={`evangelism-record-${record.key}`}
-                            className="space-y-6 border-t border-app-border bg-surface-muted p-5"
+                            className="space-y-6 bg-surface-muted p-5"
                           >
-                            <div>
-                              <p className="font-semibold text-app-foreground">
-                                Quem está registrando
-                              </p>
-                              <div className="mt-2 flex min-h-12 cursor-default items-center justify-between gap-3 rounded-xl border border-app-border bg-surface-muted px-4 py-3 text-app-secondary">
-                                <span className="font-medium">
-                                  {primaryPerson?.name || "Liderança"}
-                                </span>
-                                <span className="rounded-full bg-surface px-2.5 py-1 text-xs font-semibold text-app-secondary">
-                                  Automático
-                                </span>
-                              </div>
-                            </div>
-
                             <fieldset>
                               <legend className="font-semibold text-app-foreground">
                                 Quem evangelizou junto?
@@ -2183,23 +2158,14 @@ export function ReportForm({
                                           }
                                           className="h-5 w-5 shrink-0 accent-theme-primary disabled:cursor-not-allowed"
                                         />
-                                        <span>
-                                          <span
-                                            className={`block font-medium ${
-                                              isMarkedNotEvangelized
-                                                ? "text-app-secondary"
-                                                : "text-app-foreground"
-                                            }`}
-                                          >
-                                            {person.name}
-                                          </span>
-                                          <span className="mt-1 block text-xs text-app-secondary">
-                                            {isMarkedNotEvangelized
-                                              ? "Marcado como Não evangelizou"
-                                              : person.role === "leader"
-                                                ? "Líder"
-                                                : "Vice-líder"}
-                                          </span>
+                                        <span
+                                          className={`font-medium ${
+                                            isMarkedNotEvangelized
+                                              ? "text-app-secondary"
+                                              : "text-app-foreground"
+                                          }`}
+                                        >
+                                          {person.name}
                                         </span>
                                       </label>
                                     );
@@ -2252,10 +2218,6 @@ export function ReportForm({
                                   disabled={pending}
                                   className={fieldClassName}
                                 />
-                                <p className="mt-2 text-sm leading-5 text-app-secondary">
-                                  Informe quanto tempo foi dedicado exclusivamente a
-                                  essa missão.
-                                </p>
                               </div>
                             </div>
 
@@ -2415,15 +2377,8 @@ export function ReportForm({
             ) : null}
           </section>
 
-          <section className="rounded-xl border border-warning/20 bg-warning-soft p-4">
-            <h3 className="flex items-center gap-2 font-semibold text-warning">
-              <Info aria-hidden="true" className="h-5 w-5 shrink-0" />
-              Revise antes de enviar
-            </h3>
-            <p className="mt-2 text-sm leading-6 text-app-secondary">
-              Confira a data, as presenças e o Relatório de Evangelismo.
-            </p>
-            <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-warning/20 bg-surface p-4">
+          <section>
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-warning/20 bg-warning-soft p-4">
               <input
                 type="checkbox"
                 checked={submissionConfirmed}
@@ -2441,7 +2396,7 @@ export function ReportForm({
             </label>
           </section>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col gap-3 pt-1 sm:flex-row">
             <Button
               type="button"
               variant="secondary"
