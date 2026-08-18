@@ -16,7 +16,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           rounded={false}
           sizes="(max-width: 1023px) 135vw, 67vw"
           className="h-full min-h-0"
-          imageClassName="scale-[1.35] lg:scale-[1.16] lg:object-contain"
+          imageClassName="scale-[1.35] lg:scale-[1.65] lg:object-contain"
         />
       </div>
 
@@ -31,11 +31,10 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
             className="inline-flex rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus"
           >
             <Image
-              src="/images/icb-parque-sao-vicente.png"
+              src="/images/icb-parque-sao-vicente.webp"
               alt="ICB Parque São Vicente"
               width={160}
               height={108}
-              priority
               className="h-16 w-auto brightness-0 sm:h-20"
             />
           </Link>

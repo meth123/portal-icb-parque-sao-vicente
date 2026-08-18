@@ -92,11 +92,10 @@ export function MobilePortalNavigation({
           className="inline-flex items-center gap-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
         >
           <Image
-            src="/images/icb-parque-sao-vicente.png"
+            src="/images/icb-parque-sao-vicente.webp"
             alt=""
             width={160}
             height={108}
-            priority
             className="h-11 w-auto brightness-0"
           />
           <span className="text-sm font-semibold text-app-foreground">

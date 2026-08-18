@@ -4,6 +4,7 @@ import {
   flattenGuestGroups,
   filterLettersAndSpaces,
   filterNameListInput,
+  getCellReportWeekRange,
   getFirstPendingLeadershipId,
   getLeadershipRecords,
   normalizeLettersAndSpacesName,
@@ -201,4 +202,16 @@ test("nome para o PDF aceita somente letras e normaliza os espaços", () => {
   assert.equal(normalizeLettersAndSpacesName("  Ana   Cláudia  "), "Ana Cláudia");
   assert.equal(normalizeLettersAndSpacesName("Ana 2"), null);
   assert.equal(normalizeLettersAndSpacesName("Ana-Cláudia"), null);
+});
+
+test("identifica a semana de segunda a domingo da Data da Célula", () => {
+  assert.deepEqual(getCellReportWeekRange("2026-08-14"), {
+    startsOn: "2026-08-10",
+    endsOn: "2026-08-16",
+  });
+  assert.deepEqual(getCellReportWeekRange("2026-08-13"), {
+    startsOn: "2026-08-10",
+    endsOn: "2026-08-16",
+  });
+  assert.equal(getCellReportWeekRange("2026-02-30"), null);
 });

@@ -26,11 +26,10 @@ export function SiteShell({ children }: SiteShellProps) {
             aria-label="Ir para a página inicial"
           >
             <Image
-              src="/images/icb-parque-sao-vicente.png"
+              src="/images/icb-parque-sao-vicente.webp"
               alt="ICB Parque São Vicente"
               width={857}
               height={576}
-              priority
               className="h-20 w-auto brightness-0"
             />
           </Link>

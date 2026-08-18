@@ -3,12 +3,12 @@ export const annualTheme = {
   name: "Caminhando em Unidade",
   artwork: {
     desktop: {
-      src: "/images/themes/caminhando-em-unidade-2026-desktop.png",
+      src: "/images/themes/caminhando-em-unidade-2026-desktop.webp",
       width: 1672,
       height: 941,
     },
     mobile: {
-      src: "/images/themes/caminhando-em-unidade-2026-mobile.png",
+      src: "/images/themes/caminhando-em-unidade-2026-mobile.webp",
       width: 2172,
       height: 724,
     },

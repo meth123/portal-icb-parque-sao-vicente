@@ -1,5 +1,3 @@
-"use client";
-
 import { LogOut } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -32,11 +30,10 @@ export function DesktopSidebar({
           className="inline-flex items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus"
         >
           <Image
-            src="/images/icb-parque-sao-vicente.png"
+            src="/images/icb-parque-sao-vicente.webp"
             alt=""
             width={160}
             height={108}
-            priority
             className="h-14 w-auto brightness-0"
           />
           <span className="text-sm font-semibold leading-5 text-app-foreground">

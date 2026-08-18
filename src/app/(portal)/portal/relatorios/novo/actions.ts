@@ -3,11 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/current-user";
-import { normalizeLettersAndSpacesName } from "@/lib/cell-report-form";
+import {
+  getCellReportWeekRange,
+  normalizeLettersAndSpacesName,
+} from "@/lib/cell-report-form";
 import { createClient } from "@/lib/supabase/server";
 
 export type SubmitCellReportState = {
   message: string;
+  requiresAdditionalMeetingConfirmation?: boolean;
 };
 
 type ManualNameEntry = {
@@ -350,6 +354,40 @@ export async function submitCellReport(
   }
 
   const supabase = await createClient();
+  const confirmedAdditionalMeeting =
+    readString(formData, "confirmAdditionalMeeting") === "yes";
+
+  if (!correctionSourceVersionId && !confirmedAdditionalMeeting) {
+    const weekRange = getCellReportWeekRange(meetingOn);
+
+    if (!weekRange) {
+      return { message: "Informe uma Data da Célula válida." };
+    }
+
+    const { data: anotherMeeting, error: weeklyCheckError } = await supabase
+      .from("cell_reports")
+      .select("id")
+      .eq("cell_id", cellId)
+      .gte("meeting_on", weekRange.startsOn)
+      .lte("meeting_on", weekRange.endsOn)
+      .neq("meeting_on", meetingOn)
+      .limit(1);
+
+    if (weeklyCheckError) {
+      return {
+        message: "Não foi possível conferir as Fichas desta semana. Tente novamente.",
+      };
+    }
+
+    if ((anotherMeeting?.length ?? 0) > 0) {
+      return {
+        message:
+          "Já existe outra Ficha nesta semana. Se a data anterior estava errada, use Corrigir na Ficha enviada. Confirme abaixo apenas se houve outra reunião.",
+        requiresAdditionalMeetingConfirmation: true,
+      };
+    }
+  }
+
   const reportPayload = {
     target_cell_id: cellId,
     target_meeting_on: meetingOn,

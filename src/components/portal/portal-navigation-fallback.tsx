@@ -152,11 +152,10 @@ function Brand({
       className={`flex items-center ${className ?? ""}`}
     >
       <Image
-        src="/images/icb-parque-sao-vicente.png"
+        src="/images/icb-parque-sao-vicente.webp"
         alt=""
         width={160}
         height={108}
-        priority
         className={compact ? "h-11 w-auto brightness-0" : "h-14 w-auto brightness-0"}
       />
       <span className={compact ? "text-sm font-semibold" : "ml-3 text-sm font-semibold"}>

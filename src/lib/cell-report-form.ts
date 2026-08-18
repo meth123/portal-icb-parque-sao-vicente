@@ -125,3 +125,22 @@ export function normalizeLettersAndSpacesName(value: string) {
     ? normalized
     : null;
 }
+
+export function getCellReportWeekRange(value: string) {
+  const date = new Date(`${value}T00:00:00Z`);
+
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
+    return null;
+  }
+
+  const daysSinceMonday = (date.getUTCDay() + 6) % 7;
+  const startsOn = new Date(date);
+  startsOn.setUTCDate(startsOn.getUTCDate() - daysSinceMonday);
+  const endsOn = new Date(startsOn);
+  endsOn.setUTCDate(endsOn.getUTCDate() + 6);
+
+  return {
+    startsOn: startsOn.toISOString().slice(0, 10),
+    endsOn: endsOn.toISOString().slice(0, 10),
+  };
+}

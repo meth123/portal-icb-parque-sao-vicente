@@ -29,14 +29,14 @@ export function ThemeArtwork({
   } = getImageProps({
     ...common,
     ...annualTheme.artwork.desktop,
-    quality: 90,
+    quality: 80,
   });
   const {
     props: { srcSet: mobileSrcSet, alt, ...mobileImageProps },
   } = getImageProps({
     ...common,
     ...annualTheme.artwork.mobile,
-    quality: 90,
+    quality: 80,
   });
 
   return (
