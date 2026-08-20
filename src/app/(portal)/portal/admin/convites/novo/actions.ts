@@ -231,7 +231,7 @@ export async function createLeadershipInvite(
   // podem ser retornados pelo generateLink sem um erro de e-mail duplicado.
   // Nesse caso, não tentamos preparar um segundo perfil: geramos somente um
   // link de recuperação para a conta já existente.
-  const { data: existingProfile, error: existingProfileError } = await supabase
+  const { data: existingProfile, error: existingProfileError } = await adminClient
     .from("profiles")
     .select("id")
     .eq("id", createdProfileId)
