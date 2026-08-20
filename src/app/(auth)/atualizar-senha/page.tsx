@@ -39,9 +39,9 @@ export default async function UpdatePasswordPage({
 
   return (
     <AuthPanel
-      eyebrow="Recuperação de acesso"
-      title="Crie uma nova senha"
-      description="Use pelo menos 8 caracteres e guarde a senha em um local seguro."
+      eyebrow="Primeiro acesso ou recuperação"
+      title="Crie sua senha de acesso"
+      description="Você deve criar uma senha nesta tela. Ela não foi definida nem enviada por outra pessoa."
     >
       {errorMessage ? (
         <Alert tone="danger" className="mt-6">
@@ -50,7 +50,7 @@ export default async function UpdatePasswordPage({
       ) : null}
 
       <form action={updatePassword} className="mt-8 space-y-5">
-        <FormField id="password" label="Nova senha">
+        <FormField id="password" label="Crie uma senha">
           <PasswordInput
             id="password"
             name="password"
@@ -58,10 +58,11 @@ export default async function UpdatePasswordPage({
             required
             minLength={8}
             maxLength={128}
+            placeholder="No mínimo 8 caracteres"
           />
         </FormField>
 
-        <FormField id="passwordConfirmation" label="Confirmar nova senha">
+        <FormField id="passwordConfirmation" label="Digite a senha novamente">
           <PasswordInput
             id="passwordConfirmation"
             name="passwordConfirmation"
@@ -69,11 +70,12 @@ export default async function UpdatePasswordPage({
             required
             minLength={8}
             maxLength={128}
+            placeholder="Repita a senha criada acima"
           />
         </FormField>
 
-        <SubmitButton pendingLabel="Atualizando..." className="w-full">
-          Atualizar senha
+        <SubmitButton pendingLabel="Salvando..." className="w-full">
+          Salvar minha senha
         </SubmitButton>
       </form>
     </AuthPanel>
