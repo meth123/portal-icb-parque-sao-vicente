@@ -21,7 +21,7 @@ const errorMessages: Record<string, string> = {
   campos: "Preencha o e-mail e a senha.",
   credenciais: "E-mail ou senha inválidos.",
   perfil: "Seu perfil ainda não está disponível. Procure um administrador.",
-  link: "O link de recuperação é inválido ou expirou. Solicite um novo link.",
+  link: "O link de acesso é inválido ou expirou. Solicite um novo link.",
 };
 
 const statusMessages: Record<string, string> = {

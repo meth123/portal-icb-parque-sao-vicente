@@ -13,20 +13,13 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient();
 
   if (tokenHash && (type === "recovery" || type === "invite")) {
-    const { error } = await supabase.auth.verifyOtp({
-      token_hash: tokenHash,
-      type,
-    });
+    const confirmationUrl = request.nextUrl.clone();
+    confirmationUrl.pathname = "/confirmar-acesso";
+    confirmationUrl.search = "";
+    confirmationUrl.searchParams.set("token_hash", tokenHash);
+    confirmationUrl.searchParams.set("type", type);
 
-    if (!error) {
-      const destination = request.nextUrl.clone();
-      destination.pathname = getSafeDestination(
-        request.nextUrl.searchParams.get("next"),
-      );
-      destination.search = "";
-
-      return NextResponse.redirect(destination);
-    }
+    return NextResponse.redirect(confirmationUrl);
   }
 
   if (code) {

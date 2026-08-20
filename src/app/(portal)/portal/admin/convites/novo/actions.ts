@@ -27,6 +27,17 @@ function readString(formData: FormData, field: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function createSafePasswordLink(
+  applicationOrigin: string,
+  tokenHash: string,
+  type: "invite" | "recovery",
+) {
+  const inviteUrl = new URL("/confirmar-acesso", applicationOrigin);
+  inviteUrl.searchParams.set("token_hash", tokenHash);
+  inviteUrl.searchParams.set("type", type);
+  return inviteUrl.toString();
+}
+
 async function getTrustedOrigin() {
   const requestHeaders = await headers();
   const requestOrigin = requestHeaders.get("origin");
@@ -173,10 +184,43 @@ export async function createLeadershipInvite(
       linkError?.message.toLocaleLowerCase("pt-BR").includes("already") ||
       linkError?.message.toLocaleLowerCase("pt-BR").includes("registered");
 
+    if (alreadyExists) {
+      const { data: recoveryData, error: recoveryError } =
+        await adminClient.auth.admin.generateLink({
+          type: "recovery",
+          email,
+          options: {
+            redirectTo: `${applicationOrigin}/atualizar-senha`,
+          },
+        });
+
+      if (
+        !recoveryError &&
+        recoveryData.user?.id &&
+        recoveryData.properties?.hashed_token
+      ) {
+        await supabase.rpc("record_admin_operation", {
+          target_action: "account.password_link.create",
+          target_type: "profile",
+          target_id: recoveryData.user.id,
+          target_metadata: {},
+        });
+
+        return {
+          message: "A conta já existia. Um novo link de acesso foi gerado.",
+          success: true,
+          inviteLink: createSafePasswordLink(
+            applicationOrigin,
+            recoveryData.properties.hashed_token,
+            "recovery",
+          ),
+          invitedName: fullName,
+        };
+      }
+    }
+
     return {
-      message: alreadyExists
-        ? "Este e-mail já possui uma conta cadastrada."
-        : "Não foi possível criar o convite. Tente novamente.",
+      message: "Não foi possível criar o convite. Tente novamente.",
       success: false,
     };
   }
@@ -258,11 +302,6 @@ export async function createLeadershipInvite(
     },
   });
 
-  const inviteUrl = new URL("/auth/confirm", applicationOrigin);
-  inviteUrl.searchParams.set("token_hash", linkData.properties.hashed_token);
-  inviteUrl.searchParams.set("type", "invite");
-  inviteUrl.searchParams.set("next", "/atualizar-senha");
-
   revalidatePath("/portal/admin");
   revalidatePath("/portal/admin/celulas");
   if (!needsCellCreation) {
@@ -272,7 +311,11 @@ export async function createLeadershipInvite(
   return {
     message: "Conta criada. Copie e envie o link de primeiro acesso.",
     success: true,
-    inviteLink: inviteUrl.toString(),
+    inviteLink: createSafePasswordLink(
+      applicationOrigin,
+      linkData.properties.hashed_token,
+      "invite",
+    ),
     invitedName: fullName,
     needsCellCreation,
   };
