@@ -9,6 +9,7 @@ export const config = {
   matcher: [
     "/login",
     "/recuperar-senha",
+    "/confirmar-acesso",
     "/atualizar-senha",
     "/auth/confirm",
     "/portal/:path*",

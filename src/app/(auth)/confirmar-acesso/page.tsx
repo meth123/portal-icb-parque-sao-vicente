@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { SubmitButton } from "@/components/ui/submit-button";
 import { AuthPanel } from "../auth-panel";
-import { confirmAccess } from "./actions";
+import { ConfirmationForm } from "./confirmation-form";
 
 export const metadata: Metadata = {
   title: "Confirmar acesso | ICB Conecta",
@@ -30,13 +29,7 @@ export default async function ConfirmAccessPage({
       title="Confirme para continuar"
       description="Toque no botão abaixo para criar sua senha de acesso."
     >
-      <form action={confirmAccess} className="mt-8">
-        <input type="hidden" name="tokenHash" value={tokenHash} />
-        <input type="hidden" name="type" value={type} />
-        <SubmitButton pendingLabel="Confirmando..." className="w-full">
-          Continuar e criar minha senha
-        </SubmitButton>
-      </form>
+      <ConfirmationForm tokenHash={tokenHash} type={type} />
     </AuthPanel>
   );
 }
