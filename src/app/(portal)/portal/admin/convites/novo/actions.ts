@@ -226,6 +226,64 @@ export async function createLeadershipInvite(
   }
 
   const createdProfileId = linkData.user.id;
+
+  // Alguns usuários existentes (especialmente contas ainda não confirmadas)
+  // podem ser retornados pelo generateLink sem um erro de e-mail duplicado.
+  // Nesse caso, não tentamos preparar um segundo perfil: geramos somente um
+  // link de recuperação para a conta já existente.
+  const { data: existingProfile, error: existingProfileError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", createdProfileId)
+    .maybeSingle();
+
+  if (existingProfileError) {
+    return {
+      message: "Não foi possível verificar a conta existente. Tente novamente.",
+      success: false,
+    };
+  }
+
+  if (existingProfile) {
+    const { data: recoveryData, error: recoveryError } =
+      await adminClient.auth.admin.generateLink({
+        type: "recovery",
+        email,
+        options: {
+          redirectTo: `${applicationOrigin}/atualizar-senha`,
+        },
+      });
+
+    if (
+      recoveryError ||
+      !recoveryData.user?.id ||
+      !recoveryData.properties?.hashed_token
+    ) {
+      return {
+        message: "Não foi possível gerar um novo link para esta conta.",
+        success: false,
+      };
+    }
+
+    await supabase.rpc("record_admin_operation", {
+      target_action: "account.password_link.create",
+      target_type: "profile",
+      target_id: recoveryData.user.id,
+      target_metadata: { source: "existing_profile" },
+    });
+
+    return {
+      message: "A conta já existe. Um novo link de acesso foi gerado.",
+      success: true,
+      inviteLink: createSafePasswordLink(
+        applicationOrigin,
+        recoveryData.properties.hashed_token,
+        "recovery",
+      ),
+      invitedName: fullName,
+    };
+  }
+
   const rollbackCreatedUser = async () => {
     await adminClient.auth.admin.deleteUser(createdProfileId);
   };

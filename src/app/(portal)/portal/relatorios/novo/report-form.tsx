@@ -285,6 +285,7 @@ export function ReportForm({
     createInitialSeed(initialData, defaultDate, viceLeaders.length > 0),
   );
   const nextLocalKey = useRef(initialSeed.maxKey);
+  const pendingEvangelismScrollKey = useRef<number | null>(null);
   const [step, setStep] = useState<ReportStep>(1);
   const [localMessage, setLocalMessage] = useState("");
   const [draftReady, setDraftReady] = useState(false);
@@ -329,6 +330,38 @@ export function ReportForm({
     number | null
   >(null);
   const [submissionConfirmed, setSubmissionConfirmed] = useState(false);
+
+  useEffect(() => {
+    const recordKey = pendingEvangelismScrollKey.current;
+
+    if (
+      recordKey === null ||
+      openEvangelismRecordKey !== recordKey ||
+      !evangelismRecords.some((record) => record.key === recordKey)
+    ) {
+      return;
+    }
+
+    pendingEvangelismScrollKey.current = null;
+    const animationFrameId = window.requestAnimationFrame(() => {
+      const record = document.getElementById(`evangelism-record-${recordKey}`);
+
+      if (!record) {
+        return;
+      }
+
+      const prefersReducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+      record.scrollIntoView({
+        behavior: prefersReducedMotion ? "auto" : "smooth",
+        block: "start",
+      });
+      record.focus({ preventScroll: true });
+    });
+
+    return () => window.cancelAnimationFrame(animationFrameId);
+  }, [evangelismRecords, openEvangelismRecordKey]);
 
   useEffect(() => {
     const restoreTimeoutId = window.setTimeout(() => {
@@ -716,6 +749,7 @@ export function ReportForm({
 
   function addEvangelismRecord(primaryLeadershipId: string) {
     const recordKey = newKey();
+    pendingEvangelismScrollKey.current = recordKey;
     setNotEvangelized((current) => {
       const next = { ...current };
       delete next[primaryLeadershipId];
@@ -2194,7 +2228,8 @@ export function ReportForm({
                         {isOpen ? (
                           <div
                             id={`evangelism-record-${record.key}`}
-                            className="space-y-6 border-t border-app-border bg-surface p-4 sm:p-5"
+                            tabIndex={-1}
+                            className="scroll-mt-24 space-y-6 border-t border-app-border bg-surface p-4 outline-none sm:p-5"
                           >
                             <fieldset>
                               <legend>

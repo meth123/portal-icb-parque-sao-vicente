@@ -29,10 +29,10 @@ export async function assignMonthlyReportResponsibility(
     !user?.isActive ||
     !context ||
     context.cellId !== cellId ||
-    context.currentUserRole !== "leader"
+    !["leader", "vice_leader"].includes(context.currentUserRole)
   ) {
     return {
-      message: "Somente o Líder ativo da célula pode alterar essa indicação.",
+      message: "Somente o Líder ou Vice-líder ativo da célula pode alterar essa indicação.",
       success: false,
     };
   }

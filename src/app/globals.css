@@ -53,6 +53,18 @@ textarea {
   font: inherit;
 }
 
+:where(button:not(:disabled), a[href], [role="button"]:not([aria-disabled="true"])) {
+  -webkit-tap-highlight-color: color-mix(in srgb, var(--theme-primary) 20%, transparent);
+  touch-action: manipulation;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  :where(button:not(:disabled), a[href], [role="button"]:not([aria-disabled="true"])):active {
+    filter: brightness(0.88);
+    scale: 0.985;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

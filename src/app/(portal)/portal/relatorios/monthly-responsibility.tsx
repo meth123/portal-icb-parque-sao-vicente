@@ -57,14 +57,12 @@ export function MonthlyResponsibility({
           >
             Responsável pela Ficha do mês
           </h2>
-          {currentUserRole !== "leader" ? (
-            <p className="mt-1 text-sm text-app-secondary">
-              {responsibleName ?? "Ainda não definido"}
-            </p>
-          ) : null}
+          <p className="mt-1 text-sm text-app-secondary">
+            {responsibleName ?? "Ainda não definido"}
+          </p>
         </div>
       </div>
-      {currentUserRole === "leader" ? (
+      {currentUserRole === "leader" || currentUserRole === "vice_leader" ? (
         leadership.length > 0 ? (
           <form action={formAction} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
             <div className="w-full sm:max-w-md">
