@@ -30,27 +30,13 @@ const uuidPattern =
 export const canAccessDocumentLibrary = cache(async () => {
   const user = await getCurrentUser();
 
-  if (!user?.isActive) {
-    return false;
-  }
-
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("can_access_document_library");
-
-  return !error && data === true;
+  return user?.hasDocumentLibraryAccess === true;
 });
 
 export const canManageDocumentLibrary = cache(async () => {
   const user = await getCurrentUser();
 
-  if (!user?.isActive) {
-    return false;
-  }
-
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("can_manage_document_library");
-
-  return !error && data === true;
+  return user?.canManageDocumentLibrary === true;
 });
 
 export async function getActiveDocumentCategories() {

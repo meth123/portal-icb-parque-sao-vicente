@@ -2398,22 +2398,6 @@ export function ReportForm({
           </section>
 
           <section>
-            {state.requiresAdditionalMeetingConfirmation ? (
-              <label className="mb-3 flex cursor-pointer items-start gap-3 rounded-xl border border-danger/20 bg-danger-soft p-4">
-                <input
-                  type="checkbox"
-                  name="confirmAdditionalMeeting"
-                  value="yes"
-                  required
-                  disabled={pending}
-                  className="mt-0.5 h-5 w-5 shrink-0 accent-theme-primary"
-                />
-                <span className="font-medium text-app-foreground">
-                  Confirmo que houve outra reunião nesta mesma semana.
-                  <RequiredMark />
-                </span>
-              </label>
-            ) : null}
             <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-warning/20 bg-warning-soft p-4">
               <input
                 type="checkbox"

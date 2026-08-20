@@ -49,6 +49,7 @@ export type ManagedCellSummary = {
 
 export type ManagedCellDetail = ManagedCellSummary & {
   startedOn: string | null;
+  reportingStartsOn: string;
   endedOn: string | null;
   weekday: number;
   meetingTime: string;
@@ -200,6 +201,7 @@ type RawCell = {
   name: string;
   is_active: boolean;
   started_on: string | null;
+  reporting_starts_on: string;
   ended_on: string | null;
 };
 
@@ -261,7 +263,9 @@ export async function getManagedCells(): Promise<{
   ] = await Promise.all([
     supabase
       .from("cells")
-      .select("id, name, is_active, started_on, ended_on")
+      .select(
+        "id, name, is_active, started_on, reporting_starts_on, ended_on",
+      )
       .order("name"),
     supabase
       .from("cell_leaderships")
@@ -389,7 +393,9 @@ export async function getManagedCell(
   ] = await Promise.all([
     supabase
       .from("cells")
-      .select("id, name, is_active, started_on, ended_on")
+      .select(
+        "id, name, is_active, started_on, reporting_starts_on, ended_on",
+      )
       .eq("id", cellId)
       .maybeSingle(),
     supabase
@@ -454,6 +460,7 @@ export async function getManagedCell(
               (option) => option.value === classification.cell_type_id,
             )?.label ?? "Tipo não encontrado",
           startedOn: rawCell.started_on,
+          reportingStartsOn: rawCell.reporting_starts_on,
           endedOn: rawCell.ended_on,
           weekday: schedule.weekday,
           meetingTime: schedule.meeting_time.slice(0, 5),

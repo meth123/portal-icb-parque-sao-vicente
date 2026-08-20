@@ -171,8 +171,8 @@ test("aceita somente os períodos pastorais de 3, 6 ou 12 meses", () => {
 
 test("considera a Ficha atrasada somente depois do domingo", () => {
   const cells = [
-    { id: "cell-a", startedOn: "2026-08-03" },
-    { id: "cell-b", startedOn: "2026-08-03" },
+    { id: "cell-a", reportingStartsOn: "2026-08-03" },
+    { id: "cell-b", reportingStartsOn: "2026-08-03" },
   ];
   const reports = [
     {
@@ -202,7 +202,7 @@ test("considera a Ficha atrasada somente depois do domingo", () => {
 
 test("uma Ficha na semana satisfaz o prazo mesmo com reuniões extras", () => {
   const overdue = calculateOverdueCellWeeks(
-    [{ id: "cell-a", startedOn: "2026-08-03" }],
+    [{ id: "cell-a", reportingStartsOn: "2026-08-03" }],
     [
       {
         cellId: "cell-a",
@@ -222,9 +222,21 @@ test("uma Ficha na semana satisfaz o prazo mesmo com reuniões extras", () => {
   assert.deepEqual(overdue, []);
 });
 
+test("não cria pendências anteriores ao início do acompanhamento no portal", () => {
+  assert.deepEqual(
+    calculateOverdueCellWeeks(
+      [{ id: "cell-antiga", reportingStartsOn: "2026-08-17" }],
+      [],
+      "2026-08",
+      "2026-08-20",
+    ),
+    [],
+  );
+});
+
 test("preserva como atrasada a Ficha enviada depois do domingo", () => {
   const overdue = calculateOverdueCellWeeks(
-    [{ id: "cell-a", startedOn: "2026-08-10" }],
+    [{ id: "cell-a", reportingStartsOn: "2026-08-10" }],
     [
       {
         cellId: "cell-a",

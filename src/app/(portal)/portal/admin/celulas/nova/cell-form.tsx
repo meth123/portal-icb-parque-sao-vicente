@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { Alert } from "@/components/ui/alert";
+import { BrazilianDateInput } from "@/components/ui/brazilian-date-input";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { FormSection } from "@/components/ui/form-section";
@@ -105,7 +106,7 @@ export function CellForm({
 
       <FormSection
         title="Encontro"
-        description="Dia, horário e início das atividades da célula."
+        description="Dia, horário e data histórica em que a célula foi criada."
       >
         <div className="grid gap-5 sm:grid-cols-3">
           <FormField id="weekday" label="Dia" required>
@@ -135,12 +136,17 @@ export function CellForm({
             />
           </FormField>
 
-          <FormField id="startedOn" label="Data de início" required>
-            <input
+          <FormField
+            id="startedOn"
+            label="Início da célula"
+            hint="Informe quando a célula foi criada de verdade. As Fichas serão acompanhadas a partir da semana do cadastro no portal."
+            required
+          >
+            <BrazilianDateInput
               id="startedOn"
               name="startedOn"
-              type="date"
               defaultValue={defaultDate}
+              max={defaultDate}
               required
               className={fieldClassName}
             />

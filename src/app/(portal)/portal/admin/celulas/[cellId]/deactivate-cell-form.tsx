@@ -3,6 +3,7 @@
 import { AlertTriangle, ChevronDown } from "lucide-react";
 import { useActionState } from "react";
 import { Alert } from "@/components/ui/alert";
+import { BrazilianDateInput } from "@/components/ui/brazilian-date-input";
 import { Button } from "@/components/ui/button";
 import { deactivateCell, type DeactivateCellState } from "./actions";
 
@@ -63,9 +64,9 @@ export function DeactivateCellForm({
           <span className="font-semibold text-app-foreground">
             Data de encerramento
           </span>
-          <input
+          <BrazilianDateInput
+            id="endedOn"
             name="endedOn"
-            type="date"
             defaultValue={defaultDate}
             min={minimumDate}
             max={defaultDate}

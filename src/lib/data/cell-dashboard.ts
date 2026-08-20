@@ -17,6 +17,7 @@ import {
   normalizeMonth,
 } from "@/lib/dates/sao-paulo";
 import { createClient } from "@/lib/supabase/server";
+import type { CellDetails } from "@/lib/data/organization";
 
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -58,8 +59,95 @@ type RawCurrentViceLeadership = {
 };
 
 type RawCellStart = {
-  started_on: string;
+  id: string;
+  name: string;
+  is_active: boolean;
+  started_on: string | null;
+  reporting_starts_on: string;
+  classification: {
+    cell_type_name: string;
+    network_code: string;
+  } | null;
+  schedule: {
+    weekday: number;
+    meeting_time: string;
+  } | null;
+  location: {
+    neighborhood_name: string;
+    city_name: string;
+    state_code: string;
+  } | null;
+  leaderships: Array<{
+    profile_id: string;
+    full_name: string | null;
+    role: "leader" | "vice_leader";
+    starts_on: string;
+  }>;
 };
+
+type RawCellDashboardBundle = {
+  cell: RawCellStart | null;
+  currentLeadership: RawCurrentLeadership | null;
+  currentViceLeaderships: RawCurrentViceLeadership[];
+  reports: RawReport[];
+  versions: RawReportVersion[];
+  evangelismEntries: RawEvangelismEntry[];
+  leadershipParticipants: RawLeadershipParticipant[];
+};
+
+const weekdayNames = [
+  "domingo",
+  "segunda-feira",
+  "terça-feira",
+  "quarta-feira",
+  "quinta-feira",
+  "sexta-feira",
+  "sábado",
+];
+
+function formatBrazilianDate(date: string) {
+  const [year, month, day] = date.split("-");
+  return `${day}/${month}/${year}`;
+}
+
+function toCellDetails(
+  cell: RawCellStart | null | undefined,
+  user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>,
+): CellDetails | null {
+  if (!cell) return null;
+
+  const leaderships = cell.leaderships.map((leadership) => ({
+    profileId: leadership.profile_id,
+    name:
+      leadership.full_name ??
+      (leadership.profile_id === user.id
+        ? (user.fullName ?? user.email ?? "Conta atual")
+        : "Nome protegido"),
+    role: leadership.role === "leader" ? ("Líder" as const) : ("Vice-líder" as const),
+    startsOn: formatBrazilianDate(leadership.starts_on),
+  }));
+
+  return {
+    id: cell.id,
+    name: cell.name,
+    isActive: cell.is_active,
+    startedOn: cell.started_on ? formatBrazilianDate(cell.started_on) : null,
+    classification: cell.classification
+      ? `${cell.classification.network_code} — ${cell.classification.cell_type_name}`
+      : "Não informada",
+    schedule: cell.schedule
+      ? `${weekdayNames[cell.schedule.weekday] ?? "dia inválido"}, ${cell.schedule.meeting_time.slice(0, 5)}`
+      : "Não informado",
+    location: cell.location
+      ? `${cell.location.neighborhood_name}, ${cell.location.city_name} — ${cell.location.state_code}`
+      : "Não informada",
+    leader:
+      leaderships.find((leadership) => leadership.role === "Líder")?.name ??
+      "Não informado",
+    leaderships,
+    hasError: false,
+  };
+}
 
 export async function getCellDashboard(
   cellId: string,
@@ -92,46 +180,18 @@ export async function getCellDashboard(
   }
 
   const supabase = await createClient();
-  const [
-    reportsResult,
-    currentLeadershipResult,
-    viceLeadershipsResult,
-    cellStartResult,
-  ] =
-    await Promise.all([
-      supabase
-        .from("cell_reports")
-        .select("id, created_at")
-        .eq("cell_id", cellId)
-        .gte("meeting_on", historyRange.startsOn)
-        .lt("meeting_on", range.endsBefore)
-        .limit(200),
-      supabase
-        .from("cell_leaderships")
-        .select("id, role")
-        .eq("cell_id", cellId)
-        .eq("profile_id", user.id)
-        .is("ends_on", null)
-        .maybeSingle(),
-      supabase
-        .from("cell_leaderships")
-        .select("id, profile_id")
-        .eq("cell_id", cellId)
-        .eq("role", "vice_leader")
-        .is("ends_on", null),
-      supabase
-        .from("cells")
-        .select("started_on")
-        .eq("id", cellId)
-        .maybeSingle(),
-    ]);
-  const currentLeadership = currentLeadershipResult.data as
-    | RawCurrentLeadership
-    | null;
+  const { data, error } = await supabase.rpc("get_cell_dashboard_bundle", {
+    target_cell_id: cellId,
+    target_starts_on: historyRange.startsOn,
+    target_ends_before: range.endsBefore,
+  });
+  const bundle = data as RawCellDashboardBundle | null;
+  const currentLeadership = bundle?.currentLeadership ?? null;
+  const cellDetails = toCellDetails(bundle?.cell, user);
 
   const currentViceLeaderships =
     currentLeadership?.role === "leader"
-      ? ((viceLeadershipsResult.data ?? []) as RawCurrentViceLeadership[])
+      ? (bundle?.currentViceLeaderships ?? [])
       : [];
   const emptyViceSummaries = currentViceLeaderships.map((leadership) => ({
     profileId: leadership.profile_id,
@@ -139,9 +199,9 @@ export async function getCellDashboard(
     reports: 0,
     didEvangelize: false,
   }));
-  const cellStart = cellStartResult.data as RawCellStart | null;
+  const cellStart = bundle?.cell ?? null;
   const reportCreatedOnById = new Map(
-    ((reportsResult.data ?? []) as RawReport[]).map((report) => [
+    (bundle?.reports ?? []).map((report) => [
       report.id,
       getSaoPauloDate(new Date(report.created_at)),
     ]),
@@ -149,7 +209,12 @@ export async function getCellDashboard(
   const calculateOverdueWeeks = (reports: RawReportVersion[]) =>
     cellStart
       ? calculateOverdueCellWeeks(
-          [{ id: cellId, startedOn: cellStart.started_on }],
+          [
+            {
+              id: cellId,
+              reportingStartsOn: cellStart.reporting_starts_on,
+            },
+          ],
           reports.map((report) => ({
             cellId,
             meetingOn: report.meeting_on,
@@ -161,12 +226,7 @@ export async function getCellDashboard(
         )
       : [];
 
-  if (
-    reportsResult.error ||
-    currentLeadershipResult.error ||
-    viceLeadershipsResult.error ||
-    cellStartResult.error
-  ) {
+  if (error || !bundle) {
     return {
       month,
       monthLabel: formatMonthLabel(range.startsOn),
@@ -182,13 +242,12 @@ export async function getCellDashboard(
       personalSummary: null,
       viceSummaries: [],
       overdueWeeks: [],
+      cellDetails: null,
       hasError: true,
     };
   }
 
-  const reportIds = ((reportsResult.data ?? []) as RawReport[]).map(
-    (report) => report.id,
-  );
+  const reportIds = bundle.reports.map((report) => report.id);
 
   if (reportIds.length === 0) {
     return {
@@ -213,41 +272,12 @@ export async function getCellDashboard(
         : null,
       viceSummaries: emptyViceSummaries,
       overdueWeeks: calculateOverdueWeeks([]),
+      cellDetails,
       hasError: false,
     };
   }
 
-  const versionsResult = await supabase
-    .from("cell_report_versions")
-    .select(
-      "id, report_id, meeting_on, members_count, guests_count, first_time_guests_count",
-    )
-    .in("report_id", reportIds)
-    .eq("is_current", true)
-    .gte("meeting_on", historyRange.startsOn)
-    .lt("meeting_on", range.endsBefore);
-
-  if (versionsResult.error) {
-    return {
-      month,
-      monthLabel: formatMonthLabel(range.startsOn),
-      historyMonths: historyMonthsCount,
-      metrics: emptyMetrics,
-      history: emptyHistory,
-      evangelismHistory: [],
-      evangelismParticipation: {
-        accompanied: 0,
-        evangelized: 0,
-        percentage: null,
-      },
-      personalSummary: null,
-      viceSummaries: emptyViceSummaries,
-      overdueWeeks: [],
-      hasError: true,
-    };
-  }
-
-  const reports = (versionsResult.data ?? []) as RawReportVersion[];
+  const reports = bundle.versions;
   const overdueWeeks = calculateOverdueWeeks(reports);
   const history = historyMonths.map((historyMonth) => {
     const monthlyReports = reports
@@ -269,71 +299,19 @@ export async function getCellDashboard(
     (report) => report.meeting_on.slice(0, 7) === month,
   );
   const selectedVersionIds = selectedVersions.map((report) => report.id);
-  const evangelismResult =
-    selectedVersionIds.length > 0
-      ? await supabase
-          .from("cell_report_evangelism_entries")
-          .select(
-            "id, report_version_id, cell_leadership_id, did_evangelize",
-          )
-          .in("report_version_id", selectedVersionIds)
-      : { data: [], error: null };
-
-  if (evangelismResult.error) {
-    return {
-      month,
-      monthLabel: formatMonthLabel(range.startsOn),
-      historyMonths: historyMonthsCount,
-      metrics: selectedMonth?.metrics ?? emptyMetrics,
-      history,
-      evangelismHistory: [],
-      evangelismParticipation: {
-        accompanied: 0,
-        evangelized: 0,
-        percentage: null,
-      },
-      personalSummary: null,
-      viceSummaries: emptyViceSummaries,
-      overdueWeeks,
-      hasError: true,
-    };
-  }
-
-  const evangelismEntries = (evangelismResult.data ?? []) as RawEvangelismEntry[];
+  const selectedVersionIdSet = new Set(selectedVersionIds);
+  const evangelismEntries = bundle.evangelismEntries.filter((entry) =>
+    selectedVersionIdSet.has(entry.report_version_id),
+  );
   const positiveEvangelismEntries = evangelismEntries.filter(
     (entry) => entry.did_evangelize,
   );
   const evangelismEntryIds = positiveEvangelismEntries.map((entry) => entry.id);
-  const leadershipParticipantsResult =
-    evangelismEntryIds.length > 0
-      ? await supabase
-          .from("cell_report_evangelism_leadership_participants")
-          .select("evangelism_entry_id, cell_leadership_id")
-          .in("evangelism_entry_id", evangelismEntryIds)
-      : { data: [], error: null };
-
-  if (leadershipParticipantsResult.error) {
-    return {
-      month,
-      monthLabel: formatMonthLabel(range.startsOn),
-      historyMonths: historyMonthsCount,
-      metrics: selectedMonth?.metrics ?? emptyMetrics,
-      history,
-      evangelismHistory: [],
-      evangelismParticipation: {
-        accompanied: 0,
-        evangelized: 0,
-        percentage: null,
-      },
-      personalSummary: null,
-      viceSummaries: emptyViceSummaries,
-      overdueWeeks,
-      hasError: true,
-    };
-  }
-
-  const leadershipParticipants = (leadershipParticipantsResult.data ??
-    []) as RawLeadershipParticipant[];
+  const evangelismEntryIdSet = new Set(evangelismEntryIds);
+  const leadershipParticipants = bundle.leadershipParticipants.filter(
+    (participant) =>
+      evangelismEntryIdSet.has(participant.evangelism_entry_id),
+  );
   const evangelismHistory = calculateEvangelismHistory(
     selectedVersions.map((version) => ({
       versionId: version.id,
@@ -399,6 +377,7 @@ export async function getCellDashboard(
     personalSummary,
     viceSummaries,
     overdueWeeks,
+    cellDetails,
     hasError: false,
   };
 }

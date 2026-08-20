@@ -15,9 +15,27 @@ export type CurrentUser = {
   isSupervisor: boolean;
   canManageCells: boolean;
   isActive: boolean;
+  currentCellId: string | null;
+  currentLeadershipRole: "leader" | "vice_leader" | null;
+  hasDocumentLibraryAccess: boolean;
+  canManageDocumentLibrary: boolean;
 };
 
 const globalRoles: GlobalRole[] = ["user", "pastor", "administrator"];
+
+type RawPortalSessionContext = {
+  id: string;
+  fullName: string | null;
+  avatarPath: string | null;
+  globalRole: string;
+  isSupervisor: boolean;
+  canManageCells: boolean;
+  isActive: boolean;
+  currentCellId: string | null;
+  currentLeadershipRole: "leader" | "vice_leader" | null;
+  hasDocumentLibraryAccess: boolean;
+  canManageDocumentLibrary: boolean;
+};
 
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   await connection();
@@ -30,31 +48,30 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     return null;
   }
 
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select(
-      "full_name, avatar_path, global_role, is_supervisor, can_manage_cells, is_active",
-    )
-    .eq("id", claims.sub)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc("get_portal_session_context");
+  const profile = data as RawPortalSessionContext | null;
 
-  if (error || !profile) {
+  if (error || !profile || profile.id !== claims.sub) {
     return null;
   }
 
-  const globalRole = globalRoles.includes(profile.global_role as GlobalRole)
-    ? (profile.global_role as GlobalRole)
+  const globalRole = globalRoles.includes(profile.globalRole as GlobalRole)
+    ? (profile.globalRole as GlobalRole)
     : "user";
 
   return {
     id: claims.sub,
     email: typeof claims.email === "string" ? claims.email : null,
-    fullName: profile.full_name,
-    avatarPath: profile.avatar_path,
+    fullName: profile.fullName,
+    avatarPath: profile.avatarPath,
     globalRole,
-    isSupervisor: profile.is_supervisor,
-    canManageCells: profile.can_manage_cells,
-    isActive: profile.is_active,
+    isSupervisor: profile.isSupervisor,
+    canManageCells: profile.canManageCells,
+    isActive: profile.isActive,
+    currentCellId: profile.currentCellId,
+    currentLeadershipRole: profile.currentLeadershipRole,
+    hasDocumentLibraryAccess: profile.hasDocumentLibraryAccess,
+    canManageDocumentLibrary: profile.canManageDocumentLibrary,
   };
 });
 

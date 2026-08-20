@@ -10,6 +10,8 @@ const uuidPattern =
 type RawVersion = {
   id: string;
   report_id: string;
+  cell_id: string;
+  cell_name: string;
   version_number: number;
   meeting_format: "in_person" | "online";
   leader_was_present: boolean;
@@ -24,22 +26,12 @@ type RawVersion = {
   meeting_on: string;
 };
 
-type RawReport = {
-  id: string;
-  cell_id: string;
-  meeting_on: string;
-};
-
 type RawCellLeadership = {
   id: string;
   profile_id: string;
   role: "leader" | "vice_leader";
   starts_on: string;
   ends_on: string | null;
-};
-
-type RawDirectoryProfile = {
-  profile_id: string;
   full_name: string | null;
 };
 
@@ -50,6 +42,30 @@ type RawEvangelismEntry = {
   evangelism_on: string | null;
   duration_text: string | null;
   comments: string;
+};
+
+type RawCellReportDetailBundle = {
+  version: RawVersion;
+  leadership: RawCellLeadership[];
+  submittedByName: string | null;
+  members: Array<{ position: number; name: string }>;
+  guests: Array<{
+    position: number;
+    name: string;
+    responsible_name: string;
+    is_first_time: boolean;
+  }>;
+  vicePresences: Array<{ cell_leadership_id: string }>;
+  evangelismEntries: RawEvangelismEntry[];
+  manualParticipants: Array<{
+    evangelism_entry_id: string;
+    position: number;
+    name: string;
+  }>;
+  leadershipParticipants: Array<{
+    evangelism_entry_id: string;
+    cell_leadership_id: string;
+  }>;
 };
 
 export type CellReportVersionDetail = {
@@ -111,113 +127,20 @@ export const getCellReportVersionDetail = cache(
     }
 
     const supabase = await createClient();
-    const versionResult = await supabase
-      .from("cell_report_versions")
-      .select(
-        "id, report_id, version_number, meeting_format, leader_was_present, leader_leadership_id, no_vice_leader_was_present, members_count, guests_count, first_time_guests_count, submitted_by, submitted_at, is_current, meeting_on",
-      )
-      .eq("id", versionId)
-      .maybeSingle();
-    const version = versionResult.data as RawVersion | null;
+    const { data, error } = await supabase.rpc(
+      "get_cell_report_detail_bundle",
+      { target_version_id: versionId },
+    );
+    const bundle = data as RawCellReportDetailBundle | null;
 
-    if (versionResult.error || !version) {
+    if (error || !bundle?.version) {
       return null;
     }
 
-    const reportResult = await supabase
-      .from("cell_reports")
-      .select("id, cell_id, meeting_on")
-      .eq("id", version.report_id)
-      .maybeSingle();
-    const report = reportResult.data as RawReport | null;
-
-    if (reportResult.error || !report) {
-      return null;
-    }
-
-    const [
-      cellResult,
-      membersResult,
-      guestsResult,
-      vicePresencesResult,
-      evangelismResult,
-      cellLeadershipsResult,
-      directoryResult,
-    ] = await Promise.all([
-      supabase.from("cells").select("id, name").eq("id", report.cell_id).maybeSingle(),
-      supabase
-        .from("cell_report_member_entries")
-        .select("position, name")
-        .eq("report_version_id", version.id)
-        .order("position"),
-      supabase
-        .from("cell_report_guest_entries")
-        .select("position, name, responsible_name, is_first_time")
-        .eq("report_version_id", version.id)
-        .order("position"),
-      supabase
-        .from("cell_report_vice_presences")
-        .select("cell_leadership_id")
-        .eq("report_version_id", version.id),
-      supabase
-        .from("cell_report_evangelism_entries")
-        .select(
-          "id, cell_leadership_id, did_evangelize, evangelism_on, duration_text, comments",
-        )
-        .eq("report_version_id", version.id),
-      supabase
-        .from("cell_leaderships")
-        .select("id, profile_id, role, starts_on, ends_on")
-        .eq("cell_id", report.cell_id),
-      supabase.rpc("get_accessible_leadership_directory"),
-    ]);
-
-    if (
-      cellResult.error ||
-      !cellResult.data ||
-      membersResult.error ||
-      guestsResult.error ||
-      vicePresencesResult.error ||
-      evangelismResult.error ||
-      cellLeadershipsResult.error ||
-      directoryResult.error
-    ) {
-      return null;
-    }
-
-    const evangelismEntries = (evangelismResult.data ?? []) as RawEvangelismEntry[];
-    const evangelismEntryIds = evangelismEntries.map((entry) => entry.id);
-    const [manualParticipantsResult, leadershipParticipantsResult] =
-      evangelismEntryIds.length > 0
-        ? await Promise.all([
-            supabase
-              .from("cell_report_evangelism_participants")
-              .select("evangelism_entry_id, position, name")
-              .in("evangelism_entry_id", evangelismEntryIds)
-              .order("position"),
-            supabase
-              .from("cell_report_evangelism_leadership_participants")
-              .select("evangelism_entry_id, cell_leadership_id")
-              .in("evangelism_entry_id", evangelismEntryIds),
-          ])
-        : [
-            { data: [], error: null },
-            { data: [], error: null },
-          ];
-
-    if (manualParticipantsResult.error || leadershipParticipantsResult.error) {
-      return null;
-    }
-
-    const cellLeaderships = (cellLeadershipsResult.data ?? []) as RawCellLeadership[];
+    const version = bundle.version;
+    const cellLeaderships = bundle.leadership;
     const leadershipById = new Map(
       cellLeaderships.map((leadership) => [leadership.id, leadership]),
-    );
-    const profileNames = new Map(
-      ((directoryResult.data ?? []) as RawDirectoryProfile[]).map((profile) => [
-        profile.profile_id,
-        profile.full_name,
-      ]),
     );
 
     function getLeadershipName(leadershipId: string) {
@@ -228,30 +151,21 @@ export const getCellReportVersionDetail = cache(
       }
 
       return (
-        profileNames.get(leadership.profile_id) ??
+        leadership.full_name ??
         (leadership.role === "leader"
           ? "Líder sem nome"
           : "Vice-líder sem nome")
       );
     }
 
-    const manualParticipants = (manualParticipantsResult.data ?? []) as Array<{
-      evangelism_entry_id: string;
-      position: number;
-      name: string;
-    }>;
-    const leadershipParticipants = (leadershipParticipantsResult.data ?? []) as Array<{
-      evangelism_entry_id: string;
-      cell_leadership_id: string;
-    }>;
-    const presentViceLeaderNames = (
-      (vicePresencesResult.data ?? []) as Array<{ cell_leadership_id: string }>
-    )
+    const manualParticipants = bundle.manualParticipants;
+    const leadershipParticipants = bundle.leadershipParticipants;
+    const presentViceLeaderNames = bundle.vicePresences
       .map((presence) => getLeadershipName(presence.cell_leadership_id))
       .sort((first, second) => first.localeCompare(second, "pt-BR"));
-    const presentViceLeadershipIds = (
-      (vicePresencesResult.data ?? []) as Array<{ cell_leadership_id: string }>
-    ).map((presence) => presence.cell_leadership_id);
+    const presentViceLeadershipIds = bundle.vicePresences.map(
+      (presence) => presence.cell_leadership_id,
+    );
     const leadershipAtMeeting = cellLeaderships
       .filter(
         (leadership) =>
@@ -273,9 +187,9 @@ export const getCellReportVersionDetail = cache(
 
     return {
       id: version.id,
-      reportId: report.id,
-      cellId: report.cell_id,
-      cellName: cellResult.data.name,
+      reportId: version.report_id,
+      cellId: version.cell_id,
+      cellName: version.cell_name,
       meetingOn: version.meeting_on,
       versionNumber: version.version_number,
       meetingFormat: version.meeting_format,
@@ -288,21 +202,21 @@ export const getCellReportVersionDetail = cache(
       membersCount: version.members_count,
       guestsCount: version.guests_count,
       firstTimeGuestsCount: version.first_time_guests_count,
-      submittedByName: profileNames.get(version.submitted_by) ?? "Usuário autorizado",
+      submittedByName: bundle.submittedByName ?? "Usuário autorizado",
       submittedAt: version.submitted_at,
       isCurrent: version.is_current,
       leadership: leadershipAtMeeting,
-      members: (membersResult.data ?? []).map((member) => ({
+      members: bundle.members.map((member) => ({
         position: member.position,
         name: member.name,
       })),
-      guests: (guestsResult.data ?? []).map((guest) => ({
+      guests: bundle.guests.map((guest) => ({
         position: guest.position,
         name: guest.name,
         responsibleName: guest.responsible_name,
         isFirstTime: guest.is_first_time,
       })),
-      evangelismEntries: evangelismEntries.map((entry) => ({
+      evangelismEntries: bundle.evangelismEntries.map((entry) => ({
         id: entry.id,
         registeredByLeadershipId: entry.cell_leadership_id,
         registeredByName: getLeadershipName(entry.cell_leadership_id),

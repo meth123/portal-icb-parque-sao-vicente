@@ -78,21 +78,22 @@ export async function getWeeklyChecklistData(options?: {
   const avatarUrls = new Map<string, string>();
 
   if (options?.includeAvatars !== false) {
-    await Promise.all(
-      rows.map(async (row) => {
-        const expectedPath = `${row.profile_id}/avatar`;
-
-        if (row.avatar_path !== expectedPath) return;
-
-        const { data: signedAvatar } = await supabase.storage
-          .from(avatarBucket)
-          .createSignedUrl(expectedPath, 300);
-
-        if (signedAvatar?.signedUrl) {
-          avatarUrls.set(row.profile_id, signedAvatar.signedUrl);
-        }
-      }),
+    const avatarRows = rows.filter(
+      (row) => row.avatar_path === `${row.profile_id}/avatar`,
     );
+    const avatarPaths = avatarRows.map((row) => row.avatar_path as string);
+
+    if (avatarPaths.length > 0) {
+      const { data: signedAvatars } = await supabase.storage
+        .from(avatarBucket)
+        .createSignedUrls(avatarPaths, 300);
+
+      signedAvatars?.forEach((signedAvatar, index) => {
+        if (signedAvatar.signedUrl) {
+          avatarUrls.set(avatarRows[index].profile_id, signedAvatar.signedUrl);
+        }
+      });
+    }
   }
 
   const people = rows.map(

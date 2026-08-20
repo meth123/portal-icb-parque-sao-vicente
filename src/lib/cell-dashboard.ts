@@ -80,7 +80,7 @@ export type PastoralHistoryMonths = 3 | 6 | 12;
 
 export type OverdueCellSource = {
   id: string;
-  startedOn: string;
+  reportingStartsOn: string;
 };
 
 export type WeeklyCellReportSource = {
@@ -123,7 +123,7 @@ export function calculateOverdueCellWeeks(
 
   return completedWeeks.flatMap((week) =>
     cells
-      .filter((cell) => cell.startedOn <= week.endsOn)
+      .filter((cell) => cell.reportingStartsOn <= week.endsOn)
       .flatMap((cell) => {
         const weeklyReports = reports.filter(
           (report) =>

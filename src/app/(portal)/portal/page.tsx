@@ -21,10 +21,8 @@ import {
 import { getCellReportDraftKey } from "@/lib/cell-report-draft";
 import {
   getCellReportFormContext,
-  getCurrentMonthlyReportResponsibility,
 } from "@/lib/data/cell-reports";
-import { getInstitutionMonthlyIndicator } from "@/lib/data/institution-dashboard";
-import { getWeeklyChecklistData } from "@/lib/data/weekly-checklist";
+import { getPortalHomeSummary } from "@/lib/data/portal-home";
 import { logout } from "./actions";
 import { ClearCellReportDraft } from "./clear-cell-report-draft";
 import { ReportTutorialCard } from "./report-tutorial";
@@ -61,22 +59,21 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
 
   const [
     reportContext,
-    monthlyResponsibility,
-    institutionIndicator,
-    weeklyChecklist,
+    homeSummary,
     resolvedSearchParams,
   ] = await Promise.all([
     getCellReportFormContext(),
-    getCurrentMonthlyReportResponsibility(),
-    getInstitutionMonthlyIndicator(),
-    getWeeklyChecklistData({ includeAvatars: false }),
+    getPortalHomeSummary(),
     searchParams,
   ]);
+  const monthlyResponsibility = homeSummary?.monthlyResponsibility ?? null;
+  const institutionIndicator = homeSummary?.institutionIndicator ?? null;
+  const weeklyChecklist = homeSummary?.weeklyChecklist ?? null;
   const reportWasSubmitted = resolvedSearchParams.status === "ficha-enviada";
   const checklistIsVisible = Boolean(
     weeklyChecklist &&
       !weeklyChecklist.hasError &&
-      weeklyChecklist.people.length > 0,
+      weeklyChecklist.peopleCount > 0,
   );
   const checklistWasAnswered = Boolean(
     weeklyChecklist?.currentPerson &&

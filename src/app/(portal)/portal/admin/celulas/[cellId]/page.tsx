@@ -14,6 +14,7 @@ import {
 } from "@/lib/auth/current-user";
 import { getManagedCell } from "@/lib/data/cell-administration";
 import { DeactivateCellForm } from "./deactivate-cell-form";
+import { CellHistoryDatesForm } from "./cell-history-dates-form";
 import { EditCellLeadershipForm } from "./edit-cell-leadership-form";
 
 export const metadata: Metadata = {
@@ -101,6 +102,15 @@ export default async function EditManagedCellPage({
             </div>
           }
         />
+
+        <Surface className="mt-6 p-5 sm:p-7">
+          <CellHistoryDatesForm
+            cellId={data.cell.id}
+            startedOn={data.cell.startedOn ?? defaultDate}
+            reportingStartsOn={data.cell.reportingStartsOn}
+            maximumDate={defaultDate}
+          />
+        </Surface>
 
         <Surface className="mt-6 p-5 sm:p-7">
           <EditCellLeadershipForm

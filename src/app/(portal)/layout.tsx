@@ -6,8 +6,6 @@ import {
   canAccessPastoralDashboard,
   getCurrentUser,
 } from "@/lib/auth/current-user";
-import { getCellReportFormContext } from "@/lib/data/cell-reports";
-import { canAccessDocumentLibrary } from "@/lib/data/document-library";
 import { getProfileAvatarUrl } from "@/lib/data/profile-avatar";
 import { buildPortalNavigation } from "@/lib/portal-navigation";
 
@@ -17,12 +15,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   if (!user) redirect("/login?erro=perfil");
   if (!user.isActive) return children;
 
-  const [reportContext, hasDocumentLibraryAccess, avatarUrl] =
-    await Promise.all([
-      getCellReportFormContext(),
-      canAccessDocumentLibrary(),
-      getProfileAvatarUrl(user.id, user.avatarPath),
-    ]);
+  const avatarUrl = await getProfileAvatarUrl(user.id, user.avatarPath);
   const hasPastoralAccess = canAccessPastoralDashboard(user);
   const hasAdministrationAccess = canAccessAdministration(user);
   const roleLabel =
@@ -32,16 +25,16 @@ export default async function PortalLayout({ children }: { children: ReactNode }
         ? "Pastor"
         : user.isSupervisor
           ? "Supervisor"
-          : reportContext?.currentUserRole === "leader"
+          : user.currentLeadershipRole === "leader"
             ? "Líder"
-            : reportContext?.currentUserRole === "vice_leader"
+            : user.currentLeadershipRole === "vice_leader"
               ? "Vice-líder"
               : "Usuário";
 
   const { primaryItems, secondaryItems, bottomItems, moreItems } =
     buildPortalNavigation({
-      cellId: reportContext?.cellId ?? null,
-      hasDocumentLibraryAccess,
+      cellId: user.currentCellId,
+      hasDocumentLibraryAccess: user.hasDocumentLibraryAccess,
       hasPastoralAccess,
       hasAdministrationAccess,
     });

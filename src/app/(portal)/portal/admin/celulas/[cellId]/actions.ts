@@ -9,6 +9,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 export type UpdateCellState = { message: string };
+export type UpdateCellHistoryDatesState = { message: string; success?: boolean };
 export type DeactivateCellState = { message: string };
 export type ReactivateCellState = { message: string };
 
@@ -20,6 +21,70 @@ const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
 function readString(formData: FormData, field: string) {
   const value = formData.get(field);
   return typeof value === "string" ? value.trim() : "";
+}
+
+function isValidDate(value: string) {
+  if (!datePattern.test(value)) return false;
+  const parsedDate = new Date(`${value}T00:00:00Z`);
+  return (
+    !Number.isNaN(parsedDate.getTime()) &&
+    parsedDate.toISOString().slice(0, 10) === value
+  );
+}
+
+export async function updateCellHistoryDates(
+  _previousState: UpdateCellHistoryDatesState,
+  formData: FormData,
+): Promise<UpdateCellHistoryDatesState> {
+  const user = await getCurrentUser();
+
+  if (!user || !canManageCellAdministration(user)) {
+    return { message: "Sua conta não possui permissão para editar células." };
+  }
+
+  const cellId = readString(formData, "cellId");
+  const startedOn = readString(formData, "startedOn");
+  const reportingStartsOn = readString(formData, "reportingStartsOn");
+
+  if (
+    !uuidPattern.test(cellId) ||
+    !isValidDate(startedOn) ||
+    !isValidDate(reportingStartsOn)
+  ) {
+    return { message: "Revise as datas informadas." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_cell_history_dates", {
+    target_cell_id: cellId,
+    target_started_on: startedOn,
+    target_reporting_starts_on: reportingStartsOn,
+  });
+
+  if (error) {
+    const messages: Record<string, string> = {
+      CELL_MANAGEMENT_FORBIDDEN:
+        "Sua conta não possui permissão para editar células.",
+      CELL_HISTORY_DATES_INVALID:
+        "O início da célula não pode estar no futuro. O acompanhamento deve começar entre o início da célula e até 31 dias após hoje.",
+      CELL_FOUNDATION_AFTER_EXISTING_HISTORY:
+        "O início da célula não pode ser posterior a um histórico já registrado.",
+      CELL_NOT_FOUND: "A célula não foi encontrada.",
+    };
+
+    return {
+      message:
+        messages[error.message] ??
+        "Não foi possível atualizar as datas da célula.",
+    };
+  }
+
+  revalidatePath("/portal/admin/celulas");
+  revalidatePath(`/portal/admin/celulas/${cellId}`);
+  revalidatePath(`/portal/celulas/${cellId}`);
+  revalidatePath("/portal/supervisao");
+
+  return { message: "Datas atualizadas.", success: true };
 }
 
 export async function updateCellLeadership(

@@ -47,12 +47,18 @@ type RawCellType = {
 type RawCell = {
   id: string;
   name: string;
-  started_on: string;
+  reporting_starts_on: string;
 };
 
 type RawReport = {
   id: string;
   cell_id: string;
+  created_at: string;
+};
+
+type RawDeadlineReport = {
+  cell_id: string;
+  meeting_on: string;
   created_at: string;
 };
 
@@ -93,11 +99,28 @@ type RawLeadershipParticipant = {
   cell_leadership_id: string;
 };
 
+type RawPastoralDashboardBundle = {
+  networks: RawNetwork[];
+  cellTypes: RawCellType[];
+  cells: RawCell[];
+  classifications: RawClassification[];
+  schedules: RawSchedule[];
+  reports: RawReport[];
+  versions: RawReportVersion[];
+  submitters: RawLeadershipDirectoryEntry[];
+  deadlineReports: RawDeadlineReport[];
+  evangelismEntries: RawEvangelismEntry[];
+  leadershipParticipants: RawLeadershipParticipant[];
+};
+
 const emptyEvangelismParticipation = {
   accompanied: 0,
   evangelized: 0,
   percentage: null,
 };
+
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function getPastoralDashboard(
   requestedFilters: PastoralDashboardFilters = {},
@@ -129,48 +152,37 @@ export async function getPastoralDashboard(
     ...emptyEvangelismParticipation,
   }));
   const supabase = await createClient();
-  const [
-    networksResult,
-    cellTypesResult,
-    cellsResult,
-    classificationsResult,
-    schedulesResult,
-  ] =
-    await Promise.all([
-      supabase
-        .from("networks")
-        .select("id, name, code")
-        .eq("is_active", true)
-        .order("name"),
-      supabase
-        .from("cell_types")
-        .select("id, network_id, name")
-        .eq("is_active", true)
-        .order("name"),
-      supabase
-        .from("cells")
-        .select("id, name, started_on")
-        .eq("is_active", true)
-        .order("name"),
-      supabase
-        .from("cell_classifications")
-        .select("cell_id, cell_type_id")
-        .is("ends_on", null),
-      supabase
-        .from("cell_schedules")
-        .select("cell_id, weekday")
-        .is("ends_on", null),
-    ]);
-
-  const networks = (networksResult.data ?? []) as RawNetwork[];
-  const cellTypes = (cellTypesResult.data ?? []) as RawCellType[];
-  const baseHasError = Boolean(
-    networksResult.error ||
-      cellTypesResult.error ||
-      cellsResult.error ||
-      classificationsResult.error ||
-      schedulesResult.error,
+  const { data, error: bundleError } = await supabase.rpc(
+    "get_pastoral_dashboard_bundle",
+    {
+      target_starts_on: historyRange.startsOn,
+      target_ends_before: range.endsBefore,
+      target_month_start: range.startsOn,
+      target_network_id: uuidPattern.test(requestedFilters.networkId ?? "")
+        ? requestedFilters.networkId
+        : null,
+      target_cell_type_id: uuidPattern.test(requestedFilters.cellTypeId ?? "")
+        ? requestedFilters.cellTypeId
+        : null,
+      target_cell_id: uuidPattern.test(requestedFilters.cellId ?? "")
+        ? requestedFilters.cellId
+        : null,
+      target_weekday: ["4", "5", "6"].includes(
+        requestedFilters.weekday ?? "",
+      )
+        ? Number(requestedFilters.weekday)
+        : null,
+      target_submitter_profile_id: uuidPattern.test(
+        requestedFilters.submitterProfileId ?? "",
+      )
+        ? requestedFilters.submitterProfileId
+        : null,
+    },
   );
+  const bundle = data as RawPastoralDashboardBundle | null;
+  const networks = bundle?.networks ?? [];
+  const cellTypes = bundle?.cellTypes ?? [];
+  const baseHasError = Boolean(bundleError || !bundle);
   const selectedNetworkId = networks.some(
     (network) => network.id === requestedFilters.networkId,
   )
@@ -219,8 +231,7 @@ export async function getPastoralDashboard(
             .map((cellType) => cellType.id),
         )
       : null;
-  const classifications = (classificationsResult.data ??
-    []) as RawClassification[];
+  const classifications = bundle?.classifications ?? [];
   const cellTypeByCellId = new Map(
     classifications.map((classification) => [
       classification.cell_id,
@@ -228,7 +239,7 @@ export async function getPastoralDashboard(
     ]),
   );
   const scheduleByCellId = new Map(
-    ((schedulesResult.data ?? []) as RawSchedule[]).map((schedule) => [
+    (bundle?.schedules ?? []).map((schedule) => [
       schedule.cell_id,
       schedule.weekday,
     ]),
@@ -238,7 +249,7 @@ export async function getPastoralDashboard(
   )
     ? (requestedFilters.weekday ?? "")
     : "";
-  const organizationFilteredCells = ((cellsResult.data ?? []) as RawCell[]).filter(
+  const organizationFilteredCells = (bundle?.cells ?? []).filter(
     (cell) => {
       if (!allowedCellTypeIds) {
         return true;
@@ -262,127 +273,30 @@ export async function getPastoralDashboard(
     : organizationFilteredCells;
   let submitters: Array<{ id: string; name: string }> = [];
   let selectedSubmitterProfileId = "";
-  let directoryHasError = false;
   const filteredCellIds = filteredCells.map((cell) => cell.id);
-  const reportIds: string[] = [];
+  const filteredCellIdSet = new Set(filteredCellIds);
+  const scopedReports = (bundle?.reports ?? []).filter((report) =>
+    filteredCellIdSet.has(report.cell_id),
+  );
+  const reportIds = scopedReports.map((report) => report.id);
+  const reportIdSet = new Set(reportIds);
   const reportCellByReportId = new Map<string, string>();
-  const reportCreatedOnByReportId = new Map<string, string>();
-  let reportsHaveError = false;
-
-  if (filteredCellIds.length > 0) {
-    const pageSize = 500;
-    let offset = 0;
-    let shouldContinue = true;
-
-    while (shouldContinue) {
-      const reportsResult = await supabase
-        .from("cell_reports")
-        .select("id, cell_id, created_at")
-        .in("cell_id", filteredCellIds)
-        .gte("meeting_on", historyRange.startsOn)
-        .lt("meeting_on", range.endsBefore)
-        .order("meeting_on")
-        .order("id")
-        .range(offset, offset + pageSize - 1);
-
-      if (reportsResult.error) {
-        reportsHaveError = true;
-        break;
-      }
-
-      const page = reportsResult.data ?? [];
-      for (const report of page as RawReport[]) {
-        reportIds.push(report.id);
-        reportCellByReportId.set(report.id, report.cell_id);
-        reportCreatedOnByReportId.set(
-          report.id,
-          getSaoPauloDate(new Date(report.created_at)),
-        );
-      }
-      shouldContinue = page.length === pageSize;
-      offset += pageSize;
-    }
+  for (const report of scopedReports) {
+    reportCellByReportId.set(report.id, report.cell_id);
   }
 
-  if (reportsHaveError) {
-    return {
-      month,
-      monthLabel: formatMonthLabel(range.startsOn),
-      networks,
-      cellTypes: availableCellTypes,
-      selectedNetworkId,
-      selectedCellTypeId,
-      selectedCellId,
-      selectedWeekday,
-      selectedSubmitterProfileId,
-      cells: organizationFilteredCells,
-      submitters,
-      historyMonths: historyMonthsCount,
-      activeCells: filteredCellIds.length,
-      metrics: emptyMetrics,
-      firstTimeHistory: emptyHistory,
-      cellSummaries: [],
-      overdueWeeks: [],
-      evangelismParticipation: emptyEvangelismParticipation,
-      evangelismHistory: emptyEvangelismHistory,
-      hasError: true,
-    };
-  }
-
-  const reportIdBatches = Array.from(
-    { length: Math.ceil(reportIds.length / 200) },
-    (_, index) => reportIds.slice(index * 200, index * 200 + 200),
-  );
-  const versionResults = await Promise.all(
-    reportIdBatches.map((batch) =>
-      supabase
-        .from("cell_report_versions")
-        .select(
-          "id, report_id, submitted_by, meeting_on, members_count, guests_count, first_time_guests_count",
-        )
-        .in("report_id", batch)
-        .eq("is_current", true),
-    ),
-  );
-
-  if (versionResults.some((result) => result.error)) {
-    return {
-      month,
-      monthLabel: formatMonthLabel(range.startsOn),
-      networks,
-      cellTypes: availableCellTypes,
-      selectedNetworkId,
-      selectedCellTypeId,
-      selectedCellId,
-      selectedWeekday,
-      selectedSubmitterProfileId,
-      cells: organizationFilteredCells,
-      submitters,
-      historyMonths: historyMonthsCount,
-      activeCells: filteredCellIds.length,
-      metrics: emptyMetrics,
-      firstTimeHistory: emptyHistory,
-      cellSummaries: [],
-      overdueWeeks: [],
-      evangelismParticipation: emptyEvangelismParticipation,
-      evangelismHistory: emptyEvangelismHistory,
-      hasError: true,
-    };
-  }
-
-  const unfilteredVersions = versionResults.flatMap(
-    (result) => (result.data ?? []) as RawReportVersion[],
+  const unfilteredVersions = (bundle?.versions ?? []).filter((version) =>
+    reportIdSet.has(version.report_id),
   );
   const overdueWeeks = calculateOverdueCellWeeks(
     filteredCells.map((cell) => ({
       id: cell.id,
-      startedOn: cell.started_on,
+      reportingStartsOn: cell.reporting_starts_on,
     })),
-    unfilteredVersions.map((version) => ({
-      cellId: reportCellByReportId.get(version.report_id) ?? "",
-      meetingOn: version.meeting_on,
-      submittedOn:
-        reportCreatedOnByReportId.get(version.report_id) ?? version.meeting_on,
+    (bundle?.deadlineReports ?? []).map((report) => ({
+      cellId: report.cell_id,
+      meetingOn: report.meeting_on,
+      submittedOn: getSaoPauloDate(new Date(report.created_at)),
     })),
     month,
     today,
@@ -392,26 +306,10 @@ export async function getPastoralDashboard(
       filteredCells.find((cell) => cell.id === week.cellId)?.name ??
       "Célula não informada",
   }));
-  const selectedMonthSubmitterIds = Array.from(
-    new Set(
-      unfilteredVersions
-        .filter((version) => version.meeting_on.slice(0, 7) === month)
-        .map((version) => version.submitted_by),
-    ),
-  );
-  const leadershipDirectoryResult =
-    selectedMonthSubmitterIds.length > 0
-      ? await supabase.rpc("get_accessible_leadership_directory")
-      : { data: [] as RawLeadershipDirectoryEntry[], error: null };
-  const leadershipNames = new Map(
-    ((leadershipDirectoryResult.data ?? []) as RawLeadershipDirectoryEntry[]).map(
-      (profile) => [profile.profile_id, profile.full_name],
-    ),
-  );
-  submitters = selectedMonthSubmitterIds
-    .map((profileId) => ({
-      id: profileId,
-      name: leadershipNames.get(profileId) ?? "Nome não informado",
+  submitters = (bundle?.submitters ?? [])
+    .map((profile) => ({
+      id: profile.profile_id,
+      name: profile.full_name ?? "Nome não informado",
     }))
     .sort((first, second) => first.name.localeCompare(second.name, "pt-BR"));
   selectedSubmitterProfileId = submitters.some(
@@ -419,7 +317,6 @@ export async function getPastoralDashboard(
   )
     ? (requestedFilters.submitterProfileId ?? "")
     : "";
-  directoryHasError = Boolean(leadershipDirectoryResult.error);
   const versions = selectedSubmitterProfileId
     ? unfilteredVersions.filter(
         (version) => version.submitted_by === selectedSubmitterProfileId,
@@ -444,92 +341,17 @@ export async function getPastoralDashboard(
     })),
   );
   const versionIds = versions.map((version) => version.id);
-  const versionIdBatches = Array.from(
-    { length: Math.ceil(versionIds.length / 200) },
-    (_, index) => versionIds.slice(index * 200, index * 200 + 200),
-  );
-  const evangelismEntryResults = await Promise.all(
-    versionIdBatches.map((batch) =>
-      supabase
-        .from("cell_report_evangelism_entries")
-        .select(
-          "id, report_version_id, cell_leadership_id, did_evangelize",
-        )
-        .in("report_version_id", batch),
-    ),
-  );
-
-  if (evangelismEntryResults.some((result) => result.error)) {
-    return {
-      month,
-      monthLabel: formatMonthLabel(range.startsOn),
-      networks,
-      cellTypes: availableCellTypes,
-      selectedNetworkId,
-      selectedCellTypeId,
-      selectedCellId,
-      selectedWeekday,
-      selectedSubmitterProfileId,
-      cells: organizationFilteredCells,
-      submitters,
-      historyMonths: historyMonthsCount,
-      activeCells: dashboardCells.length,
-      metrics,
-      firstTimeHistory: emptyHistory,
-      cellSummaries: [],
-      overdueWeeks,
-      evangelismParticipation: emptyEvangelismParticipation,
-      evangelismHistory: emptyEvangelismHistory,
-      hasError: true,
-    };
-  }
-
-  const evangelismEntries = evangelismEntryResults.flatMap(
-    (result) => (result.data ?? []) as RawEvangelismEntry[],
+  const versionIdSet = new Set(versionIds);
+  const evangelismEntries = (bundle?.evangelismEntries ?? []).filter((entry) =>
+    versionIdSet.has(entry.report_version_id),
   );
   const positiveEntryIds = evangelismEntries
     .filter((entry) => entry.did_evangelize)
     .map((entry) => entry.id);
-  const positiveEntryIdBatches = Array.from(
-    { length: Math.ceil(positiveEntryIds.length / 200) },
-    (_, index) => positiveEntryIds.slice(index * 200, index * 200 + 200),
-  );
-  const leadershipParticipantResults = await Promise.all(
-    positiveEntryIdBatches.map((batch) =>
-      supabase
-        .from("cell_report_evangelism_leadership_participants")
-        .select("evangelism_entry_id, cell_leadership_id")
-        .in("evangelism_entry_id", batch),
-    ),
-  );
-
-  if (leadershipParticipantResults.some((result) => result.error)) {
-    return {
-      month,
-      monthLabel: formatMonthLabel(range.startsOn),
-      networks,
-      cellTypes: availableCellTypes,
-      selectedNetworkId,
-      selectedCellTypeId,
-      selectedCellId,
-      selectedWeekday,
-      selectedSubmitterProfileId,
-      cells: organizationFilteredCells,
-      submitters,
-      historyMonths: historyMonthsCount,
-      activeCells: dashboardCells.length,
-      metrics,
-      firstTimeHistory: emptyHistory,
-      cellSummaries: [],
-      overdueWeeks,
-      evangelismParticipation: emptyEvangelismParticipation,
-      evangelismHistory: emptyEvangelismHistory,
-      hasError: true,
-    };
-  }
-
-  const leadershipParticipants = leadershipParticipantResults.flatMap(
-    (result) => (result.data ?? []) as RawLeadershipParticipant[],
+  const positiveEntryIdSet = new Set(positiveEntryIds);
+  const leadershipParticipants = (bundle?.leadershipParticipants ?? []).filter(
+    (participant) =>
+      positiveEntryIdSet.has(participant.evangelism_entry_id),
   );
   const meetingOnByVersionId = new Map(
     versions.map((version) => [version.id, version.meeting_on]),
@@ -655,6 +477,6 @@ export async function getPastoralDashboard(
     overdueWeeks,
     evangelismParticipation,
     evangelismHistory,
-    hasError: directoryHasError,
+    hasError: false,
   };
 }

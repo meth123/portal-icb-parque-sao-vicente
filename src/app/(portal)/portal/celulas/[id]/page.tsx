@@ -26,7 +26,6 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { TrendBars } from "@/components/ui/trend-bars";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getCellDashboard } from "@/lib/data/cell-dashboard";
-import { getCellDetails } from "@/lib/data/organization";
 
 function formatDate(date: string) {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -67,10 +66,12 @@ export default async function CellDetailsPage({
     typeof query.mes === "string" ? query.mes : undefined;
   const requestedHistoryMonths =
     typeof query.historico === "string" ? query.historico : "3";
-  const [cell, dashboard] = await Promise.all([
-    getCellDetails(id),
-    getCellDashboard(id, requestedMonth, requestedHistoryMonths),
-  ]);
+  const dashboard = await getCellDashboard(
+    id,
+    requestedMonth,
+    requestedHistoryMonths,
+  );
+  const cell = dashboard?.cellDetails ?? null;
 
   if (!cell || !dashboard) {
     notFound();

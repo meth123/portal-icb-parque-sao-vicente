@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { Alert } from "@/components/ui/alert";
+import { BrazilianDateInput } from "@/components/ui/brazilian-date-input";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { FormSection } from "@/components/ui/form-section";
@@ -94,11 +95,11 @@ export function EditCellLeadershipForm({
         title="Identificação"
         description={
           cell.isActive
-            ? "Atualize o nome e informe quando a alteração passa a valer."
+            ? "Atualize o nome e informe quando esta configuração passa a valer."
             : "Confirme a célula e defina a data do novo período."
         }
       >
-        <div className="grid gap-5 sm:grid-cols-[1fr_14rem]">
+        <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_20rem]">
           <FormField id="name" label="Nome da célula" required>
             <input
               id="name"
@@ -115,13 +116,16 @@ export function EditCellLeadershipForm({
 
           <FormField
             id="effectiveOn"
-            label={cell.isActive ? "Início da alteração" : "Data da reativação"}
+            label={
+              cell.isActive
+                ? "Alteração válida a partir de"
+                : "Data da reativação"
+            }
             required
           >
-            <input
+            <BrazilianDateInput
               id="effectiveOn"
               name="effectiveOn"
-              type="date"
               defaultValue={defaultDate}
               min={minimumDate}
               max={defaultDate}
