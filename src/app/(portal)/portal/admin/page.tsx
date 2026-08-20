@@ -5,6 +5,7 @@ import {
   ShieldCheck,
   ShieldX,
   UserCheck,
+  UserPlus,
   Users,
   UsersRound,
 } from "lucide-react";
@@ -107,7 +108,14 @@ export default async function AdminAccessPage() {
             title="Gestão"
             description="Acesse as operações administrativas disponíveis."
           />
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <ActionCard
+              href="/portal/admin/convites/novo"
+              title="Cadastrar usuário"
+              description="Gere um link de primeiro acesso"
+              icon={<UserPlus size={22} strokeWidth={1.8} />}
+              tone="theme"
+            />
             <ActionCard
               href="/portal/admin/celulas"
               title="Gerenciar células"

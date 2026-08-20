@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const flowId = request.nextUrl.searchParams.get("sb_flow_id");
   const supabase = await createClient();
 
-  if (tokenHash && type === "recovery") {
+  if (tokenHash && (type === "recovery" || type === "invite")) {
     const { error } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
       type,
@@ -20,7 +20,9 @@ export async function GET(request: NextRequest) {
 
     if (!error) {
       const destination = request.nextUrl.clone();
-      destination.pathname = "/atualizar-senha";
+      destination.pathname = getSafeDestination(
+        request.nextUrl.searchParams.get("next"),
+      );
       destination.search = "";
 
       return NextResponse.redirect(destination);
