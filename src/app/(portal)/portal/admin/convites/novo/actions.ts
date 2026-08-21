@@ -133,7 +133,11 @@ export async function createLeadershipInvite(
 
   const supabase = await createClient();
   let cell: { id: string; name: string; is_active: boolean } | null = null;
-  let currentLeaderships: Array<{ profile_id: string; role: string }> = [];
+  let currentLeaderships: Array<{
+    cell_id: string;
+    profile_id: string;
+    role: string;
+  }> = [];
 
   if (!needsCellCreation) {
     const [cellResult, leadershipsResult] = await Promise.all([
@@ -144,7 +148,7 @@ export async function createLeadershipInvite(
         .maybeSingle(),
       supabase
         .from("cell_leaderships")
-        .select("profile_id, role")
+        .select("cell_id, profile_id, role")
         .eq("cell_id", cellId)
         .is("ends_on", null),
     ]);
@@ -245,6 +249,104 @@ export async function createLeadershipInvite(
   }
 
   if (existingProfile) {
+    const existingUserIsPending =
+      linkData.user.last_sign_in_at === null &&
+      linkData.user.email_confirmed_at === null;
+
+    if (existingUserIsPending) {
+      const { error: profilePreparationError } = await supabase.rpc(
+        "prepare_invited_leadership_profile",
+        {
+          target_profile_id: createdProfileId,
+          target_full_name: fullName,
+        },
+      );
+
+      if (profilePreparationError) {
+        return {
+          message:
+            "A conta pendente existe, mas não foi possível preparar o perfil. Tente gerar o link novamente.",
+          success: false,
+        };
+      }
+
+      if (!needsCellCreation && cell) {
+        const existingLeadership = currentLeaderships.find(
+          (leadership) => leadership.profile_id === createdProfileId,
+        );
+        const currentLeader = currentLeaderships.find(
+          (leadership) => leadership.role === "leader",
+        );
+        const currentViceIds = currentLeaderships
+          .filter((leadership) => leadership.role === "vice_leader")
+          .map((leadership) => leadership.profile_id);
+        const targetLeaderId =
+          leadershipRole === "leader"
+            ? createdProfileId
+            : currentLeader?.profile_id;
+        const targetViceIds =
+          leadershipRole === "vice_leader"
+            ? Array.from(new Set([...currentViceIds, createdProfileId]))
+            : currentViceIds;
+
+        if (!targetLeaderId) {
+          return {
+            message: "A célula selecionada não possui um Líder válido.",
+            success: false,
+          };
+        }
+
+        if (
+          !existingLeadership ||
+          existingLeadership.role !== leadershipRole ||
+          existingLeadership.cell_id !== cellId
+        ) {
+          const { error: leadershipError } = await supabase.rpc(
+            "update_cell_leadership",
+            {
+              target_cell_id: cellId,
+              target_name: cell.name,
+              target_effective_on: getSaoPauloDate(),
+              target_leader_profile_id: targetLeaderId,
+              target_vice_profile_ids: targetViceIds,
+            },
+          );
+
+          if (leadershipError) {
+            return {
+              message:
+                "A conta existe, mas não foi possível concluir o vínculo com a célula. Verifique se ela já está vinculada a outra célula.",
+              success: false,
+            };
+          }
+        }
+      }
+
+      await supabase.rpc("record_admin_operation", {
+        target_action: "account.password_link.create",
+        target_type: "profile",
+        target_id: createdProfileId,
+        target_metadata: {
+          source: "existing_pending_account",
+          cell_id: needsCellCreation ? null : cellId,
+          leadership_role: leadershipRole,
+        },
+      });
+
+      return {
+        message:
+          "A conta pendente foi preparada. Copie e envie o novo link de primeiro acesso.",
+        success: true,
+        inviteLink: createSafePasswordLink(
+          applicationOrigin,
+          linkData.properties.hashed_token,
+          "invite",
+        ),
+        invitedName: fullName,
+        needsCellCreation,
+      };
+    }
+
     const { data: recoveryData, error: recoveryError } =
       await adminClient.auth.admin.generateLink({
         type: "recovery",
