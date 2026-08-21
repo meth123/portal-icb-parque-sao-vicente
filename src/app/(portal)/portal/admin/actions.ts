@@ -69,23 +69,31 @@ export async function generatePendingAccessLink(
     const { data: userData, error: userError } =
       await adminClient.auth.admin.getUserById(profileId);
 
-    if (
-      userError ||
-      !userData.user ||
-      Boolean(userData.user.last_sign_in_at) ||
-      Boolean(userData.user.email_confirmed_at)
-    ) {
+    if (userError || !userData.user?.email) {
       return {
-        message: "Esta conta não está pendente de primeiro acesso.",
+        message: "Não foi possível localizar o e-mail desta conta.",
         success: false,
       };
     }
 
-    const { data, error } = await adminClient.auth.admin.generateLink({
+    let { data, error } = await adminClient.auth.admin.generateLink({
       type: "invite",
-      email: userData.user.email ?? "",
+      email: userData.user.email,
       options: { redirectTo: `${applicationOrigin}/atualizar-senha` },
     });
+
+    let linkType: "invite" | "recovery" = "invite";
+
+    if (error || !data.properties?.hashed_token) {
+      const recoveryResult = await adminClient.auth.admin.generateLink({
+        type: "recovery",
+        email: userData.user.email,
+        options: { redirectTo: `${applicationOrigin}/atualizar-senha` },
+      });
+      data = recoveryResult.data;
+      error = recoveryResult.error;
+      linkType = "recovery";
+    }
 
     if (error || !data.properties?.hashed_token) {
       return {
@@ -96,11 +104,14 @@ export async function generatePendingAccessLink(
 
     const accessLink = new URL("/confirmar-acesso", applicationOrigin);
     accessLink.searchParams.set("token_hash", data.properties.hashed_token);
-    accessLink.searchParams.set("type", "invite");
+    accessLink.searchParams.set("type", linkType);
 
     revalidatePath("/portal/admin");
     return {
-      message: "Novo link de primeiro acesso gerado.",
+      message:
+        linkType === "invite"
+          ? "Novo link de primeiro acesso gerado."
+          : "Novo link de acesso gerado.",
       success: true,
       accessLink: accessLink.toString(),
     };

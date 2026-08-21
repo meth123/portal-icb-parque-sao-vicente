@@ -203,6 +203,76 @@ export async function createLeadershipInvite(
         recoveryData.user?.id &&
         recoveryData.properties?.hashed_token
       ) {
+        if (!needsCellCreation && cell) {
+          const { data: existingActiveLeaderships, error: activeLeadershipError } =
+            await supabase
+              .from("cell_leaderships")
+              .select("cell_id, profile_id, role")
+              .eq("profile_id", recoveryData.user.id)
+              .is("ends_on", null);
+
+          if (activeLeadershipError) {
+            return {
+              message:
+                "A conta existe, mas não foi possível verificar seus vínculos atuais.",
+              success: false,
+            };
+          }
+
+          const linkedToAnotherCell = (existingActiveLeaderships ?? []).some(
+            (leadership) => leadership.cell_id !== cellId,
+          );
+
+          if (linkedToAnotherCell) {
+            return {
+              message:
+                "Esta conta já está vinculada a outra célula. Encerre o vínculo anterior antes de transferi-la.",
+              success: false,
+            };
+          }
+
+          const currentLeader = currentLeaderships.find(
+            (leadership) => leadership.role === "leader",
+          );
+          const currentViceIds = currentLeaderships
+            .filter((leadership) => leadership.role === "vice_leader")
+            .map((leadership) => leadership.profile_id);
+          const targetLeaderId =
+            leadershipRole === "leader"
+              ? recoveryData.user.id
+              : currentLeader?.profile_id;
+          const targetViceIds =
+            leadershipRole === "vice_leader"
+              ? Array.from(new Set([...currentViceIds, recoveryData.user.id]))
+              : currentViceIds;
+
+          if (!targetLeaderId) {
+            return {
+              message: "A célula selecionada não possui um Líder válido.",
+              success: false,
+            };
+          }
+
+          const { error: leadershipError } = await supabase.rpc(
+            "update_cell_leadership",
+            {
+              target_cell_id: cellId,
+              target_name: cell.name,
+              target_effective_on: getSaoPauloDate(),
+              target_leader_profile_id: targetLeaderId,
+              target_vice_profile_ids: targetViceIds,
+            },
+          );
+
+          if (leadershipError) {
+            return {
+              message:
+                "A conta existe, mas não foi possível vinculá-la à célula. Verifique se ela já possui um vínculo ativo.",
+              success: false,
+            };
+          }
+        }
+
         await supabase.rpc("record_admin_operation", {
           target_action: "account.password_link.create",
           target_type: "profile",
@@ -262,11 +332,30 @@ export async function createLeadershipInvite(
       );
 
       if (profilePreparationError) {
-        return {
-          message:
-            "A conta pendente existe, mas não foi possível preparar o perfil. Tente gerar o link novamente.",
-          success: false,
-        };
+        // Para o fluxo "célula ainda será cadastrada", a conta pode ser
+        // preparada diretamente pelo cliente administrativo. Isso mantém o
+        // cadastro utilizável mesmo quando o perfil já foi criado pelo Auth
+        // com metadados diferentes do convite original.
+        if (needsCellCreation) {
+          const { error: fallbackProfileError } = await adminClient
+            .from("profiles")
+            .update({ full_name: fullName })
+            .eq("id", createdProfileId);
+
+          if (fallbackProfileError) {
+            return {
+              message:
+                "A conta pendente existe, mas não foi possível preparar o perfil. Tente gerar o link novamente.",
+              success: false,
+            };
+          }
+        } else {
+          return {
+            message:
+              "A conta pendente existe, mas não foi possível preparar o perfil. Tente gerar o link novamente.",
+            success: false,
+          };
+        }
       }
 
       if (!needsCellCreation && cell) {
@@ -398,11 +487,26 @@ export async function createLeadershipInvite(
   );
 
   if (profileError) {
-    await rollbackCreatedUser();
-    return {
-      message: "Não foi possível preparar o perfil da nova conta.",
-      success: false,
-    };
+    if (needsCellCreation) {
+      const { error: fallbackProfileError } = await adminClient
+        .from("profiles")
+        .update({ full_name: fullName })
+        .eq("id", createdProfileId);
+
+      if (fallbackProfileError) {
+        await rollbackCreatedUser();
+        return {
+          message: "Não foi possível preparar o perfil da nova conta.",
+          success: false,
+        };
+      }
+    } else {
+      await rollbackCreatedUser();
+      return {
+        message: "Não foi possível preparar o perfil da nova conta.",
+        success: false,
+      };
+    }
   }
 
   if (!needsCellCreation && cell) {
