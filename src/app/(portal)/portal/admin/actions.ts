@@ -72,8 +72,8 @@ export async function generatePendingAccessLink(
     if (
       userError ||
       !userData.user ||
-      userData.user.last_sign_in_at !== null ||
-      userData.user.email_confirmed_at !== null
+      Boolean(userData.user.last_sign_in_at) ||
+      Boolean(userData.user.email_confirmed_at)
     ) {
       return {
         message: "Esta conta não está pendente de primeiro acesso.",

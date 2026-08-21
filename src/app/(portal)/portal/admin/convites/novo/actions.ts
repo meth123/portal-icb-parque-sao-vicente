@@ -250,8 +250,7 @@ export async function createLeadershipInvite(
 
   if (existingProfile) {
     const existingUserIsPending =
-      linkData.user.last_sign_in_at === null &&
-      linkData.user.email_confirmed_at === null;
+      !linkData.user.last_sign_in_at && !linkData.user.email_confirmed_at;
 
     if (existingUserIsPending) {
       const { error: profilePreparationError } = await supabase.rpc(
