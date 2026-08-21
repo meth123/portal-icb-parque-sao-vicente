@@ -38,6 +38,29 @@ function createSafePasswordLink(
   return inviteUrl.toString();
 }
 
+type GeneratedLinkResponse = {
+  properties?: {
+    hashed_token?: string | null;
+    action_link?: string | null;
+  } | null;
+};
+
+function getGeneratedLink(
+  data: GeneratedLinkResponse | null | undefined,
+  applicationOrigin: string,
+  type: "invite" | "recovery",
+) {
+  const hashedToken = data?.properties?.hashed_token;
+
+  if (hashedToken) {
+    return createSafePasswordLink(applicationOrigin, hashedToken, type);
+  }
+
+  // Algumas respostas do Auth retornam somente o action_link oficial.
+  // Ele já contém o token e redireciona para a URL informada na requisição.
+  return data?.properties?.action_link ?? null;
+}
+
 async function getTrustedOrigin() {
   const requestHeaders = await headers();
   const requestOrigin = requestHeaders.get("origin");
@@ -182,7 +205,13 @@ export async function createLeadershipInvite(
       },
     });
 
-  if (linkError || !linkData.user?.id || !linkData.properties?.hashed_token) {
+  if (linkError || !linkData.user?.id || !getGeneratedLink(linkData, applicationOrigin, "invite")) {
+    // Se o Auth criou uma conta, mas não devolveu nenhum link utilizável,
+    // remove a conta incompleta para permitir uma nova tentativa limpa.
+    if (!linkError && linkData.user?.id) {
+      await adminClient.auth.admin.deleteUser(linkData.user.id);
+    }
+
     const alreadyExists =
       linkError?.code === "email_exists" ||
       linkError?.message.toLocaleLowerCase("pt-BR").includes("already") ||
@@ -201,7 +230,7 @@ export async function createLeadershipInvite(
       if (
         !recoveryError &&
         recoveryData.user?.id &&
-        recoveryData.properties?.hashed_token
+        getGeneratedLink(recoveryData, applicationOrigin, "recovery")
       ) {
         if (!needsCellCreation && cell) {
           const { data: existingActiveLeaderships, error: activeLeadershipError } =
@@ -283,11 +312,11 @@ export async function createLeadershipInvite(
         return {
           message: "A conta já existia. Um novo link de acesso foi gerado.",
           success: true,
-          inviteLink: createSafePasswordLink(
+          inviteLink: getGeneratedLink(
+            recoveryData,
             applicationOrigin,
-            recoveryData.properties.hashed_token,
             "recovery",
-          ),
+          ) ?? undefined,
           invitedName: fullName,
         };
       }
@@ -425,11 +454,7 @@ export async function createLeadershipInvite(
         message:
           "A conta pendente foi preparada. Copie e envie o novo link de primeiro acesso.",
         success: true,
-        inviteLink: createSafePasswordLink(
-          applicationOrigin,
-          linkData.properties.hashed_token,
-          "invite",
-        ),
+        inviteLink: getGeneratedLink(linkData, applicationOrigin, "invite") ?? undefined,
         invitedName: fullName,
         needsCellCreation,
       };
@@ -447,7 +472,7 @@ export async function createLeadershipInvite(
     if (
       recoveryError ||
       !recoveryData.user?.id ||
-      !recoveryData.properties?.hashed_token
+      !getGeneratedLink(recoveryData, applicationOrigin, "recovery")
     ) {
       return {
         message: "Não foi possível gerar um novo link para esta conta.",
@@ -465,11 +490,7 @@ export async function createLeadershipInvite(
     return {
       message: "A conta já existe. Um novo link de acesso foi gerado.",
       success: true,
-      inviteLink: createSafePasswordLink(
-        applicationOrigin,
-        recoveryData.properties.hashed_token,
-        "recovery",
-      ),
+      inviteLink: getGeneratedLink(recoveryData, applicationOrigin, "recovery") ?? undefined,
       invitedName: fullName,
     };
   }
@@ -574,11 +595,7 @@ export async function createLeadershipInvite(
   return {
     message: "Conta criada. Copie e envie o link de primeiro acesso.",
     success: true,
-    inviteLink: createSafePasswordLink(
-      applicationOrigin,
-      linkData.properties.hashed_token,
-      "invite",
-    ),
+    inviteLink: getGeneratedLink(linkData, applicationOrigin, "invite") ?? undefined,
     invitedName: fullName,
     needsCellCreation,
   };
