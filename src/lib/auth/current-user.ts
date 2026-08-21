@@ -15,6 +15,7 @@ export type CurrentUser = {
   isSupervisor: boolean;
   canManageCells: boolean;
   isActive: boolean;
+  mustChangePassword: boolean;
   currentCellId: string | null;
   currentLeadershipRole: "leader" | "vice_leader" | null;
   hasDocumentLibraryAccess: boolean;
@@ -31,6 +32,7 @@ type RawPortalSessionContext = {
   isSupervisor: boolean;
   canManageCells: boolean;
   isActive: boolean;
+  mustChangePassword: boolean;
   currentCellId: string | null;
   currentLeadershipRole: "leader" | "vice_leader" | null;
   hasDocumentLibraryAccess: boolean;
@@ -68,6 +70,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     isSupervisor: profile.isSupervisor,
     canManageCells: profile.canManageCells,
     isActive: profile.isActive,
+    mustChangePassword: profile.mustChangePassword,
     currentCellId: profile.currentCellId,
     currentLeadershipRole: profile.currentLeadershipRole,
     hasDocumentLibraryAccess: profile.hasDocumentLibraryAccess,

@@ -35,6 +35,14 @@ export async function updatePassword(formData: FormData) {
     redirect("/atualizar-senha?erro=atualizacao");
   }
 
+  const { error: profileError } = await supabase.rpc(
+    "complete_password_change",
+  );
+
+  if (profileError) {
+    redirect("/atualizar-senha?erro=atualizacao");
+  }
+
   await supabase.auth.signOut();
   redirect("/login?status=senha-atualizada");
 }

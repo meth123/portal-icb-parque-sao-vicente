@@ -33,15 +33,20 @@ export default async function UpdatePasswordPage({
     redirect("/login?erro=link");
   }
 
-  const { erro } = await searchParams;
+  const { erro, primeiro_acesso } = await searchParams;
   const errorCode = typeof erro === "string" ? erro : "";
   const errorMessage = errorMessages[errorCode];
+  const isFirstAccess = primeiro_acesso === "1";
 
   return (
     <AuthPanel
-      eyebrow="Primeiro acesso ou recuperação"
+      eyebrow={isFirstAccess ? "Primeiro acesso" : "Primeiro acesso ou recuperação"}
       title="Crie sua senha de acesso"
-      description="Você deve criar uma senha nesta tela. Ela não foi definida nem enviada por outra pessoa."
+      description={
+        isFirstAccess
+          ? "Crie sua senha pessoal para continuar no portal."
+          : "Você deve criar uma senha nesta tela. Ela não foi definida nem enviada por outra pessoa."
+      }
     >
       {errorMessage ? (
         <Alert tone="danger" className="mt-6">

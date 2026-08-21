@@ -13,6 +13,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   const user = await getCurrentUser();
 
   if (!user) redirect("/login?erro=perfil");
+  if (user.mustChangePassword) redirect("/atualizar-senha?primeiro_acesso=1");
   if (!user.isActive) return children;
 
   const avatarUrl = await getProfileAvatarUrl(user.id, user.avatarPath);

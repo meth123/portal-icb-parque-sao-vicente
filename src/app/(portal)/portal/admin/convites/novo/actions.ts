@@ -1,5 +1,6 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import {
@@ -14,6 +15,7 @@ export type CreateLeadershipInviteState = {
   message: string;
   success: boolean;
   inviteLink?: string;
+  temporaryPassword?: string;
   invitedName?: string;
   needsCellCreation?: boolean;
 };
@@ -59,6 +61,10 @@ function getGeneratedLink(
   // Algumas respostas do Auth retornam somente o action_link oficial.
   // Ele já contém o token e redireciona para a URL informada na requisição.
   return data?.properties?.action_link ?? null;
+}
+
+function generateTemporaryPassword() {
+  return `ICB-${randomBytes(9).toString("base64url")}!`;
 }
 
 async function getTrustedOrigin() {
@@ -193,6 +199,105 @@ export async function createLeadershipInvite(
         success: false,
       };
     }
+  }
+
+  // Contas novas usam uma senha temporária individual. Assim o cadastro não
+  // depende de SMTP nem de links que expiram; o portal obriga a troca no
+  // primeiro acesso através de profiles.must_change_password.
+  const temporaryPassword = generateTemporaryPassword();
+  const { data: createdAccount, error: createAccountError } =
+    await adminClient.auth.admin.createUser({
+      email,
+      password: temporaryPassword,
+      email_confirm: true,
+      user_metadata: { full_name: fullName },
+    });
+
+  if (!createAccountError && createdAccount.user?.id) {
+    const createdProfileId = createdAccount.user.id;
+    const rollbackCreatedUser = async () => {
+      await adminClient.auth.admin.deleteUser(createdProfileId);
+    };
+
+    const { error: profileError } = await adminClient
+      .from("profiles")
+      .update({ full_name: fullName, must_change_password: true })
+      .eq("id", createdProfileId);
+
+    if (profileError) {
+      await rollbackCreatedUser();
+      return {
+        message: "Não foi possível preparar o perfil da nova conta.",
+        success: false,
+      };
+    }
+
+    if (!needsCellCreation && cell) {
+      const currentLeader = currentLeaderships.find(
+        (leadership) => leadership.role === "leader",
+      );
+      const currentViceIds = currentLeaderships
+        .filter((leadership) => leadership.role === "vice_leader")
+        .map((leadership) => leadership.profile_id);
+      const targetLeaderId =
+        leadershipRole === "leader"
+          ? createdProfileId
+          : currentLeader?.profile_id;
+      const targetViceIds =
+        leadershipRole === "vice_leader"
+          ? [...currentViceIds, createdProfileId]
+          : currentViceIds;
+
+      if (!targetLeaderId) {
+        await rollbackCreatedUser();
+        return {
+          message: "A célula selecionada não possui um Líder válido.",
+          success: false,
+        };
+      }
+
+      const { error: leadershipError } = await supabase.rpc(
+        "update_cell_leadership",
+        {
+          target_cell_id: cellId,
+          target_name: cell.name,
+          target_effective_on: getSaoPauloDate(),
+          target_leader_profile_id: targetLeaderId,
+          target_vice_profile_ids: targetViceIds,
+        },
+      );
+
+      if (leadershipError) {
+        await rollbackCreatedUser();
+        return {
+          message:
+            "A conta não foi criada porque não foi possível vinculá-la à célula.",
+          success: false,
+        };
+      }
+    }
+
+    await supabase.rpc("record_admin_operation", {
+      target_action: "account.temporary_password.create",
+      target_type: "profile",
+      target_id: createdProfileId,
+      target_metadata: {
+        cell_id: needsCellCreation ? null : cellId,
+        leadership_role: leadershipRole,
+        must_change_password: true,
+      },
+    });
+
+    revalidatePath("/portal/admin");
+    revalidatePath("/portal/admin/celulas");
+
+    return {
+      message: "Conta criada. Envie a senha temporária com segurança.",
+      success: true,
+      temporaryPassword,
+      invitedName: fullName,
+      needsCellCreation,
+    };
   }
 
   const { data: linkData, error: linkError } =

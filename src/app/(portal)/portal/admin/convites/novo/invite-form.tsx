@@ -40,7 +40,7 @@ export function InviteForm({ cells }: { cells: ManagedCellSummary[] }) {
     setCopied(true);
   }
 
-  if (state.success && state.inviteLink) {
+  if (state.success && (state.inviteLink || state.temporaryPassword)) {
     return (
       <div className="space-y-5 text-center">
         <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-success-soft text-success">
@@ -50,10 +50,16 @@ export function InviteForm({ cells }: { cells: ManagedCellSummary[] }) {
           <h2 className="text-xl font-semibold text-app-foreground">
             Conta criada
           </h2>
+          {state.temporaryPassword ? (
+            <p className="mt-2 text-sm leading-6 text-app-secondary">
+              Envie a senha temporária para {state.invitedName}.
+            </p>
+          ) : (
           <p className="mt-2 text-sm leading-6 text-app-secondary">
             Envie este link para {state.invitedName}. A pessoa definirá a própria
             senha.
           </p>
+          )}
           {state.needsCellCreation ? (
             <p className="mt-2 text-sm font-medium leading-6 text-app-foreground">
               Depois, cadastre a nova célula e escolha esta conta como Líder.
@@ -61,20 +67,36 @@ export function InviteForm({ cells }: { cells: ManagedCellSummary[] }) {
           ) : null}
         </div>
 
+        {state.temporaryPassword ? (
+          <div className="rounded-xl border border-warning/30 bg-warning-soft p-4 text-left">
+            <p className="text-sm font-semibold text-app-foreground">
+              Senha temporária
+            </p>
+            <p className="mt-2 break-all rounded-lg bg-surface px-3 py-2 font-mono text-base text-app-foreground">
+              {state.temporaryPassword}
+            </p>
+            <p className="mt-2 text-xs leading-5 text-app-secondary">
+              Envie esta senha com segurança. No primeiro acesso, a pessoa deverá criar uma nova senha.
+            </p>
+          </div>
+        ) : null}
+
+        {state.inviteLink ? (
         <div className="rounded-xl border border-app-border bg-surface-muted p-3 text-left">
           <p className="break-all text-sm leading-6 text-app-secondary">
             {state.inviteLink}
           </p>
         </div>
+        ) : null}
 
-        <Button type="button" onClick={copyInviteLink} className="w-full">
+        {state.inviteLink ? <Button type="button" onClick={copyInviteLink} className="w-full">
           {copied ? (
             <Check aria-hidden="true" className="size-4" />
           ) : (
             <Copy aria-hidden="true" className="size-4" />
           )}
           {copied ? "Link copiado" : "Copiar link"}
-        </Button>
+        </Button> : null}
 
         <div className="grid gap-3 sm:grid-cols-2">
           {state.needsCellCreation ? (
