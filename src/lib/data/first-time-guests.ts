@@ -12,6 +12,14 @@ type RawFirstTimeGuestMonth = {
 type RawFirstTimeGuestHistory = {
   accumulatedTotal?: unknown;
   months?: unknown;
+  networkTotals?: unknown;
+};
+
+type RawFirstTimeGuestNetworkTotal = {
+  networkId?: unknown;
+  networkName?: unknown;
+  networkCode?: unknown;
+  total?: unknown;
 };
 
 export type FirstTimeGuestMonth = {
@@ -23,7 +31,15 @@ export type FirstTimeGuestMonth = {
 export type FirstTimeGuestHistory = {
   accumulatedTotal: number;
   months: FirstTimeGuestMonth[];
+  networkTotals: FirstTimeGuestNetworkTotal[];
   hasError: boolean;
+};
+
+export type FirstTimeGuestNetworkTotal = {
+  networkId: string;
+  networkName: string;
+  networkCode: "RJ" | "H.M";
+  total: number;
 };
 
 const monthStartPattern = /^\d{4}-(0[1-9]|1[0-2])-01$/;
@@ -55,6 +71,29 @@ function parseMonth(value: unknown): FirstTimeGuestMonth | null {
   };
 }
 
+function parseNetworkTotal(value: unknown): FirstTimeGuestNetworkTotal | null {
+  if (!value || typeof value !== "object") return null;
+
+  const network = value as RawFirstTimeGuestNetworkTotal;
+  const total = parseNonNegativeInteger(network.total);
+
+  if (
+    typeof network.networkId !== "string" ||
+    typeof network.networkName !== "string" ||
+    (network.networkCode !== "RJ" && network.networkCode !== "H.M") ||
+    total === null
+  ) {
+    return null;
+  }
+
+  return {
+    networkId: network.networkId,
+    networkName: network.networkName,
+    networkCode: network.networkCode,
+    total,
+  };
+}
+
 export async function getFirstTimeGuestHistory(): Promise<FirstTimeGuestHistory | null> {
   const user = await getCurrentUser();
 
@@ -70,19 +109,30 @@ export async function getFirstTimeGuestHistory(): Promise<FirstTimeGuestHistory 
   const months = Array.isArray(rawMonths)
     ? rawMonths.map(parseMonth).filter((month) => month !== null)
     : [];
+  const rawNetworkTotals = history?.networkTotals;
+  const networkTotals = Array.isArray(rawNetworkTotals)
+    ? rawNetworkTotals
+        .map(parseNetworkTotal)
+        .filter((network) => network !== null)
+    : [];
   const hasInvalidMonths =
     Array.isArray(rawMonths) && months.length !== rawMonths.length;
+  const hasInvalidNetworkTotals =
+    Array.isArray(rawNetworkTotals) &&
+    networkTotals.length !== rawNetworkTotals.length;
 
   if (
     error ||
     !history ||
     accumulatedTotal === null ||
     !Array.isArray(rawMonths) ||
-    hasInvalidMonths
+    hasInvalidMonths ||
+    hasInvalidNetworkTotals
   ) {
     return {
       accumulatedTotal: 0,
       months: [],
+      networkTotals: [],
       hasError: true,
     };
   }
@@ -90,6 +140,7 @@ export async function getFirstTimeGuestHistory(): Promise<FirstTimeGuestHistory 
   return {
     accumulatedTotal,
     months,
+    networkTotals,
     hasError: false,
   };
 }

@@ -53,6 +53,12 @@ export default async function FirstTimeGuestsPage() {
   if (!history) redirect("/portal");
 
   const years = groupMonthsByYear(history.months);
+  const networkTotals = new Map(
+    history.networkTotals.map((network) => [network.networkCode, network.total]),
+  );
+  const hasNetworkTotals = history.networkTotals.length > 0;
+  const rjTotal = networkTotals.get("RJ") ?? 0;
+  const hmTotal = networkTotals.get("H.M") ?? 0;
 
   return (
     <main className="min-h-full bg-app-background py-6 sm:py-8">
@@ -71,34 +77,87 @@ export default async function FirstTimeGuestsPage() {
           <>
             <section
               aria-labelledby="accumulated-total-title"
-              className="overflow-hidden rounded-2xl bg-theme-primary-active p-6 text-theme-primary-foreground sm:p-8"
+              className="border-y border-app-border py-6 sm:py-8"
             >
-              <div className="flex items-center justify-between gap-6">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.1em] text-white/70">
-                    Desde o início dos registros
+              <div className="grid gap-6 sm:grid-cols-[minmax(0,0.9fr)_minmax(16rem,1.1fr)] sm:items-center sm:gap-10">
+                <div className="relative pl-5 sm:pl-6">
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-y-0 left-0 w-1 rounded-full bg-theme-primary"
+                  />
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-theme-primary-active">
+                    Acumulado histórico
                   </p>
-                  <p className="mt-3 text-5xl font-semibold leading-none sm:text-6xl">
+                  <p className="mt-3 text-6xl font-semibold leading-none tracking-[-0.05em] text-theme-primary-active sm:text-7xl">
                     {numberFormatter.format(history.accumulatedTotal)}
                   </p>
                   <h2
                     id="accumulated-total-title"
-                    className="mt-3 text-lg font-semibold"
+                    className="mt-3 text-lg font-semibold text-app-foreground"
                   >
                     {history.accumulatedTotal === 1
-                      ? "vida pela primeira vez"
-                      : "vidas pela primeira vez"}
+                      ? "primeira visita registrada"
+                      : "primeiras visitas registradas"}
                   </h2>
-                  <p className="mt-2 text-sm text-white/75">
-                    Total histórico das Fichas de Organização
-                  </p>
                 </div>
-                <span
-                  aria-hidden="true"
-                  className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-white/12"
-                >
-                  <Users size={31} strokeWidth={1.7} />
-                </span>
+
+                <div className="border-t border-app-border pt-5 sm:border-l sm:border-t-0 sm:py-2 sm:pl-8">
+                  {hasNetworkTotals ? (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <span
+                          aria-hidden="true"
+                          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-theme-primary-soft text-theme-primary-active"
+                        >
+                          <Users className="size-5" strokeWidth={1.8} />
+                        </span>
+                        <p className="text-xs font-semibold uppercase tracking-[0.1em] text-app-secondary">
+                          Distribuição por Rede
+                        </p>
+                      </div>
+                      <dl className="mt-5 grid grid-cols-2 divide-x divide-app-border">
+                        <div className="pr-5">
+                          <dt className="text-sm font-medium text-app-secondary">
+                            RJ
+                          </dt>
+                          <dd className="mt-1 text-3xl font-semibold tracking-[-0.03em] text-app-foreground">
+                            {numberFormatter.format(rjTotal)}
+                          </dd>
+                        </div>
+                        <div className="pl-5">
+                          <dt className="text-sm font-medium text-app-secondary">
+                            H.M
+                          </dt>
+                          <dd className="mt-1 text-3xl font-semibold tracking-[-0.03em] text-app-foreground">
+                            {numberFormatter.format(hmTotal)}
+                          </dd>
+                        </div>
+                      </dl>
+                      <p className="mt-4 text-sm leading-6 text-app-secondary">
+                        Totais desde o início, conforme a Rede de cada célula na
+                        data da Ficha.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <span
+                          aria-hidden="true"
+                          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-theme-primary-soft text-theme-primary-active"
+                        >
+                          <Users className="size-5" strokeWidth={1.8} />
+                        </span>
+                        <p className="text-sm font-semibold text-app-foreground">
+                          Desde o início dos registros
+                        </p>
+                      </div>
+                      <p className="mt-3 max-w-xl leading-7 text-app-secondary">
+                        Convidados informados pelas células em sua primeira
+                        visita, somados a partir das Fichas de Organização.
+                      </p>
+                    </>
+                  )}
+                </div>
               </div>
             </section>
 
