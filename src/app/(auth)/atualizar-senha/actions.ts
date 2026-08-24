@@ -1,6 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth/current-user";
+import { isValidNewPassword } from "@/lib/auth/passwords";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export async function updatePassword(formData: FormData) {
@@ -10,8 +13,7 @@ export async function updatePassword(formData: FormData) {
   if (
     typeof passwordValue !== "string" ||
     typeof confirmationValue !== "string" ||
-    passwordValue.length < 8 ||
-    passwordValue.length > 128
+    !isValidNewPassword(passwordValue)
   ) {
     redirect("/atualizar-senha?erro=senha");
   }
@@ -20,29 +22,43 @@ export async function updatePassword(formData: FormData) {
     redirect("/atualizar-senha?erro=confirmacao");
   }
 
+  const currentUser = await getCurrentUser();
+  if (!currentUser) redirect("/login?erro=link");
+
   const supabase = await createClient();
-  const { data, error: claimsError } = await supabase.auth.getClaims();
-
-  if (claimsError || !data?.claims?.sub) {
-    redirect("/login?erro=link");
-  }
-
   const { error } = await supabase.auth.updateUser({
     password: passwordValue,
   });
 
-  if (error) {
-    redirect("/atualizar-senha?erro=atualizacao");
-  }
+  if (error) redirect("/atualizar-senha?erro=atualizacao");
 
-  const { error: profileError } = await supabase.rpc(
-    "complete_password_change",
-  );
+  if (currentUser.mustChangePassword) {
+    let adminClient: ReturnType<typeof createAdminClient>;
 
-  if (profileError) {
-    redirect("/atualizar-senha?erro=atualizacao");
+    try {
+      adminClient = createAdminClient();
+    } catch {
+      redirect("/atualizar-senha?erro=atualizacao");
+    }
+
+    const { data: completedProfile, error: profileError } =
+      await adminClient.rpc("complete_required_password_change", {
+        target_profile_id: currentUser.id,
+      });
+
+    if (profileError || completedProfile !== true) {
+      redirect("/atualizar-senha?erro=atualizacao");
+    }
+
+    redirect("/portal?status=senha-atualizada");
   }
 
   await supabase.auth.signOut();
   redirect("/login?status=senha-atualizada");
+}
+
+export async function logoutFromPasswordChange() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/login");
 }

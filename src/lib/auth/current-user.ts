@@ -11,6 +11,8 @@ export type CurrentUser = {
   email: string | null;
   fullName: string | null;
   avatarPath: string | null;
+  birthDate: string | null;
+  leadershipStartedOn: string | null;
   globalRole: GlobalRole;
   isSupervisor: boolean;
   canManageCells: boolean;
@@ -28,6 +30,8 @@ type RawPortalSessionContext = {
   id: string;
   fullName: string | null;
   avatarPath: string | null;
+  birthDate: string | null;
+  leadershipStartedOn: string | null;
   globalRole: string;
   isSupervisor: boolean;
   canManageCells: boolean;
@@ -66,6 +70,8 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     email: typeof claims.email === "string" ? claims.email : null,
     fullName: profile.fullName,
     avatarPath: profile.avatarPath,
+    birthDate: profile.birthDate,
+    leadershipStartedOn: profile.leadershipStartedOn,
     globalRole,
     isSupervisor: profile.isSupervisor,
     canManageCells: profile.canManageCells,
@@ -81,6 +87,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
 export function canAccessAdministration(user: CurrentUser) {
   return (
     user.isActive &&
+    !user.mustChangePassword &&
     (user.globalRole === "administrator" || user.globalRole === "pastor")
   );
 }
@@ -88,6 +95,7 @@ export function canAccessAdministration(user: CurrentUser) {
 export function canManageCellAdministration(user: CurrentUser) {
   return (
     user.isActive &&
+    !user.mustChangePassword &&
     (user.globalRole === "administrator" || user.globalRole === "pastor")
   );
 }
@@ -95,6 +103,7 @@ export function canManageCellAdministration(user: CurrentUser) {
 export function canAccessPastoralDashboard(user: CurrentUser) {
   return (
     user.isActive &&
+    !user.mustChangePassword &&
     (user.globalRole === "administrator" ||
       user.globalRole === "pastor" ||
       user.isSupervisor)

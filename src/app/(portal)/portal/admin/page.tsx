@@ -110,9 +110,9 @@ export default async function AdminAccessPage() {
           />
           <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <ActionCard
-              href="/portal/admin/convites/novo"
+              href="/portal/admin/usuarios/novo"
               title="Cadastrar usuário"
-              description="Gere um link de primeiro acesso"
+              description="Crie uma conta com senha temporária"
               icon={<UserPlus size={22} strokeWidth={1.8} />}
               tone="theme"
             />

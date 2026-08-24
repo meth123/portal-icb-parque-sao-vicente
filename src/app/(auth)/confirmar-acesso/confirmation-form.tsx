@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 
 type ConfirmationFormProps = {
   tokenHash: string;
-  type: "invite" | "recovery";
+  type: "recovery";
 };
 
 export function ConfirmationForm({ tokenHash, type }: ConfirmationFormProps) {

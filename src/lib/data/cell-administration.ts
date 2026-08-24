@@ -43,6 +43,7 @@ export type ManagedCellSummary = {
   networkName: string;
   cellTypeId: string;
   cellTypeName: string;
+  hasLeader: boolean;
   leaderName: string;
   viceLeaderNames: string[];
 };
@@ -55,7 +56,7 @@ export type ManagedCellDetail = ManagedCellSummary & {
   meetingTime: string;
   neighborhoodId: string;
   neighborhoodName: string;
-  leaderProfileId: string;
+  leaderProfileId: string | null;
   viceProfileIds: string[];
 };
 
@@ -324,9 +325,10 @@ export async function getManagedCells(): Promise<{
       networkName: network?.name ?? "Rede não encontrada",
       cellTypeId: cellType?.id ?? "",
       cellTypeName: cellType?.name ?? "Tipo não encontrado",
+      hasLeader: Boolean(leader),
       leaderName: leader
         ? (profileNames.get(leader.profile_id) ?? "Nome não informado")
-        : "Líder não encontrado",
+        : "Não definido",
       viceLeaderNames: currentLeaderships
         .filter((leadership) => leadership.role === "vice_leader")
         .map(
@@ -447,7 +449,7 @@ export async function getManagedCell(
   );
 
   const cell =
-    rawCell && leader && classification && schedule && location
+    rawCell && classification && schedule && location
       ? ({
           id: rawCell.id,
           name: rawCell.name,
@@ -459,6 +461,7 @@ export async function getManagedCell(
             options.cellTypes.find(
               (option) => option.value === classification.cell_type_id,
             )?.label ?? "Tipo não encontrado",
+          hasLeader: Boolean(leader),
           startedOn: rawCell.started_on,
           reportingStartsOn: rawCell.reporting_starts_on,
           endedOn: rawCell.ended_on,
@@ -469,13 +472,14 @@ export async function getManagedCell(
             options.neighborhoods.find(
               (option) => option.value === location.neighborhood_id,
             )?.label ?? "Localidade não encontrada",
-          leaderProfileId: leader.profile_id,
+          leaderProfileId: leader?.profile_id ?? null,
           viceProfileIds: leaderships
             .filter((leadership) => leadership.role === "vice_leader")
             .map((leadership) => leadership.profile_id)
             .sort(),
-          leaderName:
-            profileNames.get(leader.profile_id) ?? "Nome não informado",
+          leaderName: leader
+            ? (profileNames.get(leader.profile_id) ?? "Nome não informado")
+            : "Não definido",
           viceLeaderNames: leaderships
             .filter((leadership) => leadership.role === "vice_leader")
             .map(

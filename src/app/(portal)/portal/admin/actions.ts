@@ -1,18 +1,15 @@
 "use server";
 
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import {
   canAccessAdministration,
   getCurrentUser,
 } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 
 export type AccountAccessState = {
   message: string;
   success: boolean;
-  accessLink?: string;
 };
 
 const uuidPattern =
@@ -22,105 +19,6 @@ const allowedRoles = new Set(["user", "pastor", "administrator"]);
 function readString(formData: FormData, field: string) {
   const value = formData.get(field);
   return typeof value === "string" ? value.trim() : "";
-}
-
-async function getApplicationOrigin() {
-  const requestHeaders = await headers();
-  const requestOrigin = requestHeaders.get("origin");
-
-  if (requestOrigin) {
-    const parsedOrigin = new URL(requestOrigin);
-    const isLocalDevelopment =
-      parsedOrigin.protocol === "http:" &&
-      (parsedOrigin.hostname === "localhost" ||
-        parsedOrigin.hostname === "127.0.0.1");
-
-    if (parsedOrigin.protocol === "https:" || isLocalDevelopment) {
-      return parsedOrigin.origin;
-    }
-  }
-
-  const productionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
-  if (productionUrl) return `https://${productionUrl}`;
-
-  throw new Error("APPLICATION_ORIGIN_NOT_AVAILABLE");
-}
-
-export async function generatePendingAccessLink(
-  _previousState: AccountAccessState,
-  formData: FormData,
-): Promise<AccountAccessState> {
-  const user = await getCurrentUser();
-  if (!user || !canAccessAdministration(user)) {
-    return {
-      message: "Sua conta não possui permissão para gerar acessos.",
-      success: false,
-    };
-  }
-
-  const profileId = readString(formData, "profileId");
-  if (!uuidPattern.test(profileId)) {
-    return { message: "Selecione uma conta válida.", success: false };
-  }
-
-  try {
-    const adminClient = createAdminClient();
-    const applicationOrigin = await getApplicationOrigin();
-    const { data: userData, error: userError } =
-      await adminClient.auth.admin.getUserById(profileId);
-
-    if (userError || !userData.user?.email) {
-      return {
-        message: "Não foi possível localizar o e-mail desta conta.",
-        success: false,
-      };
-    }
-
-    let { data, error } = await adminClient.auth.admin.generateLink({
-      type: "invite",
-      email: userData.user.email,
-      options: { redirectTo: `${applicationOrigin}/atualizar-senha` },
-    });
-
-    let linkType: "invite" | "recovery" = "invite";
-
-    if (error || !data.properties?.hashed_token) {
-      const recoveryResult = await adminClient.auth.admin.generateLink({
-        type: "recovery",
-        email: userData.user.email,
-        options: { redirectTo: `${applicationOrigin}/atualizar-senha` },
-      });
-      data = recoveryResult.data;
-      error = recoveryResult.error;
-      linkType = "recovery";
-    }
-
-    if (error || !data.properties?.hashed_token) {
-      return {
-        message: "Não foi possível gerar o link. Tente novamente.",
-        success: false,
-      };
-    }
-
-    const accessLink = new URL("/confirmar-acesso", applicationOrigin);
-    accessLink.searchParams.set("token_hash", data.properties.hashed_token);
-    accessLink.searchParams.set("type", linkType);
-
-    revalidatePath("/portal/admin");
-    return {
-      message:
-        linkType === "invite"
-          ? "Novo link de primeiro acesso gerado."
-          : "Novo link de acesso gerado.",
-      success: true,
-      accessLink: accessLink.toString(),
-    };
-  } catch {
-    return {
-      message: "O servidor não está configurado para gerar links de acesso.",
-      success: false,
-    };
-  }
 }
 
 export async function updateAccountAccess(

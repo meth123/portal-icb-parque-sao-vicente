@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const flowId = request.nextUrl.searchParams.get("sb_flow_id");
   const supabase = await createClient();
 
-  if (tokenHash && (type === "recovery" || type === "invite")) {
+  if (tokenHash && type === "recovery") {
     const confirmationUrl = request.nextUrl.clone();
     confirmationUrl.pathname = "/confirmar-acesso";
     confirmationUrl.search = "";

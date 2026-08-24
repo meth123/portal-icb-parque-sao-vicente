@@ -118,10 +118,10 @@ export async function updateCellLeadership(
     !uuidPattern.test(cellId) ||
     !uuidPattern.test(cellTypeId) ||
     !uuidPattern.test(neighborhoodId) ||
-    !uuidPattern.test(leaderProfileId)
+    (leaderProfileId !== "" && !uuidPattern.test(leaderProfileId))
   ) {
     return {
-      message: "Selecione célula, Rede/tipo, localidade e Líder válidos.",
+      message: "Selecione célula, Rede/tipo e localidade válidos.",
     };
   }
 
@@ -138,7 +138,7 @@ export async function updateCellLeadership(
     return { message: "Informe uma data válida para a alteração." };
   }
 
-  if (viceProfileIds.includes(leaderProfileId)) {
+  if (leaderProfileId && viceProfileIds.includes(leaderProfileId)) {
     return { message: "A mesma pessoa não pode ser Líder e Vice-líder." };
   }
 
@@ -159,7 +159,7 @@ export async function updateCellLeadership(
     target_weekday: weekday,
     target_meeting_time: meetingTime,
     target_neighborhood_id: neighborhoodId,
-    target_leader_profile_id: leaderProfileId,
+    target_leader_profile_id: leaderProfileId || null,
     target_vice_profile_ids: viceProfileIds,
   });
 
@@ -183,8 +183,6 @@ export async function updateCellLeadership(
         "Líder e Vices precisam possuir uma conta comum ativa.",
       CELL_PROFILE_ASSIGNED_ELSEWHERE:
         "Uma das pessoas selecionadas ainda possui vínculo com outra célula.",
-      CELL_CURRENT_LEADER_MISSING:
-        "A célula não possui o Líder atual esperado.",
       CELL_CURRENT_CLASSIFICATION_MISSING:
         "A célula não possui classificação vigente.",
       CELL_CURRENT_SCHEDULE_MISSING:
@@ -314,7 +312,7 @@ export async function reactivateCell(
     !uuidPattern.test(cellId) ||
     !uuidPattern.test(cellTypeId) ||
     !uuidPattern.test(neighborhoodId) ||
-    !uuidPattern.test(leaderProfileId) ||
+    (leaderProfileId !== "" && !uuidPattern.test(leaderProfileId)) ||
     !datePattern.test(reactivatedOn) ||
     Number.isNaN(parsedDate.getTime()) ||
     parsedDate.toISOString().slice(0, 10) !== reactivatedOn ||
@@ -325,7 +323,7 @@ export async function reactivateCell(
     return { message: "Revise os dados da reativação." };
   }
 
-  if (viceProfileIds.includes(leaderProfileId)) {
+  if (leaderProfileId && viceProfileIds.includes(leaderProfileId)) {
     return { message: "A mesma pessoa não pode ser Líder e Vice-líder." };
   }
 
@@ -337,7 +335,7 @@ export async function reactivateCell(
     target_weekday: weekday,
     target_meeting_time: meetingTime,
     target_neighborhood_id: neighborhoodId,
-    target_leader_profile_id: leaderProfileId,
+    target_leader_profile_id: leaderProfileId || null,
     target_vice_profile_ids: viceProfileIds,
   });
 

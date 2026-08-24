@@ -38,11 +38,11 @@ export function EditCellLeadershipForm({
   defaultDate,
   minimumDate,
 }: EditCellLeadershipFormProps) {
-  const initialLeaderProfileId = leaders.some(
-    (leader) => leader.value === cell.leaderProfileId,
-  )
-    ? cell.leaderProfileId
-    : (leaders[0]?.value ?? "");
+  const initialLeaderProfileId =
+    cell.leaderProfileId &&
+    leaders.some((leader) => leader.value === cell.leaderProfileId)
+      ? cell.leaderProfileId
+      : "";
   const [state, formAction, pending] = useActionState(
     cell.isActive ? updateCellLeadership : reactivateCell,
     initialState,
@@ -202,17 +202,17 @@ export function EditCellLeadershipForm({
 
       <FormSection
         title="Liderança"
-        description="A célula deve permanecer com um Líder; Vice-líderes são opcionais."
+        description="Líder e Vice-líderes são opcionais. Remover uma função encerra o vínculo atual e preserva o histórico."
       >
-        <FormField id="leaderProfileId" label="Líder" required>
+        <FormField id="leaderProfileId" label="Líder">
           <select
             id="leaderProfileId"
             name="leaderProfileId"
             value={leaderProfileId}
-            required
             onChange={(event) => changeLeader(event.target.value)}
             className={fieldClassName}
           >
+            <option value="">Não definido</option>
             {leaders.map((leader) => (
               <option key={leader.value} value={leader.value}>
                 {leader.label} — {leader.description}

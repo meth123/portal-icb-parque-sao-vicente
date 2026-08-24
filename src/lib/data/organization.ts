@@ -249,7 +249,7 @@ export async function getOrganizationOverview() {
           : "Não informada",
       leader: leadership
         ? (visibleLeaderName ?? currentUserFallback)
-        : "Não informado",
+        : "Não definido",
     } satisfies CellOverview;
   });
 

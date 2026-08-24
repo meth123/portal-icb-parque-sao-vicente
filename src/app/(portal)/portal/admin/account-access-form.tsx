@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Copy, ShieldCheck } from "lucide-react";
+import { ChevronDown, ShieldCheck } from "lucide-react";
 import { useActionState, useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -8,11 +8,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Surface } from "@/components/ui/surface";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import type { AdministrationProfile } from "@/lib/data/cell-administration";
-import {
-  generatePendingAccessLink,
-  updateAccountAccess,
-  type AccountAccessState,
-} from "./actions";
+import { updateAccountAccess, type AccountAccessState } from "./actions";
 
 const initialState: AccountAccessState = { message: "", success: false };
 const fieldClassName =
@@ -43,17 +39,12 @@ export function AccountAccessForm({
     updateAccountAccess,
     initialState,
   );
-  const [linkState, linkFormAction, linkPending] = useActionState(
-    generatePendingAccessLink,
-    initialState,
-  );
   const [role, setRole] = useState(profile.global_role);
   const [isActive, setIsActive] = useState(profile.is_active);
   const [isSupervisor, setIsSupervisor] = useState(profile.is_supervisor);
   const currentCellRoleLabel = cellRoleLabel(profile.current_cell_role);
   const supervisorEligible =
     isActive && role === "user" && profile.current_cell_role === "leader";
-  const isPendingFirstAccess = profile.is_active && !profile.full_name;
   const displayName = profile.full_name ?? "Nome não informado";
 
   function changeRole(nextRole: string) {
@@ -119,44 +110,6 @@ export function AccountAccessForm({
             Sua própria conta não pode ser alterada nesta tela.
           </Alert>
         ) : (
-          <>
-            {isPendingFirstAccess ? (
-              <div className="mb-4 rounded-xl border border-theme-primary-border bg-theme-primary-subtle p-4">
-                <p className="font-semibold text-app-foreground">Primeiro acesso pendente</p>
-                <p className="mt-1 text-sm leading-6 text-app-secondary">
-                  Gere um novo link para a pessoa criar a própria senha.
-                </p>
-                <form action={linkFormAction} className="mt-3 space-y-3">
-                  <input type="hidden" name="profileId" value={profile.profile_id} />
-                  {linkState.message ? (
-                    <Alert tone={linkState.success ? "success" : "danger"}>
-                      {linkState.message}
-                    </Alert>
-                  ) : null}
-                  {linkState.accessLink ? (
-                    <>
-                      <p className="break-all rounded-lg border border-app-border bg-surface p-3 text-xs leading-5 text-app-secondary">
-                        {linkState.accessLink}
-                      </p>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        className="w-full"
-                        onClick={() => navigator.clipboard.writeText(linkState.accessLink ?? "")}
-                      >
-                        <Copy aria-hidden="true" className="size-4" />
-                        Copiar link
-                      </Button>
-                    </>
-                  ) : (
-                    <Button type="submit" disabled={linkPending} className="w-full">
-                      {linkPending ? "Gerando..." : "Gerar novo link"}
-                    </Button>
-                  )}
-                </form>
-              </div>
-            ) : null}
-
           <form
             action={formAction}
             className="mt-4 space-y-5"
@@ -231,7 +184,6 @@ export function AccountAccessForm({
               {pending ? "Salvando..." : "Salvar acesso"}
             </Button>
           </form>
-          </>
         )}
       </div>
     </details>

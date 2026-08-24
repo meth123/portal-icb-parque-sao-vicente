@@ -17,7 +17,7 @@ export default async function ConfirmAccessPage({
 }: PageProps<"/confirmar-acesso">) {
   const { token_hash: tokenHashValue, type: typeValue } = await searchParams;
   const tokenHash = typeof tokenHashValue === "string" ? tokenHashValue : "";
-  const type = typeValue === "invite" || typeValue === "recovery" ? typeValue : "";
+  const type = typeValue === "recovery" ? typeValue : "";
 
   if (tokenHash.length < 20 || !type) {
     redirect("/login?erro=link");
@@ -25,9 +25,9 @@ export default async function ConfirmAccessPage({
 
   return (
     <AuthPanel
-      eyebrow="Acesso protegido"
+      eyebrow="Recuperação de acesso"
       title="Confirme para continuar"
-      description="Toque no botão abaixo para criar sua senha de acesso."
+      description="Confirme o link recebido por e-mail para criar uma nova senha."
     >
       <ConfirmationForm tokenHash={tokenHash} type={type} />
     </AuthPanel>

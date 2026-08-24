@@ -10,6 +10,7 @@ import {
 } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button, buttonClassName } from "@/components/ui/button";
+import { BrazilianDateInput } from "@/components/ui/brazilian-date-input";
 import { FormField } from "@/components/ui/form-field";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { createClient } from "@/lib/supabase/client";
@@ -27,6 +28,9 @@ type ProfileFormProps = {
   userId: string;
   email: string | null;
   initialFullName: string;
+  initialBirthDate: string;
+  initialLeadershipStartedOn: string;
+  currentDate: string;
   initialAvatarPath: string | null;
   initialAvatarUrl: string | null;
 };
@@ -35,6 +39,9 @@ export function ProfileForm({
   userId,
   email,
   initialFullName,
+  initialBirthDate,
+  initialLeadershipStartedOn,
+  currentDate,
   initialAvatarPath,
   initialAvatarUrl,
 }: ProfileFormProps) {
@@ -92,9 +99,28 @@ export function ProfileForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const normalizedName = fullName.trim().replace(/\s+/g, " ");
+    const formData = new FormData(event.currentTarget);
+    const birthDateValue = formData.get("birthDate");
+    const birthDate =
+      typeof birthDateValue === "string" ? birthDateValue : "";
+    const leadershipStartedOnValue = formData.get("leadershipStartedOn");
+    const leadershipStartedOn =
+      typeof leadershipStartedOnValue === "string"
+        ? leadershipStartedOnValue
+        : "";
 
     if (normalizedName.length < 2 || normalizedName.length > 120) {
       showError("Informe um nome entre 2 e 120 caracteres.");
+      return;
+    }
+
+    if (birthDate && birthDate > currentDate) {
+      showError("Informe uma data de nascimento válida.");
+      return;
+    }
+
+    if (leadershipStartedOn && leadershipStartedOn > currentDate) {
+      showError("Informe uma data de início na liderança válida.");
       return;
     }
 
@@ -127,9 +153,11 @@ export function ProfileForm({
       .update({
         full_name: normalizedName,
         avatar_path: nextAvatarPath,
+        birth_date: birthDate || null,
+        leadership_started_on: leadershipStartedOn || null,
       })
       .eq("id", userId)
-      .select("full_name, avatar_path")
+      .select("full_name, avatar_path, birth_date, leadership_started_on")
       .maybeSingle();
 
     if (error || !data) {
@@ -254,7 +282,6 @@ export function ProfileForm({
         id="fullName"
         label="Nome completo"
         required
-        hint="Este é o nome exibido para você e para lideranças autorizadas."
       >
         <input
           id="fullName"
@@ -284,6 +311,31 @@ export function ProfileForm({
           />
         </FormField>
       ) : null}
+
+      <FormField id="birthDate" label="Data de nascimento">
+        <BrazilianDateInput
+          id="birthDate"
+          name="birthDate"
+          defaultValue={initialBirthDate}
+          max={currentDate}
+          disabled={pending}
+          className="min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none transition-colors focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-soft disabled:cursor-wait disabled:bg-surface-muted"
+        />
+      </FormField>
+
+      <FormField
+        id="leadershipStartedOn"
+        label="Início na liderança (opcional)"
+      >
+        <BrazilianDateInput
+          id="leadershipStartedOn"
+          name="leadershipStartedOn"
+          defaultValue={initialLeadershipStartedOn}
+          max={currentDate}
+          disabled={pending}
+          className="min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none transition-colors focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-soft disabled:cursor-wait disabled:bg-surface-muted"
+        />
+      </FormField>
 
       <div className="flex justify-end border-t border-app-border pt-6">
         <Button

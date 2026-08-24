@@ -31,7 +31,35 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getClaims();
+  const { data: claimsData } = await supabase.auth.getClaims();
+
+  if (
+    request.nextUrl.pathname.startsWith("/portal") &&
+    typeof claimsData?.claims?.sub === "string"
+  ) {
+    const { data: sessionContext } = await supabase.rpc(
+      "get_portal_session_context",
+    );
+    const mustChangePassword = Boolean(
+      sessionContext &&
+        typeof sessionContext === "object" &&
+        "mustChangePassword" in sessionContext &&
+        sessionContext.mustChangePassword,
+    );
+
+    if (mustChangePassword) {
+      const destination = request.nextUrl.clone();
+      destination.pathname = "/atualizar-senha";
+      destination.search = "?primeiro_acesso=1";
+      const redirectResponse = NextResponse.redirect(destination);
+
+      response.cookies.getAll().forEach((cookie) => {
+        redirectResponse.cookies.set(cookie);
+      });
+
+      return redirectResponse;
+    }
+  }
 
   return response;
 }

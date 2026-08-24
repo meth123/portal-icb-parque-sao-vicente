@@ -156,18 +156,31 @@ export function CellForm({
 
       <FormSection
         title="Liderança"
-        description="Escolha um Líder e, se necessário, adicione Vice-líderes."
+        description="Líder e Vice-líderes são opcionais e podem ser definidos depois."
       >
-        <FormField id="leaderProfileId" label="Líder" required>
+        <FormField
+          id="leadershipStartsOn"
+          label="Início dos vínculos"
+          hint="Se selecionar alguém abaixo, informe quando essa pessoa assumiu a função nesta célula. Esta data é independente do início da célula."
+        >
+          <BrazilianDateInput
+            id="leadershipStartsOn"
+            name="leadershipStartsOn"
+            defaultValue={defaultDate}
+            max={defaultDate}
+            className={fieldClassName}
+          />
+        </FormField>
+
+        <FormField id="leaderProfileId" label="Líder">
           <select
             id="leaderProfileId"
             name="leaderProfileId"
-            required
             defaultValue=""
             className={fieldClassName}
           >
-            <option value="" disabled>
-              Selecione uma conta ativa
+            <option value="">
+              Não definido
             </option>
             {leaders.map((leader) => (
               <option key={leader.value} value={leader.value}>
