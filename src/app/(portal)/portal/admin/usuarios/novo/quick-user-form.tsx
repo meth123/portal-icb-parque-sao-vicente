@@ -6,6 +6,10 @@ import { useActionState, useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { BrazilianDateInput } from "@/components/ui/brazilian-date-input";
 import { Button, buttonClassName } from "@/components/ui/button";
+import {
+  choiceClassName,
+  controlClassName as fieldClassName,
+} from "@/components/ui/control-styles";
 import { FormField } from "@/components/ui/form-field";
 import type { ManagedCellSummary } from "@/lib/data/cell-administration";
 import {
@@ -14,9 +18,6 @@ import {
 } from "./actions";
 
 const initialState: CreateQuickUserState = { message: "", success: false };
-const fieldClassName =
-  "min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-subtle disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-app-secondary";
-
 type QuickUserFormProps = {
   cells: ManagedCellSummary[];
   currentDate: string;
@@ -135,19 +136,6 @@ export function QuickUserForm({
 
   return (
     <form action={formAction} className="space-y-7">
-      <header>
-        <p className="text-sm font-semibold text-theme-primary">
-          Cadastro Rápido
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold text-app-foreground">
-          Cadastrar usuário
-        </h1>
-        <p className="mt-2 text-sm leading-6 text-app-secondary">
-          Crie a conta com os dados essenciais. O vínculo com uma célula é
-          opcional.
-        </p>
-      </header>
-
       {state.message ? <Alert tone="danger">{state.message}</Alert> : null}
 
       <fieldset className="space-y-5">
@@ -249,7 +237,9 @@ export function QuickUserForm({
             <p className="text-sm font-semibold text-app-foreground">
               Esta célula já possui um líder ativo: {currentLeaderName}.
             </p>
-            <label className="mt-3 flex cursor-pointer items-start gap-3 text-sm leading-6 text-app-foreground">
+            <label
+              className={`${choiceClassName} mt-3 flex items-start gap-3 p-3 text-sm leading-6 text-app-foreground`}
+            >
               <input
                 type="checkbox"
                 name="confirmLeaderReplacement"
@@ -283,7 +273,12 @@ export function QuickUserForm({
         </FormField>
       </fieldset>
 
-      <Button type="submit" disabled={pending} className="w-full">
+      <Button
+        type="submit"
+        disabled={pending}
+        aria-busy={pending}
+        className="w-full"
+      >
         <UserPlus aria-hidden="true" className="size-4" />
         {pending ? "Cadastrando..." : "Cadastrar usuário"}
       </Button>

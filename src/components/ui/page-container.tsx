@@ -19,7 +19,7 @@ export function PageContainer({
   return (
     <div
       className={classNames(
-        "mx-auto w-full px-4 sm:px-6 lg:px-8",
+        "mx-auto w-full px-5 sm:px-7 lg:px-10",
         widthClasses[width],
         className,
       )}

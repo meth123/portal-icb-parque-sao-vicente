@@ -24,13 +24,13 @@ export function FilterPanel({
     <section
       aria-label={title}
       className={classNames(
-        "overflow-hidden rounded-2xl border border-app-border bg-surface",
+        "overflow-hidden rounded-[var(--radius-surface)] border border-app-border bg-surface shadow-[var(--shadow-subtle)]",
         className,
       )}
     >
       <button
         type="button"
-        className="flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left text-app-foreground focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus md:hidden"
+        className="flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left text-app-foreground transition-colors active:bg-theme-primary-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus md:hidden"
         aria-controls={contentId}
         aria-expanded={isOpen}
         onClick={() => setIsOpen((current) => !current)}

@@ -33,7 +33,7 @@ export function ReportStepper({
   return (
     <nav
       aria-label="Etapas da Ficha de Organização"
-      className="relative px-1 sm:px-3"
+      className="relative rounded-[1.125rem] bg-surface-muted/70 px-1.5 pt-2 sm:bg-transparent sm:px-3 sm:pt-0"
     >
       <div
         aria-hidden="true"
@@ -60,7 +60,7 @@ export function ReportStepper({
                 disabled={!canNavigate}
                 aria-current={isCurrent ? "step" : undefined}
                 className={classNames(
-                  "flex min-h-[4.5rem] w-full min-w-0 flex-col items-center gap-2 rounded-lg px-0.5 text-center transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
+                  "flex min-h-[4.5rem] w-full min-w-0 flex-col items-center gap-2 rounded-lg px-0.5 text-center transition-[color,transform] duration-150 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:active:scale-100 motion-reduce:transform-none",
                   isCurrent && "text-theme-primary-active",
                   isComplete && "text-theme-primary-active",
                   !isCurrent && !isComplete && "text-app-secondary",

@@ -4,6 +4,7 @@ import { FileUp, Upload } from "lucide-react";
 import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { controlClassName as inputClassName } from "@/components/ui/control-styles";
 import { FormField } from "@/components/ui/form-field";
 import { FormSection } from "@/components/ui/form-section";
 import type { DocumentCategorySummary } from "@/lib/data/document-library";
@@ -17,7 +18,6 @@ type DocumentUploadFormProps = {
 
 const initialState: CreateDocumentPublicationState = { message: "" };
 const maximumPdfSize = 10 * 1024 * 1024;
-const inputClassName = "min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-app-foreground outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-soft disabled:opacity-60";
 
 export function DocumentUploadForm({ categories, currentUserId }: DocumentUploadFormProps) {
   const [state, formAction, actionPending] = useActionState(createDocumentPublication, initialState);
@@ -116,13 +116,13 @@ export function DocumentUploadForm({ categories, currentUserId }: DocumentUpload
               accept="application/pdf,.pdf"
               required
               disabled={isPending}
-              className="sr-only"
+              className="peer sr-only"
               onChange={(event) => setSelectedFileName(event.target.files?.[0]?.name ?? "")}
             />
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <label
                 htmlFor="pdfFile"
-                className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl bg-theme-primary px-4 text-sm font-semibold text-theme-primary-foreground hover:bg-theme-primary-hover"
+                className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-[0.875rem] bg-theme-primary px-4 text-sm font-semibold text-theme-primary-foreground transition-[background-color,transform] duration-150 hover:bg-theme-primary-hover active:scale-[0.97] active:bg-theme-primary-active peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus motion-reduce:transform-none"
               >
                 Escolher PDF
               </label>
@@ -137,7 +137,12 @@ export function DocumentUploadForm({ categories, currentUserId }: DocumentUpload
       {message ? <Alert tone="danger">{message}</Alert> : null}
 
       <div className="flex justify-end border-t border-app-border pt-6">
-        <Button type="submit" disabled={isPending} className="w-full sm:w-auto sm:min-w-56">
+        <Button
+          type="submit"
+          disabled={isPending}
+          aria-busy={isPending}
+          className="w-full sm:w-auto sm:min-w-56"
+        >
           <Upload aria-hidden="true" className="size-5" />
           {uploading ? "Enviando PDF..." : actionPending ? "Registrando publicação..." : "Publicar documento"}
         </Button>

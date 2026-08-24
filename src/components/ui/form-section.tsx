@@ -22,7 +22,9 @@ export function FormSection({
       )}
     >
       <div className="max-w-2xl">
-        <h2 className="text-lg font-semibold text-app-foreground">{title}</h2>
+        <h2 className="text-lg font-semibold tracking-[-0.015em] text-app-foreground">
+          {title}
+        </h2>
         {description ? (
           <p className="mt-1 text-sm leading-6 text-app-secondary">
             {description}

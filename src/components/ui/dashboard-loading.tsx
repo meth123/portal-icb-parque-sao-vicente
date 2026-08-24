@@ -9,7 +9,7 @@ export function DashboardLoading({ label }: { label: string }) {
     >
       <PageContainer width="wide">
         <p className="sr-only">{label}</p>
-        <div className="animate-pulse space-y-6" aria-hidden="true">
+        <div className="space-y-6 motion-safe:animate-pulse" aria-hidden="true">
           <div className="space-y-3">
             <div className="h-4 w-28 rounded bg-surface-muted" />
             <div className="h-9 w-64 max-w-full rounded-lg bg-surface-muted" />

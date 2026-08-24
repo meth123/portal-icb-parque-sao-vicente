@@ -3,6 +3,7 @@
 import { Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { controlClassName as fieldClassName } from "@/components/ui/control-styles";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FilterPanel } from "@/components/ui/filter-panel";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -13,9 +14,6 @@ type AccountDirectoryProps = {
   profiles: AdministrationProfile[];
   currentUserId: string;
 };
-
-const fieldClassName =
-  "min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-subtle";
 
 export function AccountDirectory({
   profiles,

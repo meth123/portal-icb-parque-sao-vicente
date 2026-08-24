@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { getCurrentUser } from "@/lib/auth/current-user";
@@ -87,9 +86,13 @@ export default async function UpdatePasswordPage({
 
       {isFirstAccess ? (
         <form action={logoutFromPasswordChange} className="mt-4">
-          <Button type="submit" variant="ghost" className="w-full">
+          <SubmitButton
+            pendingLabel="Saindo..."
+            variant="ghost"
+            className="w-full"
+          >
             Sair da conta
-          </Button>
+          </SubmitButton>
         </form>
       ) : null}
     </AuthPanel>

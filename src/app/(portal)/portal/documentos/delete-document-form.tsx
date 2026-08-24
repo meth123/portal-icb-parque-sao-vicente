@@ -15,6 +15,7 @@ function DeleteButton() {
       type="submit"
       size="compact"
       disabled={pending}
+      aria-busy={pending}
       aria-label={pending ? "Excluindo documento" : "Excluir documento"}
       title="Excluir documento"
       className="text-danger hover:border-danger/30 hover:bg-danger-soft"

@@ -4,6 +4,7 @@ import { ClipboardCheck } from "lucide-react";
 import { useActionState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { controlClassName } from "@/components/ui/control-styles";
 import {
   assignMonthlyReportResponsibility,
   type MonthlyResponsibilityState,
@@ -72,7 +73,7 @@ export function MonthlyResponsibility({
                 aria-label="Responsável do mês"
                 defaultValue={responsibleLeadershipId ?? ""}
                 disabled={pending || hasError}
-                className="min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-soft disabled:opacity-60"
+                className={controlClassName}
               >
                 <option value="">Selecionar responsável</option>
                 {leadership.map((person) => (
@@ -88,6 +89,7 @@ export function MonthlyResponsibility({
             <Button
               type="submit"
               disabled={pending || hasError}
+              aria-busy={pending}
               className="sm:min-w-28"
             >
               {pending ? "Salvando…" : "Salvar"}
@@ -101,7 +103,11 @@ export function MonthlyResponsibility({
       ) : null}
 
       {state.message ? (
-        <Alert tone={state.success ? "success" : "danger"} className="mt-4">
+        <Alert
+          tone={state.success ? "success" : "danger"}
+          className="mt-4"
+          aria-live="polite"
+        >
           {state.message}
         </Alert>
       ) : null}

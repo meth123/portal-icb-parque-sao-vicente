@@ -1,8 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fafafa;
-  --foreground: #18181b;
+  --background: #f8f6f9;
+  --foreground: #231d27;
+  --radius-control: 0.875rem;
+  --radius-surface: 1.25rem;
+  --shadow-subtle: 0 1px 2px rgba(35, 29, 39, 0.035);
+  --shadow-raised: 0 14px 36px rgba(54, 31, 61, 0.08);
+  --motion-fast: 120ms;
+  --motion-standard: 180ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 @theme inline {
@@ -31,6 +38,9 @@
   --color-danger-soft: var(--danger-soft);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --radius-xl: var(--radius-control);
+  --radius-2xl: var(--radius-surface);
+  --shadow-sm: var(--shadow-subtle);
 }
 
 html {
@@ -41,9 +51,26 @@ html {
 
 body {
   min-width: 320px;
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--app-background, var(--background));
+  color: var(--app-foreground, var(--foreground));
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary-active);
+}
+
+@keyframes auth-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 button,
@@ -53,15 +80,32 @@ textarea {
   font: inherit;
 }
 
-:where(button:not(:disabled), a[href], [role="button"]:not([aria-disabled="true"])) {
+:where(
+  button:not(:disabled),
+  a[href],
+  summary,
+  label:has(input[type="radio"]:not(:disabled)),
+  label:has(input[type="checkbox"]:not(:disabled)),
+  label:has(input[type="file"]:not(:disabled)),
+  [role="button"]:not([aria-disabled="true"])
+) {
   -webkit-tap-highlight-color: color-mix(in srgb, var(--theme-primary) 20%, transparent);
   touch-action: manipulation;
+  transform-origin: center;
 }
 
 @media (hover: none) and (pointer: coarse) {
-  :where(button:not(:disabled), a[href], [role="button"]:not([aria-disabled="true"])):active {
-    filter: brightness(0.88);
-    scale: 0.985;
+  :where(
+    button:not(:disabled):not([data-press="none"]),
+    a[href]:not([data-press="none"]),
+    summary:not([data-press="none"]),
+    label:has(input[type="radio"]:not(:disabled)):not([data-press="none"]),
+    label:has(input[type="checkbox"]:not(:disabled)):not([data-press="none"]),
+    label:has(input[type="file"]:not(:disabled)):not([data-press="none"]),
+    [role="button"]:not([aria-disabled="true"]):not([data-press="none"])
+  ):active {
+    filter: brightness(0.96);
+    transform: scale(0.975);
   }
 }
 
@@ -73,5 +117,15 @@ textarea {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  :where(
+    button,
+    a[href],
+    summary,
+    label:has(input),
+    [role="button"]
+  ):active {
+    transform: none !important;
   }
 }

@@ -4,6 +4,7 @@ import { CircleCheck, CircleMinus, LoaderCircle } from "lucide-react";
 import { useActionState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { choiceClassName } from "@/components/ui/control-styles";
 import {
   submitWeeklyChecklist,
   type WeeklyChecklistState,
@@ -22,12 +23,14 @@ function AnswerOptions({
   initialValue,
   positiveLabel,
   negativeLabel,
+  disabled,
 }: {
   name: string;
   label: string;
   initialValue: boolean | null;
   positiveLabel: string;
   negativeLabel: string;
+  disabled: boolean;
 }) {
   return (
     <fieldset>
@@ -43,7 +46,7 @@ function AnswerOptions({
           return (
             <label
               key={option.value}
-              className="relative flex min-h-20 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-theme-primary-border bg-surface px-2 py-3 text-center text-sm font-semibold text-app-secondary transition-colors has-[:checked]:border-theme-primary has-[:checked]:bg-theme-primary-soft has-[:checked]:text-theme-primary-active has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus"
+              className={`${choiceClassName} relative flex min-h-20 flex-col items-center justify-center gap-2 px-2 py-3 text-center text-sm font-semibold text-app-secondary has-[:checked]:text-theme-primary-active`}
             >
               <input
                 type="radio"
@@ -51,6 +54,7 @@ function AnswerOptions({
                 value={option.value}
                 defaultChecked={initialValue === (option.value === "yes")}
                 required
+                disabled={disabled}
                 className="absolute inset-0 h-full w-full cursor-pointer appearance-none opacity-0"
               />
               <Icon aria-hidden="true" size={23} strokeWidth={1.8} />
@@ -75,7 +79,11 @@ export function ChecklistForm({
   return (
     <form action={formAction} className="space-y-6">
       {state.message ? (
-        <Alert tone={state.success ? "success" : "danger"} className="mb-4">
+        <Alert
+          tone={state.success ? "success" : "danger"}
+          className="mb-4"
+          aria-live="polite"
+        >
           {state.message}
         </Alert>
       ) : null}
@@ -86,6 +94,7 @@ export function ChecklistForm({
         initialValue={initialPrayer}
         positiveLabel="Participei"
         negativeLabel="Não participei"
+        disabled={pending}
       />
       <AnswerOptions
         name="fastedForCell"
@@ -93,11 +102,13 @@ export function ChecklistForm({
         initialValue={initialFasting}
         positiveLabel="Jejuei"
         negativeLabel="Não jejuei"
+        disabled={pending}
       />
 
       <Button
         type="submit"
         disabled={pending}
+        aria-busy={pending}
         className="w-full sm:w-auto sm:min-w-52"
       >
         {pending ? (

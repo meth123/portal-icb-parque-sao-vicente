@@ -119,7 +119,7 @@ export function BrazilianDateInput({
             calendarInput.click();
           }
         }}
-        className="absolute right-1 top-1 flex h-10 w-10 items-center justify-center rounded-lg text-app-secondary hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus disabled:opacity-60"
+        className="absolute right-1 top-1 flex h-10 w-10 items-center justify-center rounded-[0.625rem] text-app-secondary transition-[background-color,color,transform] duration-150 hover:bg-surface-muted active:scale-[0.94] active:bg-theme-primary-soft active:text-theme-primary focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus disabled:opacity-60 disabled:active:scale-100 motion-reduce:transform-none"
       >
         <CalendarDays aria-hidden="true" className="size-5" />
       </button>

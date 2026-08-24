@@ -10,6 +10,7 @@ type ActionCardProps = {
   icon: ReactNode;
   meta?: ReactNode;
   tone?: "default" | "theme";
+  layout?: "card" | "list";
   className?: string;
 };
 
@@ -20,16 +21,55 @@ export function ActionCard({
   icon,
   meta,
   tone = "default",
+  layout = "card",
   className,
 }: ActionCardProps) {
+  const toneClassName =
+    tone === "theme"
+      ? "border-theme-primary-border bg-theme-primary-subtle hover:bg-theme-primary-soft"
+      : "border-app-border bg-surface hover:border-theme-primary-border hover:bg-theme-primary-subtle";
+
+  if (layout === "list") {
+    return (
+      <Link
+        href={href}
+        className={classNames(
+          "group grid min-h-[4.75rem] grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-[1.0625rem] border px-3.5 py-3 transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.985] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus motion-reduce:transform-none sm:px-4",
+          toneClassName,
+          className,
+        )}
+      >
+        <span
+          aria-hidden="true"
+          className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-theme-primary-soft text-theme-primary-active"
+        >
+          {icon}
+        </span>
+        <span className="min-w-0">
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="font-semibold text-app-foreground">{title}</span>
+            {meta ? <span className="min-w-0">{meta}</span> : null}
+          </span>
+          <span className="mt-0.5 block text-sm leading-5 text-app-secondary">
+            {description}
+          </span>
+        </span>
+        <ArrowRight
+          aria-hidden="true"
+          className="shrink-0 text-theme-primary transition-transform duration-150 group-hover:translate-x-0.5 group-active:translate-x-1 motion-reduce:transform-none"
+          size={19}
+          strokeWidth={1.8}
+        />
+      </Link>
+    );
+  }
+
   return (
     <Link
       href={href}
       className={classNames(
-        "group flex min-h-32 flex-col justify-between rounded-2xl border p-5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus",
-        tone === "theme"
-          ? "border-theme-primary-border bg-theme-primary-subtle hover:bg-theme-primary-soft"
-          : "border-app-border bg-surface hover:border-theme-primary-border hover:bg-theme-primary-subtle",
+        "group flex min-h-32 flex-col justify-between rounded-[var(--radius-surface)] border p-5 shadow-[var(--shadow-subtle)] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out hover:shadow-[var(--shadow-raised)] active:scale-[0.985] active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus motion-reduce:transform-none",
+        toneClassName,
         className,
       )}
     >
@@ -51,7 +91,7 @@ export function ActionCard({
         </div>
         <ArrowRight
           aria-hidden="true"
-          className="mb-1 shrink-0 text-theme-primary transition-transform group-hover:translate-x-1"
+          className="mb-1 shrink-0 text-theme-primary transition-transform duration-150 group-hover:translate-x-1 group-active:translate-x-1.5 motion-reduce:transform-none"
           size={20}
           strokeWidth={1.8}
         />

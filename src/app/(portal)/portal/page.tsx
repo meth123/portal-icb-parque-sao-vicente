@@ -1,19 +1,23 @@
 import {
+  ArrowRight,
   ChartNoAxesCombined,
   Check,
   ClipboardCheck,
   FilePlus2,
-  Users,
+  HeartHandshake,
+  ShieldCheck,
+  Sparkles,
 } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ActionCard } from "@/components/ui/action-card";
 import { Alert } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageContainer } from "@/components/ui/page-container";
 import { PageHeader } from "@/components/ui/page-header";
 import { SectionHeader } from "@/components/ui/section-header";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { SubmitButton } from "@/components/ui/submit-button";
 import {
   canAccessPastoralDashboard,
   getCurrentUser,
@@ -24,6 +28,7 @@ import {
 } from "@/lib/data/cell-reports";
 import { getPortalHomeSummary } from "@/lib/data/portal-home";
 import { logout } from "./actions";
+import { AnimatedNumber } from "./animated-number";
 import { ClearCellReportDraft } from "./clear-cell-report-draft";
 import { ReportTutorialCard } from "./report-tutorial";
 
@@ -48,9 +53,13 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
             administrador.
           </p>
           <form action={logout} className="mt-8">
-            <Button type="submit" variant="secondary" className="w-full">
+            <SubmitButton
+              pendingLabel="Saindo..."
+              variant="secondary"
+              className="w-full"
+            >
               Sair
-            </Button>
+            </SubmitButton>
           </form>
         </div>
       </main>
@@ -87,11 +96,56 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
   );
   const firstName = user.fullName?.trim().split(/\s+/)[0] ?? "usuário";
   const canViewPastoralDashboard = canAccessPastoralDashboard(user);
+  const pastoralViewLabel =
+    user.globalRole === "pastor"
+      ? "Visão Pastoral"
+      : user.isSupervisor
+        ? "Visão de Supervisor"
+        : null;
+  const highlightedAction = checklistNeedsAnswer
+    ? "checklist"
+    : reportContext
+      ? "report"
+      : canViewPastoralDashboard
+        ? "pastoral"
+        : null;
 
   return (
     <main>
-      <PageContainer width="wide" className="py-6 sm:py-8 lg:py-10">
-        <PageHeader title={`Olá, ${firstName}`} />
+      <PageContainer width="wide" className="py-5 sm:py-8 lg:py-10">
+        <PageHeader
+          title={`Olá, ${firstName}`}
+          description="Veja o que merece sua atenção e continue de onde parou."
+          actions={
+            pastoralViewLabel ? (
+              <div className="inline-flex min-h-14 w-fit items-center gap-3 rounded-2xl border border-white/10 bg-theme-primary-active px-3 py-2.5 text-theme-primary-foreground shadow-[0_10px_26px_rgba(84,16,103,0.2)]">
+                <span
+                  aria-hidden="true"
+                  className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/15"
+                >
+                  {user.globalRole === "pastor" ? (
+                    <HeartHandshake size={20} strokeWidth={1.9} />
+                  ) : (
+                    <ShieldCheck size={20} strokeWidth={1.9} />
+                  )}
+                </span>
+                <span className="text-left">
+                  <span className="block text-[0.625rem] font-bold uppercase tracking-[0.13em] text-white/65">
+                    Acesso pastoral
+                  </span>
+                  <span className="mt-0.5 block text-sm font-semibold text-white">
+                    {pastoralViewLabel}
+                  </span>
+                </span>
+                <Sparkles
+                  aria-hidden="true"
+                  className="ml-1 size-4 shrink-0 text-white/65"
+                  strokeWidth={1.8}
+                />
+              </div>
+            ) : null
+          }
+        />
 
         {reportWasSubmitted ? (
           <div className="mt-6">
@@ -106,118 +160,152 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
           </div>
         ) : null}
 
-        {institutionIndicator ? (
-          <section className="mt-7" aria-labelledby="monthly-summary-title">
-            {institutionIndicator.hasError ? (
-              <Alert tone="danger">
-                Não foi possível carregar o resumo do mês.
-              </Alert>
-            ) : (
-              <div className="relative overflow-hidden rounded-2xl bg-theme-primary-active px-5 py-6 text-theme-primary-foreground sm:px-7 sm:py-7">
-                <div className="relative flex items-center justify-between gap-6">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-white/75">
-                      {institutionIndicator.monthLabel}
-                    </p>
-                    <div className="mt-3 flex items-baseline gap-3">
-                      <p className="text-5xl font-semibold leading-none sm:text-6xl">
-                        {institutionIndicator.firstTimeGuests}
-                      </p>
+        <div className="mt-7 grid items-start gap-8 xl:grid-cols-[minmax(22rem,0.9fr)_minmax(28rem,1.1fr)] xl:gap-10">
+          {institutionIndicator ? (
+            <section aria-labelledby="monthly-summary-title">
+              {institutionIndicator.hasError ? (
+                <Alert tone="danger">
+                  Não foi possível carregar o resumo do mês.
+                </Alert>
+              ) : (
+                <Link
+                  href="/portal/vidas"
+                  aria-label={`Ver resumo e histórico mensal: ${institutionIndicator.firstTimeGuests} em ${institutionIndicator.monthLabel}`}
+                  className="group flex min-h-56 flex-col overflow-hidden rounded-[1.5rem] border border-white/10 bg-theme-primary-active px-5 py-5 text-theme-primary-foreground shadow-[0_16px_36px_rgba(84,16,103,0.18)] transition-[background-color,box-shadow,transform] duration-150 hover:bg-theme-primary-hover hover:shadow-[0_18px_42px_rgba(84,16,103,0.22)] active:scale-[0.985] active:bg-theme-primary-active active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus motion-reduce:transform-none sm:px-7 sm:py-6"
+                >
+                  <div className="flex items-center justify-between gap-3 text-xs font-semibold text-white/75">
+                    <span>{institutionIndicator.monthLabel}</span>
+                    <span className="rounded-full bg-white/10 px-2.5 py-1 text-[0.6875rem] text-white/90">
+                      Resumo mensal
+                    </span>
+                  </div>
+
+                  <div className="flex flex-1 flex-col justify-center py-5 sm:py-6">
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <AnimatedNumber
+                        value={institutionIndicator.firstTimeGuests}
+                        className="text-5xl font-semibold leading-none sm:text-6xl"
+                      />
                       <h2
                         id="monthly-summary-title"
-                        className="max-w-44 text-base font-semibold leading-5 sm:max-w-none sm:text-lg"
+                        className="text-base font-semibold leading-5 sm:text-lg"
                       >
-                        novos convidados
+                        {institutionIndicator.firstTimeGuests === 1
+                          ? "vida pela 1ª vez"
+                          : "vidas pela 1ª vez"}
                       </h2>
                     </div>
-                    <p className="mt-3 text-sm text-white/75">
-                      Primeira participação nas células
+                    <p className="mt-3 text-sm text-white/70">
+                      Registradas pelas células
                     </p>
                   </div>
-                  <span
-                    aria-hidden="true"
-                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/12 sm:h-16 sm:w-16"
-                  >
-                    <Users size={30} strokeWidth={1.7} />
-                  </span>
-                </div>
+
+                  <div className="flex items-center justify-between gap-4 border-t border-white/15 pt-3.5 text-sm font-semibold text-white/85">
+                    <span>Ver histórico mensal</span>
+                    <ArrowRight
+                      aria-hidden="true"
+                      className="shrink-0 transition-transform group-hover:translate-x-1 group-active:translate-x-1.5 motion-reduce:transform-none"
+                      size={18}
+                      strokeWidth={1.8}
+                    />
+                  </div>
+                </Link>
+              )}
+            </section>
+          ) : null}
+
+          <section
+            className={institutionIndicator ? "" : "xl:col-span-2 xl:max-w-3xl"}
+            aria-labelledby="portal-now-title"
+          >
+            <SectionHeader
+              id="portal-now-title"
+              title="Para você"
+              description="Ações disponíveis para o seu perfil."
+            />
+            {checklistIsVisible || reportContext || canViewPastoralDashboard ? (
+              <div className="mt-4 space-y-3">
+                {checklistIsVisible && weeklyChecklist ? (
+                  <ActionCard
+                    href="/portal/checklist"
+                    title="Checklist semanal"
+                    description={
+                      weeklyChecklist.currentPerson
+                        ? weeklyChecklist.period.isOpen
+                          ? checklistWasAnswered
+                            ? "Revisar respostas"
+                            : "Responder esta semana"
+                          : "Ver resultado"
+                        : "Acompanhar respostas"
+                    }
+                    icon={<ClipboardCheck size={22} strokeWidth={1.8} />}
+                    tone={
+                      highlightedAction === "checklist" ? "theme" : "default"
+                    }
+                    layout={
+                      highlightedAction === "checklist" ? "card" : "list"
+                    }
+                    meta={
+                      <StatusBadge
+                        tone={checklistNeedsAnswer ? "warning" : "success"}
+                      >
+                        {checklistNeedsAnswer
+                          ? "Pendente"
+                          : weeklyChecklist.period.isOpen
+                            ? "Em dia"
+                            : "Encerrado"}
+                      </StatusBadge>
+                    }
+                  />
+                ) : null}
+
+                {reportContext ? (
+                  <ActionCard
+                    href="/portal/relatorios/novo"
+                    title="Preencher Ficha"
+                    description={reportContext.cellName}
+                    icon={<FilePlus2 size={22} strokeWidth={1.8} />}
+                    tone={
+                      highlightedAction === "report" ? "theme" : "default"
+                    }
+                    layout={
+                      highlightedAction === "report" ? "card" : "list"
+                    }
+                    meta={
+                      monthlyResponsibility?.isCurrentUserResponsible ? (
+                        <StatusBadge tone="theme">
+                          Responsável em {monthlyResponsibility.monthLabel}
+                        </StatusBadge>
+                      ) : null
+                    }
+                  />
+                ) : null}
+
+                {canViewPastoralDashboard ? (
+                  <ActionCard
+                    href="/portal/supervisao"
+                    title="Painel pastoral"
+                    description="Acompanhar células e lideranças"
+                    icon={<ChartNoAxesCombined size={22} strokeWidth={1.8} />}
+                    tone={
+                      highlightedAction === "pastoral" ? "theme" : "default"
+                    }
+                    layout={
+                      highlightedAction === "pastoral" ? "card" : "list"
+                    }
+                  />
+                ) : null}
               </div>
+            ) : (
+              <EmptyState
+                className="mt-4"
+                icon={<Check size={28} strokeWidth={1.8} />}
+                title="Tudo certo por agora"
+                description="Você não tem nenhuma pendência."
+              />
             )}
           </section>
-        ) : null}
-
-        <section className="mt-8" aria-labelledby="portal-now-title">
-          <SectionHeader id="portal-now-title" title="Para você" />
-          {checklistIsVisible || reportContext || canViewPastoralDashboard ? (
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              {checklistIsVisible && weeklyChecklist ? (
-                <ActionCard
-                  href="/portal/checklist"
-                  title="Checklist semanal"
-                  description={
-                    weeklyChecklist.currentPerson
-                      ? weeklyChecklist.period.isOpen
-                        ? checklistWasAnswered
-                          ? "Revisar respostas"
-                          : "Responder esta semana"
-                        : "Ver resultado"
-                      : "Acompanhar respostas"
-                  }
-                  icon={<ClipboardCheck size={22} strokeWidth={1.8} />}
-                  tone={checklistNeedsAnswer ? "theme" : "default"}
-                  meta={
-                    <StatusBadge
-                      tone={checklistNeedsAnswer ? "warning" : "success"}
-                    >
-                      {checklistNeedsAnswer
-                        ? "Pendente"
-                        : weeklyChecklist.period.isOpen
-                          ? "Em dia"
-                          : "Encerrado"}
-                    </StatusBadge>
-                  }
-                />
-              ) : null}
-
-              {reportContext ? (
-                <ActionCard
-                  href="/portal/relatorios/novo"
-                  title="Preencher Ficha"
-                  description={reportContext.cellName}
-                  icon={<FilePlus2 size={22} strokeWidth={1.8} />}
-                  tone={
-                    monthlyResponsibility?.isCurrentUserResponsible
-                      ? "theme"
-                      : "default"
-                  }
-                  meta={
-                    monthlyResponsibility?.isCurrentUserResponsible ? (
-                      <StatusBadge tone="theme">
-                        Responsável em {monthlyResponsibility.monthLabel}
-                      </StatusBadge>
-                    ) : null
-                  }
-                />
-              ) : null}
-
-              {canViewPastoralDashboard ? (
-                <ActionCard
-                  href="/portal/supervisao"
-                  title="Painel pastoral"
-                  description="Acompanhar células e lideranças"
-                  icon={<ChartNoAxesCombined size={22} strokeWidth={1.8} />}
-                />
-              ) : null}
-            </div>
-          ) : (
-            <EmptyState
-              className="mt-4"
-              icon={<Check size={28} strokeWidth={1.8} />}
-              title="Tudo certo por agora"
-              description="Você não tem nenhuma pendência."
-            />
-          )}
-        </section>
+        </div>
 
         {reportContext ? <ReportTutorialCard /> : null}
       </PageContainer>

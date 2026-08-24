@@ -4,6 +4,10 @@ import { useActionState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { BrazilianDateInput } from "@/components/ui/brazilian-date-input";
 import { Button } from "@/components/ui/button";
+import {
+  choiceClassName,
+  controlClassName as fieldClassName,
+} from "@/components/ui/control-styles";
 import { FormField } from "@/components/ui/form-field";
 import { FormSection } from "@/components/ui/form-section";
 import type {
@@ -13,9 +17,6 @@ import type {
 import { createCell, type CreateCellState } from "./actions";
 
 const initialState: CreateCellState = { message: "" };
-const fieldClassName =
-  "min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-subtle";
-
 const weekdays = [
   { value: "4", label: "Quinta-feira" },
   { value: "5", label: "Sexta-feira" },
@@ -199,7 +200,7 @@ export function CellForm({
             {leaders.map((leader) => (
               <label
                 key={leader.value}
-                className="flex min-h-14 cursor-pointer items-start gap-3 rounded-xl border border-app-border bg-surface p-4 hover:border-theme-primary-border hover:bg-theme-primary-subtle"
+                className={`${choiceClassName} flex min-h-14 items-start gap-3 p-4`}
               >
                 <input
                   type="checkbox"
@@ -221,7 +222,12 @@ export function CellForm({
         </fieldset>
       </FormSection>
 
-      <Button type="submit" disabled={pending} className="w-full">
+      <Button
+        type="submit"
+        disabled={pending}
+        aria-busy={pending}
+        className="w-full"
+      >
         {pending ? "Cadastrando..." : "Cadastrar célula"}
       </Button>
     </form>

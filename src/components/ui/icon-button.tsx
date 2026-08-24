@@ -16,7 +16,7 @@ export function IconButton({
     <button
       type={type}
       className={classNames(
-        "inline-flex shrink-0 items-center justify-center rounded-xl border border-app-border bg-surface text-app-foreground transition-colors hover:bg-surface-muted active:bg-theme-primary-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex shrink-0 items-center justify-center rounded-[0.875rem] border border-app-border bg-surface text-app-foreground transition-[background-color,border-color,color,opacity,transform] duration-150 ease-out hover:border-theme-primary-border hover:bg-theme-primary-subtle active:scale-[0.96] active:bg-theme-primary-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 motion-reduce:transform-none",
         size === "compact" ? "h-11 w-11" : "h-12 w-12",
         className,
       )}

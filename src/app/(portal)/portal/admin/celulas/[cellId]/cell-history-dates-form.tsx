@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { BrazilianDateInput } from "@/components/ui/brazilian-date-input";
 import { Button } from "@/components/ui/button";
+import { controlClassName as fieldClassName } from "@/components/ui/control-styles";
 import { FormField } from "@/components/ui/form-field";
 import { FormSection } from "@/components/ui/form-section";
 import {
@@ -12,9 +13,6 @@ import {
 } from "./actions";
 
 const initialState: UpdateCellHistoryDatesState = { message: "" };
-const fieldClassName =
-  "min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-subtle";
-
 type CellHistoryDatesFormProps = {
   cellId: string;
   startedOn: string;
@@ -81,7 +79,12 @@ export function CellHistoryDatesForm({
           </FormField>
         </div>
 
-        <Button type="submit" disabled={pending} className="mt-5 w-full sm:w-auto">
+        <Button
+          type="submit"
+          disabled={pending}
+          aria-busy={pending}
+          className="mt-5 w-full sm:w-auto"
+        >
           {pending ? "Salvando datas..." : "Salvar datas"}
         </Button>
       </FormSection>

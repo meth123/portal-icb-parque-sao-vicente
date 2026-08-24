@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { buttonClassName } from "@/components/ui/button";
 import { PageContainer } from "@/components/ui/page-container";
+import { PageHeader } from "@/components/ui/page-header";
 import { Surface } from "@/components/ui/surface";
 import {
   canAccessAdministration,
@@ -32,17 +33,22 @@ export default async function NewUserPage() {
 
   return (
     <main className="min-h-full bg-app-background py-6 sm:py-8">
-      <PageContainer width="narrow">
-        <div className="mb-4">
-          <Link
-            href="/portal/admin"
-            className={buttonClassName({ variant: "ghost", size: "compact" })}
-          >
-            <ArrowLeft aria-hidden="true" className="size-4" />
-            Voltar
-          </Link>
-        </div>
-        <Surface className="mx-auto max-w-xl p-5 sm:p-7">
+      <PageContainer width="default">
+        <PageHeader
+          eyebrow="Área administrativa"
+          title="Cadastrar usuário"
+          description="Crie a conta com os dados essenciais e, se necessário, vincule a pessoa a uma célula."
+          actions={
+            <Link
+              href="/portal/admin"
+              className={buttonClassName({ variant: "secondary", size: "compact" })}
+            >
+              <ArrowLeft aria-hidden="true" className="size-4" />
+              Voltar
+            </Link>
+          }
+        />
+        <Surface className="mx-auto mt-6 max-w-2xl p-5 sm:p-7">
           <QuickUserForm
             cells={activeCells}
             currentDate={getSaoPauloDate()}

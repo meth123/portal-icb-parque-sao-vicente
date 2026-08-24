@@ -14,13 +14,15 @@ export function AuthPanel({
   children,
 }: AuthPanelProps) {
   return (
-    <div>
+    <div className="animate-[auth-enter_360ms_var(--ease-out)_both] motion-reduce:animate-none">
       <header>
         {eyebrow ? (
-          <p className="text-sm font-semibold text-theme-primary">{eyebrow}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-theme-primary">
+            {eyebrow}
+          </p>
         ) : null}
         <h1
-          className={`${eyebrow ? "mt-2" : ""} text-3xl font-semibold text-app-foreground`}
+          className={`${eyebrow ? "mt-2" : ""} text-[1.75rem] font-semibold leading-tight tracking-[-0.025em] text-app-foreground sm:text-3xl`}
         >
           {title}
         </h1>

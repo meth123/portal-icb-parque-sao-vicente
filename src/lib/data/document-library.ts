@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export type DocumentCategorySummary = {
   id: string;
+  code: string;
   name: string;
 };
 
@@ -47,7 +48,7 @@ export async function getActiveDocumentCategories() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("document_categories")
-    .select("id, name")
+    .select("id, code, name")
     .eq("is_active", true)
     .order("sort_order")
     .order("name");
@@ -66,13 +67,14 @@ export async function getDocumentLibraryOverview(categoryId?: string) {
   const supabase = await createClient();
   const categoriesResult = await supabase
     .from("document_categories")
-    .select("id, name, sort_order")
+    .select("id, code, name, sort_order")
     .eq("is_active", true)
     .order("sort_order")
     .order("name");
 
   const categories = (categoriesResult.data ?? []).map((category) => ({
     id: category.id,
+    code: category.code,
     name: category.name,
   })) satisfies DocumentCategorySummary[];
 
@@ -82,22 +84,12 @@ export async function getDocumentLibraryOverview(categoryId?: string) {
     categories.some((category) => category.id === categoryId)
       ? categoryId
       : "";
-  let publicationsQuery = supabase
+  const publicationsResult = await supabase
     .from("document_publications")
     .select("id, category_id, title, published_at")
     .eq("status", "published")
     .order("published_at", { ascending: false });
-
-  if (selectedCategoryId) {
-    publicationsQuery = publicationsQuery.eq(
-      "category_id",
-      selectedCategoryId,
-    );
-  }
-
-  const publicationsResult = await publicationsQuery;
-
-  const publications = (
+  const allPublications = (
     (publicationsResult.data ?? []) as RawDocumentPublication[]
   ).map((publication) => ({
     id: publication.id,
@@ -105,10 +97,25 @@ export async function getDocumentLibraryOverview(categoryId?: string) {
     title: publication.title,
     publishedAt: publication.published_at,
   })) satisfies DocumentPublicationSummary[];
+  const publications = selectedCategoryId
+    ? allPublications.filter(
+        (publication) => publication.categoryId === selectedCategoryId,
+      )
+    : [];
+  const categoryCounts = Object.fromEntries(
+    categories.map((category) => [
+      category.id,
+      allPublications.filter(
+        (publication) => publication.categoryId === category.id,
+      ).length,
+    ]),
+  ) as Record<string, number>;
 
   return {
     categories,
     publications,
+    categoryCounts,
+    totalPublicationCount: allPublications.length,
     selectedCategoryId,
     hasError: Boolean(categoriesResult.error || publicationsResult.error),
   };

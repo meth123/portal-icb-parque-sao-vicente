@@ -6,11 +6,11 @@ export type ButtonSize = "default" | "compact";
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "border-transparent bg-theme-primary text-theme-primary-foreground hover:bg-theme-primary-hover active:bg-theme-primary-active disabled:bg-theme-primary disabled:opacity-50",
+    "border-transparent bg-theme-primary text-theme-primary-foreground shadow-[0_1px_2px_rgba(84,16,103,0.18)] hover:bg-theme-primary-hover hover:shadow-[0_5px_14px_rgba(84,16,103,0.16)] active:bg-theme-primary-active active:shadow-none disabled:bg-theme-primary disabled:opacity-55 disabled:shadow-none",
   secondary:
-    "border-app-border bg-surface text-app-foreground hover:bg-surface-muted active:bg-theme-primary-subtle disabled:opacity-50",
+    "border-app-border bg-surface text-app-foreground shadow-[var(--shadow-subtle)] hover:border-theme-primary-border hover:bg-theme-primary-subtle active:bg-theme-primary-soft disabled:opacity-55 disabled:shadow-none",
   ghost:
-    "border-transparent bg-transparent text-app-foreground hover:bg-surface-muted active:bg-theme-primary-subtle disabled:opacity-50",
+    "border-transparent bg-transparent text-app-secondary hover:bg-surface-muted hover:text-app-foreground active:bg-theme-primary-soft active:text-theme-primary-active disabled:opacity-50",
   danger:
     "border-transparent bg-danger text-white hover:brightness-95 active:brightness-90 disabled:opacity-50",
 };
@@ -30,7 +30,7 @@ export function buttonClassName({
   className?: string;
 } = {}) {
   return classNames(
-    "inline-flex items-center justify-center gap-2 rounded-xl border font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed",
+    "inline-flex items-center justify-center gap-2 rounded-[0.875rem] border font-semibold transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-150 ease-out active:scale-[0.98] active:duration-75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:active:scale-100 motion-reduce:transform-none",
     variantClasses[variant],
     sizeClasses[size],
     className,

@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:unit": "node --experimental-strip-types --test tests/cell-dashboard.test.ts tests/cell-report-form.test.ts tests/cell-report-pdf.test.ts tests/document-file-name.test.ts tests/passwords.test.ts tests/portal-navigation.test.ts tests/sao-paulo-date.test.ts tests/weekly-checklist.test.ts"
+    "test:unit": "node --experimental-strip-types --test tests/cell-dashboard.test.ts tests/cell-report-form.test.ts tests/cell-report-pdf.test.ts tests/checklist-results.test.ts tests/checklist-results-pdf.test.ts tests/checklist-results-query.test.ts tests/document-file-name.test.ts tests/first-time-guests-history-query.test.ts tests/passwords.test.ts tests/portal-navigation.test.ts tests/sao-paulo-date.test.ts tests/weekly-checklist.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

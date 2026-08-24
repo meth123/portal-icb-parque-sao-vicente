@@ -23,12 +23,12 @@ export function SectionHeader({
         className,
       )}
     >
-      <div>
-        <h2 id={id} className="text-xl font-semibold text-app-foreground">
+      <div className="min-w-0">
+        <h2 id={id} className="text-lg font-semibold tracking-[-0.015em] text-app-foreground sm:text-xl">
           {title}
         </h2>
         {description ? (
-          <p className="mt-1 text-sm leading-6 text-app-secondary">
+          <p className="mt-1 max-w-[68ch] text-sm leading-5 text-app-secondary sm:leading-6">
             {description}
           </p>
         ) : null}

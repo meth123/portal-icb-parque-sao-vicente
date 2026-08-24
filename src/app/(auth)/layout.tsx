@@ -22,9 +22,9 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
 
       <section
         aria-label="Acesso ao ICB Conecta"
-        className="flex min-h-[calc(100dvh-10rem)] items-center bg-surface px-5 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-9 sm:min-h-[calc(100dvh-13rem)] sm:px-10 sm:pt-10 lg:min-h-dvh lg:px-12 lg:py-12 xl:px-16"
+        className="flex min-h-[calc(100dvh-10rem)] min-w-0 items-center bg-surface px-5 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-9 sm:min-h-[calc(100dvh-13rem)] sm:px-10 sm:pt-10 lg:min-h-dvh lg:px-12 lg:py-12 xl:px-16"
       >
-        <div className="mx-auto w-full max-w-md">
+        <div className="mx-auto min-w-0 w-full max-w-md">
           <Link
             href="/"
             aria-label="Voltar para o site"

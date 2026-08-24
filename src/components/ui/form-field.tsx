@@ -25,7 +25,7 @@ export function FormField({
   return (
     <div className={classNames("min-w-0", className)}>
       <div className="flex items-baseline justify-between gap-4">
-        <label htmlFor={id} className="block font-semibold text-app-foreground">
+        <label htmlFor={id} className="block text-sm font-semibold text-app-foreground sm:text-[0.9375rem]">
           {label}
           {required ? (
             <span className="ml-1 text-danger" aria-hidden="true">

@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { PortalNavigationItem } from "@/components/portal/navigation-types";
 import { PortalNavLink } from "@/components/portal/portal-nav-link";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { logout } from "@/app/(portal)/portal/actions";
 
 type DesktopSidebarProps = {
@@ -22,7 +23,7 @@ export function DesktopSidebar({
   user,
 }: DesktopSidebarProps) {
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 flex-col border-r border-app-border bg-surface lg:flex">
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 flex-col border-r border-t-[3px] border-app-border border-t-theme-primary bg-surface lg:flex">
       <div className="flex min-h-24 items-center border-b border-app-border px-6">
         <Link
           href="/portal"
@@ -59,7 +60,7 @@ export function DesktopSidebar({
 
         {secondaryItems.length > 0 ? (
           <>
-            <p className="mb-2 mt-7 px-3 text-xs font-semibold uppercase text-app-secondary">
+            <p className="mb-2 mt-7 px-3 text-[0.6875rem] font-bold uppercase tracking-[0.1em] text-app-secondary">
               Outros acessos
             </p>
             <ul className="space-y-1">
@@ -76,7 +77,7 @@ export function DesktopSidebar({
       <div className="border-t border-app-border p-4">
         <Link
           href="/portal/perfil"
-          className="flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          className="flex items-center gap-3 rounded-xl p-2 transition-[background-color,transform] duration-150 hover:bg-surface-muted active:scale-[0.985] active:bg-theme-primary-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transform-none"
         >
           <UserAvatar name={user.name} src={user.avatarUrl} size="small" />
           <span className="min-w-0 flex-1">
@@ -89,13 +90,15 @@ export function DesktopSidebar({
           </span>
         </Link>
         <form action={logout} className="mt-2">
-          <button
-            type="submit"
-            className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-semibold text-app-secondary transition-colors hover:bg-surface-muted hover:text-app-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          <SubmitButton
+            pendingLabel="Saindo..."
+            variant="ghost"
+            size="compact"
+            className="w-full justify-start"
           >
             <LogOut aria-hidden="true" size={20} strokeWidth={1.8} />
             Sair
-          </button>
+          </SubmitButton>
         </form>
       </div>
     </aside>

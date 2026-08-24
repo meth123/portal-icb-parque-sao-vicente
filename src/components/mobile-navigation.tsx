@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
 type NavigationItem = {
@@ -16,18 +17,20 @@ export function MobileNavigation({ items }: MobileNavigationProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="w-full md:hidden">
+    <div className="order-3 w-full md:hidden">
       <button
         type="button"
         aria-expanded={isOpen}
         aria-controls="mobile-navigation"
         aria-label={isOpen ? "Fechar menu" : "Abrir menu"}
         onClick={() => setIsOpen((current) => !current)}
-        className="flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base font-semibold text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-900"
+        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[0.875rem] border border-app-border bg-surface px-4 py-3 text-sm font-semibold text-app-foreground transition-[background-color,border-color,transform] active:scale-[0.985] active:bg-theme-primary-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transform-none"
       >
-        <span aria-hidden className="text-xl leading-none">
-          {isOpen ? "×" : "☰"}
-        </span>
+        {isOpen ? (
+          <X aria-hidden="true" className="size-5" />
+        ) : (
+          <Menu aria-hidden="true" className="size-5" />
+        )}
         Menu
       </button>
 
@@ -35,15 +38,15 @@ export function MobileNavigation({ items }: MobileNavigationProps) {
         <nav
           id="mobile-navigation"
           aria-label="Navegação principal no celular"
-          className="mt-3 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm"
+          className="mt-3 overflow-hidden rounded-[var(--radius-surface)] border border-app-border bg-surface shadow-[var(--shadow-raised)]"
         >
-          <ul className="divide-y divide-zinc-200">
+          <ul className="divide-y divide-app-border">
             {items.map((item) => (
               <li key={item.href}>
                 <Link
                   href={item.href}
                   onClick={() => setIsOpen(false)}
-                  className="block min-h-12 px-4 py-3 text-center text-base font-medium text-zinc-800 transition-colors hover:bg-zinc-100 focus-visible:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-zinc-900"
+                  className="block min-h-12 px-4 py-3 text-center text-base font-semibold text-app-foreground transition-[background-color,transform] active:scale-[0.985] active:bg-theme-primary-soft hover:bg-theme-primary-subtle focus-visible:bg-theme-primary-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus motion-reduce:transform-none"
                 >
                   {item.label}
                 </Link>

@@ -23,6 +23,10 @@ import {
 } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import {
+  choiceClassName,
+  controlClassName as fieldClassName,
+} from "@/components/ui/control-styles";
 import { IconButton } from "@/components/ui/icon-button";
 import {
   flattenGuestGroups,
@@ -53,6 +57,7 @@ import type {
 import { createInitialSeed, getEvangelismRecordError } from "./utils";
 
 const initialState: SubmitCellReportState = { message: "" };
+const spacedFieldClassName = `mt-2 ${fieldClassName}`;
 
 type ReportFormProps = {
   cellId: string;
@@ -64,9 +69,6 @@ type ReportFormProps = {
   initialData?: CellReportInitialData;
   correctionSourceVersionId?: string;
 };
-
-const fieldClassName =
-  "min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none transition placeholder:text-app-secondary focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-subtle disabled:cursor-wait disabled:opacity-60";
 
 function formatBrazilianDate(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -125,7 +127,7 @@ function BrazilianDateInput({
   }, [value]);
 
   return (
-    <div className="relative">
+    <div className="relative mt-2">
       <input
         ref={inputRef}
         id={id}
@@ -177,7 +179,7 @@ function BrazilianDateInput({
             calendarInput.click();
           }
         }}
-        className="absolute right-1 top-1 flex h-10 w-10 items-center justify-center rounded-lg text-app-secondary hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus disabled:cursor-wait disabled:opacity-60"
+        className="absolute right-1 top-1 flex h-10 w-10 items-center justify-center rounded-[0.625rem] text-app-secondary transition-[background-color,color,transform] active:scale-[0.94] active:bg-theme-primary-soft active:text-theme-primary hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus disabled:cursor-wait disabled:opacity-60 motion-reduce:transform-none"
       >
         <CalendarDays aria-hidden="true" className="h-5 w-5" />
       </button>
@@ -261,7 +263,7 @@ function ManualNameListInput({
       }}
       placeholder={"Manoel\nMatheus"}
       disabled={disabled}
-      className={`${fieldClassName} py-3`}
+      className={`${spacedFieldClassName} py-3`}
     />
   );
 }
@@ -1291,10 +1293,10 @@ export function ReportForm({
                 ].map(([value, label]) => (
                   <label
                     key={value}
-                    className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-4 transition-colors ${
+                    className={`${choiceClassName} flex min-h-12 items-center gap-3 px-4 ${
                       meetingFormat === value
-                        ? "border-theme-primary bg-theme-primary-subtle text-theme-primary-active"
-                        : "border-app-border bg-surface text-app-foreground hover:bg-surface-muted"
+                        ? "text-theme-primary-active"
+                        : "text-app-foreground"
                     }`}
                   >
                     <input
@@ -1328,10 +1330,10 @@ export function ReportForm({
               ].map(([value, label]) => (
                   <label
                     key={value}
-                    className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-4 transition-colors ${
+                    className={`${choiceClassName} flex min-h-12 items-center gap-3 px-4 ${
                       leaderWasPresent === value
-                        ? "border-theme-primary bg-theme-primary-subtle text-theme-primary-active"
-                        : "border-app-border bg-surface text-app-foreground hover:bg-surface-muted"
+                        ? "text-theme-primary-active"
+                        : "text-app-foreground"
                     }`}
                 >
                   <input
@@ -1362,10 +1364,10 @@ export function ReportForm({
                 {viceLeaders.map((viceLeader) => (
                   <label
                     key={viceLeader.leadershipId}
-                    className={`flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border p-4 transition-colors ${
+                    className={`${choiceClassName} flex min-h-14 items-center gap-3 p-4 ${
                       selectedViceIds.includes(viceLeader.leadershipId)
-                        ? "border-theme-primary bg-theme-primary-subtle"
-                        : "border-app-border bg-surface hover:bg-surface-muted"
+                        ? "text-theme-primary-active"
+                        : "text-app-foreground"
                     }`}
                   >
                     <input
@@ -1391,10 +1393,10 @@ export function ReportForm({
                 Esta célula não possui Vice-líderes vinculados atualmente.
               </p>
             )}
-            <label className={`mt-3 flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border p-4 transition-colors ${
+            <label className={`${choiceClassName} mt-3 flex min-h-14 items-center gap-3 p-4 ${
               noViceWasPresent
-                ? "border-theme-primary bg-theme-primary-subtle"
-                : "border-app-border bg-surface-muted"
+                ? "text-theme-primary-active"
+                : "bg-surface-muted text-app-foreground"
             }`}>
               <input
                 type="checkbox"
@@ -1461,7 +1463,7 @@ export function ReportForm({
                   member={member}
                   index={index}
                   disabled={pending}
-                  inputClassName={fieldClassName}
+                  inputClassName={spacedFieldClassName}
                   onNameChange={(name) =>
                     setMembers((current) =>
                       current.map((item) =>
@@ -1534,7 +1536,7 @@ export function ReportForm({
                   }
                   placeholder={"João\nAndré\nMaria"}
                   disabled={pending}
-                  className={`${fieldClassName} py-3`}
+                  className={`${spacedFieldClassName} py-3`}
                 />
                 {bulkMemberMessage ? (
                   <p
@@ -1723,11 +1725,11 @@ export function ReportForm({
                             required
                             maxLength={200}
                             disabled={pending}
-                            className={fieldClassName}
+                            className={spacedFieldClassName}
                           />
                         </div>
                         <div className="mt-3 flex items-center justify-between gap-3 sm:mt-0 sm:justify-end">
-                          <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-app-border bg-surface px-3 font-medium text-app-foreground has-[:checked]:border-theme-primary has-[:checked]:bg-theme-primary-soft has-[:checked]:text-theme-primary-active">
+                          <label className={`${choiceClassName} flex min-h-11 items-center gap-2 px-3 font-medium text-app-foreground has-[:checked]:text-theme-primary-active`}>
                             <input
                               type="checkbox"
                               checked={guest.isFirstTime}
@@ -1818,7 +1820,7 @@ export function ReportForm({
                         }
                         placeholder={"Manoel\nRafael\nLucas\nMaria\nJoana"}
                         disabled={pending}
-                        className={`${fieldClassName} py-3`}
+                        className={`${spacedFieldClassName} py-3`}
                       />
                       <p className="mt-2 text-sm leading-6 text-theme-primary-active">
                         Linhas vazias serão ignoradas. Depois você poderá
@@ -2052,7 +2054,7 @@ export function ReportForm({
                             required
                             maxLength={4000}
                             disabled={pending}
-                            className={`${fieldClassName} py-3`}
+                            className={`${spacedFieldClassName} py-3`}
                           />
                           <div className="mt-3 flex flex-col gap-3 sm:flex-row">
                             <Button
@@ -2108,7 +2110,7 @@ export function ReportForm({
                           type="button"
                           onClick={() => addEvangelismRecord(person.leadershipId)}
                           disabled={pending}
-                          className="flex min-h-20 items-center gap-3 rounded-xl border border-success/25 bg-surface px-4 text-left transition-colors hover:bg-success-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-50"
+                          className="flex min-h-20 items-center gap-3 rounded-[0.875rem] border border-success/25 bg-surface px-4 text-left shadow-[var(--shadow-subtle)] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out hover:border-success/40 hover:bg-success-soft active:scale-[0.97] active:border-success/60 active:bg-success-soft active:shadow-[inset_0_0_0_2px_rgba(22,122,82,0.14)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 motion-reduce:transform-none"
                         >
                           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success-soft text-success">
                             <CheckCircle2 aria-hidden="true" className="h-5 w-5" />
@@ -2126,7 +2128,7 @@ export function ReportForm({
                           type="button"
                           onClick={() => markNotEvangelized(person.leadershipId)}
                           disabled={pending}
-                          className="flex min-h-20 items-center gap-3 rounded-xl border border-app-border bg-surface px-4 text-left transition-colors hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-50"
+                          className="flex min-h-20 items-center gap-3 rounded-[0.875rem] border border-app-border bg-surface px-4 text-left shadow-[var(--shadow-subtle)] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out hover:border-theme-primary-border hover:bg-surface-muted active:scale-[0.97] active:border-theme-primary-border active:bg-theme-primary-soft active:shadow-[inset_0_0_0_2px_rgba(114,21,143,0.1)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 motion-reduce:transform-none"
                         >
                           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-muted text-app-secondary">
                             <CircleMinus aria-hidden="true" className="h-5 w-5" />
@@ -2189,7 +2191,7 @@ export function ReportForm({
                           }
                           aria-expanded={isOpen}
                           aria-controls={`evangelism-record-${record.key}`}
-                          className="flex min-h-20 w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus sm:px-5"
+                          className="flex min-h-20 w-full items-center gap-3 px-4 py-4 text-left transition-[background-color,transform] duration-150 active:scale-[0.99] active:bg-theme-primary-subtle hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus motion-reduce:transform-none sm:px-5"
                         >
                           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-theme-primary-subtle text-theme-primary-active">
                             <Megaphone aria-hidden="true" className="h-5 w-5" />
@@ -2257,10 +2259,10 @@ export function ReportForm({
                                     return (
                                       <label
                                         key={person.leadershipId}
-                                        className={`flex min-h-14 items-center gap-3 rounded-xl border p-4 transition-colors has-[:checked]:border-theme-primary has-[:checked]:bg-theme-primary-soft ${
+                                        className={`${choiceClassName} flex min-h-14 items-center gap-3 p-4 ${
                                           isMarkedNotEvangelized
-                                            ? "cursor-not-allowed border-app-border bg-surface-muted"
-                                            : "cursor-pointer border-app-border bg-surface"
+                                            ? "cursor-not-allowed bg-surface-muted"
+                                            : ""
                                         }`}
                                       >
                                         <input
@@ -2338,7 +2340,7 @@ export function ReportForm({
                                   required
                                   maxLength={60}
                                   disabled={pending}
-                                  className={fieldClassName}
+                                  className={spacedFieldClassName}
                                 />
                               </div>
                             </div>
@@ -2391,7 +2393,7 @@ export function ReportForm({
                                 maxLength={4000}
                                 placeholder="Conte brevemente como foi o evangelismo."
                                 disabled={pending}
-                                className={`${fieldClassName} py-3`}
+                                className={`${spacedFieldClassName} py-3`}
                               />
                             </div>
 
@@ -2433,7 +2435,7 @@ export function ReportForm({
           </section>
 
           <section>
-            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-warning/20 bg-warning-soft p-4">
+            <label className="flex cursor-pointer items-start gap-3 rounded-[0.875rem] border border-warning/20 bg-warning-soft p-4 transition-[background-color,border-color,transform] duration-150 active:scale-[0.985] active:border-warning/35 active:bg-warning-soft motion-reduce:transform-none">
               <input
                 type="checkbox"
                 checked={submissionConfirmed}
@@ -2465,6 +2467,7 @@ export function ReportForm({
             <Button
               type="submit"
               disabled={pending}
+              aria-busy={pending}
               className="w-full sm:w-auto sm:min-w-56"
             >
               {pending ? (

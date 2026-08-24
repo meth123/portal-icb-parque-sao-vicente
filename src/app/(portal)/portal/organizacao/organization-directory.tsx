@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CalendarDays, House, MapPin, Search, UserRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import { buttonClassName } from "@/components/ui/button";
+import { controlClassName } from "@/components/ui/control-styles";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FilterPanel } from "@/components/ui/filter-panel";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -37,7 +38,7 @@ export function OrganizationDirectory({ cells }: { cells: CellOverview[] }) {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Nome, líder, rede ou bairro"
-                className="min-h-12 w-full rounded-xl border border-app-border bg-surface py-3 pl-12 pr-4 text-app-foreground outline-none placeholder:text-app-secondary focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-soft"
+                className={`${controlClassName} py-3 pl-12 pr-4`}
               />
             </span>
           </label>
@@ -46,7 +47,7 @@ export function OrganizationDirectory({ cells }: { cells: CellOverview[] }) {
             <select
               value={status}
               onChange={(event) => setStatus(event.target.value as StatusFilter)}
-              className="min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-app-foreground outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-soft"
+              className={controlClassName}
             >
               <option value="all">Todas</option>
               <option value="active">Ativas</option>

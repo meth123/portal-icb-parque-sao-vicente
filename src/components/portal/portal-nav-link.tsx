@@ -71,10 +71,10 @@ export function PortalNavLink({
       aria-current={active ? "page" : undefined}
       onClick={onNavigate}
       className={classNames(
-        "flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
+        "flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.985] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transform-none",
         active
-          ? "bg-theme-primary-soft text-theme-primary-active"
-          : "text-app-secondary hover:bg-surface-muted hover:text-app-foreground",
+          ? "bg-theme-primary-soft text-theme-primary-active shadow-[inset_3px_0_0_var(--theme-primary)]"
+          : "text-app-secondary hover:bg-surface-muted hover:text-app-foreground active:bg-theme-primary-subtle",
         compact && "min-h-12 text-base",
       )}
     >

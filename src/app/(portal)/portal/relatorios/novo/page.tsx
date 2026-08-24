@@ -53,7 +53,7 @@ export default async function NewCellReportPage() {
 
         <ReportThemeIntroduction priority />
 
-        <Surface className="mt-5 p-4 sm:p-7 lg:p-8">
+        <Surface className="mt-5 border-0 bg-transparent p-0 shadow-none sm:border sm:bg-surface sm:p-7 sm:shadow-[var(--shadow-subtle)] lg:p-8">
           <ReportForm
             cellId={reportContext.cellId}
             defaultDate={defaultDate}

@@ -11,6 +11,7 @@ import {
 import { Alert } from "@/components/ui/alert";
 import { Button, buttonClassName } from "@/components/ui/button";
 import { BrazilianDateInput } from "@/components/ui/brazilian-date-input";
+import { controlClassName } from "@/components/ui/control-styles";
 import { FormField } from "@/components/ui/form-field";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { createClient } from "@/lib/supabase/client";
@@ -247,7 +248,7 @@ export function ProfileForm({
             disabled={pending}
             aria-describedby="avatar-hint"
             onChange={handleAvatarChange}
-            className="sr-only"
+            className="peer sr-only"
           />
           <div className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
             <label
@@ -255,6 +256,7 @@ export function ProfileForm({
               aria-disabled={pending}
               className={classNames(
                 buttonClassName({ variant: "secondary", size: "compact" }),
+                "peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus",
                 pending && "pointer-events-none opacity-50",
               )}
             >
@@ -295,7 +297,7 @@ export function ProfileForm({
           onChange={(event) => setFullName(event.target.value)}
           autoComplete="name"
           aria-describedby="fullName-hint"
-          className="min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none transition-colors placeholder:text-app-secondary focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-soft disabled:cursor-wait disabled:bg-surface-muted"
+          className={controlClassName}
         />
       </FormField>
 
@@ -307,7 +309,7 @@ export function ProfileForm({
             value={email}
             readOnly
             aria-readonly="true"
-            className="min-h-12 break-all rounded-xl border border-app-border bg-surface-muted px-4 py-3 text-app-secondary"
+            className={`${controlClassName} break-all py-3`}
           />
         </FormField>
       ) : null}
@@ -319,7 +321,7 @@ export function ProfileForm({
           defaultValue={initialBirthDate}
           max={currentDate}
           disabled={pending}
-          className="min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none transition-colors focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-soft disabled:cursor-wait disabled:bg-surface-muted"
+          className={controlClassName}
         />
       </FormField>
 
@@ -333,7 +335,7 @@ export function ProfileForm({
           defaultValue={initialLeadershipStartedOn}
           max={currentDate}
           disabled={pending}
-          className="min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none transition-colors focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-soft disabled:cursor-wait disabled:bg-surface-muted"
+          className={controlClassName}
         />
       </FormField>
 
@@ -341,6 +343,7 @@ export function ProfileForm({
         <Button
           type="submit"
           disabled={pending}
+          aria-busy={pending}
           className="w-full sm:w-auto"
         >
           <Save aria-hidden="true" size={19} strokeWidth={1.8} />

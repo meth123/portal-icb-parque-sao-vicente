@@ -12,6 +12,7 @@ import {
   PortalNavigationIconView,
 } from "@/components/portal/portal-nav-link";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { classNames } from "@/lib/ui/class-names";
 import { logout } from "@/app/(portal)/portal/actions";
 
@@ -85,7 +86,7 @@ export function MobilePortalNavigation({
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-[calc(4rem+env(safe-area-inset-top))] items-center justify-between border-b border-app-border bg-surface/95 px-4 pt-[env(safe-area-inset-top)] backdrop-blur lg:hidden">
+      <header className="sticky top-0 z-30 flex h-[calc(4rem+env(safe-area-inset-top))] items-center justify-between border-b border-t-[3px] border-app-border border-t-theme-primary bg-surface/95 px-5 pt-[env(safe-area-inset-top)] shadow-[0_1px_10px_rgba(35,29,39,0.035)] backdrop-blur lg:hidden">
         <Link
           href="/portal"
           aria-label="Ir para o início do ICB Conecta"
@@ -98,8 +99,11 @@ export function MobilePortalNavigation({
             height={108}
             className="h-11 w-auto brightness-0"
           />
-          <span className="text-sm font-semibold text-app-foreground">
+          <span className="text-sm font-semibold leading-4 text-app-foreground">
             ICB Conecta
+            <span className="block text-[0.625rem] font-medium text-app-secondary">
+              Parque São Vicente
+            </span>
           </span>
         </Link>
         <Link
@@ -113,7 +117,7 @@ export function MobilePortalNavigation({
 
       <nav
         aria-label="Navegação principal no celular"
-        className="fixed inset-x-0 bottom-0 z-50 border-t border-app-border bg-surface/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-app-border bg-surface/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-8px_24px_rgba(35,29,39,0.055)] backdrop-blur lg:hidden"
       >
         <ul
           className="mx-auto grid max-w-lg"
@@ -132,13 +136,20 @@ export function MobilePortalNavigation({
               aria-controls="portal-more-menu"
               onClick={() => setIsOpen(true)}
               className={classNames(
-                "flex min-h-14 w-full flex-col items-center justify-center gap-1 rounded-xl px-1 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus",
+                "flex min-h-[3.625rem] w-full flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[0.6875rem] font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.96] active:bg-theme-primary-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus motion-reduce:transform-none",
                 moreIsActive
                   ? "text-theme-primary-active"
                   : "text-app-secondary",
               )}
             >
-              <Ellipsis aria-hidden="true" size={22} strokeWidth={1.8} />
+              <span
+                className={classNames(
+                  "flex size-8 items-center justify-center rounded-[0.625rem] transition-colors",
+                  moreIsActive && "bg-theme-primary-soft",
+                )}
+              >
+                <Ellipsis aria-hidden="true" size={22} strokeWidth={1.8} />
+              </span>
               Mais
             </button>
           </li>
@@ -150,6 +161,7 @@ export function MobilePortalNavigation({
           <button
             type="button"
             aria-label="Fechar menu"
+            data-press="none"
             className="absolute inset-0 bg-black/35"
             onClick={closeMenu}
           />
@@ -159,7 +171,7 @@ export function MobilePortalNavigation({
             role="dialog"
             aria-modal="true"
             aria-labelledby="portal-more-title"
-            className="absolute inset-x-0 bottom-0 max-h-[85dvh] overscroll-contain overflow-y-auto rounded-t-2xl bg-surface px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4"
+            className="absolute inset-x-0 bottom-0 max-h-[85dvh] overscroll-contain overflow-y-auto rounded-t-[1.75rem] bg-surface px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-18px_50px_rgba(35,29,39,0.16)]"
           >
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-app-border" />
             <div className="flex items-center gap-3 border-b border-app-border pb-4">
@@ -201,13 +213,14 @@ export function MobilePortalNavigation({
             </nav>
 
             <form action={logout} className="border-t border-app-border pt-3">
-              <button
-                type="submit"
-                className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-base font-semibold text-app-secondary hover:bg-surface-muted hover:text-app-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+              <SubmitButton
+                pendingLabel="Saindo..."
+                variant="ghost"
+                className="w-full justify-start"
               >
                 <LogOut aria-hidden="true" size={20} strokeWidth={1.8} />
                 Sair
-              </button>
+              </SubmitButton>
             </form>
           </section>
         </div>
@@ -225,11 +238,18 @@ function MobileBottomLink({ item }: { item: PortalNavigationItem }) {
       href={item.href}
       aria-current={active ? "page" : undefined}
       className={classNames(
-        "flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus",
+        "flex min-h-[3.625rem] flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[0.6875rem] font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.96] active:bg-theme-primary-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus motion-reduce:transform-none",
         active ? "text-theme-primary-active" : "text-app-secondary",
       )}
     >
-      <PortalNavigationIconView icon={item.icon} size={22} />
+      <span
+        className={classNames(
+          "flex size-8 items-center justify-center rounded-[0.625rem] transition-colors",
+          active && "bg-theme-primary-soft",
+        )}
+      >
+        <PortalNavigationIconView icon={item.icon} size={22} />
+      </span>
       <span className="max-w-full truncate">{item.label}</span>
     </Link>
   );

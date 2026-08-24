@@ -1,13 +1,18 @@
-import { Info } from "lucide-react";
+import { FileBarChart, Info } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
+import { buttonClassName } from "@/components/ui/button";
 import { PageContainer } from "@/components/ui/page-container";
 import { PageHeader } from "@/components/ui/page-header";
 import { SectionHeader } from "@/components/ui/section-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Surface } from "@/components/ui/surface";
-import { getCurrentUser } from "@/lib/auth/current-user";
+import {
+  canAccessPastoralDashboard,
+  getCurrentUser,
+} from "@/lib/auth/current-user";
 import {
   getWeeklyChecklistData,
   type WeeklyChecklistPerson,
@@ -49,11 +54,22 @@ export default async function WeeklyChecklistPage() {
           eyebrow={checklist.periodLabel}
           title="Checklist semanal"
           actions={
-            <StatusBadge tone={checklist.period.isOpen ? "success" : "neutral"}>
-              {checklist.period.isOpen
-                ? `Aberto até ${formatClosingDate(checklist.period.closesOn)}`
-                : "Encerrado"}
-            </StatusBadge>
+            <div className="flex flex-wrap items-center gap-3">
+              {canAccessPastoralDashboard(user) ? (
+                <Link
+                  href="/portal/checklist/resultados"
+                  className={buttonClassName({ variant: "secondary", size: "compact" })}
+                >
+                  <FileBarChart aria-hidden="true" className="size-4" />
+                  Histórico e PDF
+                </Link>
+              ) : null}
+              <StatusBadge tone={checklist.period.isOpen ? "success" : "neutral"}>
+                {checklist.period.isOpen
+                  ? `Aberto até ${formatClosingDate(checklist.period.closesOn)}`
+                  : "Encerrado"}
+              </StatusBadge>
+            </div>
           }
         />
 
@@ -64,7 +80,7 @@ export default async function WeeklyChecklistPage() {
         ) : null}
 
         {checklist.currentPerson && checklist.canRespond ? (
-          <Surface tone="theme" className="mt-7 max-w-2xl sm:p-6">
+          <Surface tone="theme" className="mt-7 max-w-2xl border-theme-primary-border p-5 sm:p-7">
             <ChecklistForm
               initialPrayer={checklist.currentPerson.prayedInGroup}
               initialFasting={checklist.currentPerson.fastedForCell}

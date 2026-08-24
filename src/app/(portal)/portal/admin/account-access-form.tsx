@@ -4,6 +4,10 @@ import { ChevronDown, ShieldCheck } from "lucide-react";
 import { useActionState, useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import {
+  choiceClassName,
+  controlClassName,
+} from "@/components/ui/control-styles";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Surface } from "@/components/ui/surface";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -11,8 +15,7 @@ import type { AdministrationProfile } from "@/lib/data/cell-administration";
 import { updateAccountAccess, type AccountAccessState } from "./actions";
 
 const initialState: AccountAccessState = { message: "", success: false };
-const fieldClassName =
-  "mt-2 min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-subtle disabled:bg-surface-muted disabled:text-app-secondary";
+const fieldClassName = `mt-2 ${controlClassName}`;
 
 function roleLabel(role: string) {
   if (role === "administrator") return "Administrador";
@@ -159,7 +162,9 @@ export function AccountAccessForm({
             </div>
 
             {supervisorEligible ? (
-              <label className="flex min-h-14 cursor-pointer items-start gap-3 rounded-xl border border-theme-primary-border bg-theme-primary-subtle p-4">
+              <label
+                className={`${choiceClassName} flex min-h-14 items-start gap-3 p-4`}
+              >
                 <input
                   type="checkbox"
                   name="isSupervisor"
@@ -180,7 +185,12 @@ export function AccountAccessForm({
               </label>
             ) : null}
 
-            <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+            <Button
+              type="submit"
+              disabled={pending}
+              aria-busy={pending}
+              className="w-full sm:w-auto"
+            >
               {pending ? "Salvando..." : "Salvar acesso"}
             </Button>
           </form>

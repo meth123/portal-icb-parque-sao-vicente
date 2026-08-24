@@ -64,51 +64,42 @@ const evangelismGuide = [
 
 export function ReportTutorialCard() {
   return (
-    <section className="mt-10" aria-labelledby="report-tutorial-card-title">
-      <div className="grid overflow-hidden rounded-2xl border border-theme-primary-border bg-surface lg:grid-cols-[1.15fr_0.85fr]">
-        <div className="p-5 sm:p-7">
-          <div className="flex items-center gap-2 text-sm font-semibold text-theme-primary-active">
-            <ClipboardCheck aria-hidden="true" className="h-5 w-5" />
+    <section
+      className="mt-10 border-t border-app-border py-6 sm:mt-12 sm:py-7"
+      aria-labelledby="report-tutorial-card-title"
+    >
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+        <span
+          aria-hidden="true"
+          className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-theme-primary-soft text-theme-primary-active"
+        >
+          <ClipboardCheck className="size-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-theme-primary-active">
             Guia da Ficha
-          </div>
+          </p>
           <h2
             id="report-tutorial-card-title"
-            className="mt-3 text-2xl font-semibold leading-8 text-app-foreground"
+            className="mt-1 text-lg font-semibold text-app-foreground sm:text-xl"
           >
-            Preencha com segurança, sem retrabalho.
+            Preencha com segurança
           </h2>
-          <p className="mt-2 max-w-xl leading-7 text-app-secondary">
-            O ICB Conecta organiza nomes, presenças e o PDF para poupar seu
-            tempo e fortalecer o cuidado do ministério.
-          </p>
-          <p className="mt-3 text-sm font-medium text-theme-primary-active">
-            Organização também é uma forma de servir e glorificar a Deus.
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-app-secondary">
+            Consulte as orientações para nomes, presenças e evangelismo.
           </p>
         </div>
-
-        <div className="border-t border-theme-primary-border bg-theme-primary-subtle p-5 sm:p-7 lg:border-l lg:border-t-0">
-          <ul className="space-y-3 text-sm leading-5 text-app-foreground">
-            <li className="flex gap-2">
-              <Check aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-              Líder e Vices já aparecem identificados.
-            </li>
-            <li className="flex gap-2">
-              <Check aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-              Nomes entram sem numeração, um por linha.
-            </li>
-            <li className="flex gap-2">
-              <Check aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-              Evangelismo explicado com exemplos práticos.
-            </li>
-          </ul>
-          <Link
-            href="/portal/relatorios/guia"
-            className={buttonClassName({ className: "mt-5 w-full sm:w-auto" })}
-          >
-            Ver tutorial completo
-            <ArrowRight aria-hidden="true" className="h-4 w-4" />
-          </Link>
-        </div>
+        <Link
+          href="/portal/relatorios/guia"
+          className={buttonClassName({
+            variant: "ghost",
+            size: "compact",
+            className: "-ml-4 w-fit shrink-0 sm:ml-0",
+          })}
+        >
+          Abrir guia
+          <ArrowRight aria-hidden="true" className="h-4 w-4" />
+        </Link>
       </div>
     </section>
   );
@@ -117,7 +108,7 @@ export function ReportTutorialCard() {
 export function ReportTutorialGuide() {
   return (
     <section className="mt-6" aria-labelledby="report-guide-title">
-      <div className="overflow-hidden rounded-2xl border border-theme-primary-border bg-surface">
+      <article className="-mx-5 overflow-hidden border-y border-theme-primary-border bg-surface sm:mx-0 sm:rounded-[1.5rem] sm:border sm:shadow-[var(--shadow-subtle)]">
         <header className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[minmax(0,1.35fr)_minmax(17rem,0.65fr)] lg:items-center">
           <div>
             <div className="inline-flex items-center gap-2 text-sm font-semibold text-theme-primary-active">
@@ -280,7 +271,7 @@ export function ReportTutorialGuide() {
             </p>
           </div>
         </footer>
-      </div>
+      </article>
     </section>
   );
 }

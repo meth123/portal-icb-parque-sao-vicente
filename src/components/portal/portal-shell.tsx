@@ -57,7 +57,7 @@ export function PortalShell({
       <div
         id="portal-content"
         tabIndex={-1}
-        className="min-h-dvh pb-[calc(5rem+env(safe-area-inset-bottom))] focus:outline-none lg:pl-72 lg:pb-0"
+        className="min-h-dvh scroll-mt-[calc(4rem+env(safe-area-inset-top))] pb-[calc(5.25rem+env(safe-area-inset-bottom))] focus:outline-none lg:scroll-mt-0 lg:pl-72 lg:pb-0"
       >
         {children}
       </div>

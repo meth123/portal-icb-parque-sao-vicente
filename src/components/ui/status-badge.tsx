@@ -6,11 +6,11 @@ type StatusBadgeProps = HTMLAttributes<HTMLSpanElement> & {
 };
 
 const toneClasses = {
-  neutral: "bg-surface-muted text-app-secondary",
-  theme: "bg-theme-primary-soft text-theme-primary-active",
-  success: "bg-success-soft text-success",
-  warning: "bg-warning-soft text-warning",
-  danger: "bg-danger-soft text-danger",
+  neutral: "border-app-border bg-surface-muted text-app-secondary",
+  theme: "border-theme-primary-border bg-theme-primary-soft text-theme-primary-active",
+  success: "border-success/15 bg-success-soft text-success",
+  warning: "border-warning/15 bg-warning-soft text-warning",
+  danger: "border-danger/15 bg-danger-soft text-danger",
 };
 
 export function StatusBadge({
@@ -21,7 +21,7 @@ export function StatusBadge({
   return (
     <span
       className={classNames(
-        "inline-flex min-h-7 items-center rounded-full px-3 py-1 text-xs font-semibold",
+        "inline-flex min-h-7 items-center rounded-full border px-3 py-1 text-xs font-semibold leading-4",
         toneClasses[tone],
         className,
       )}

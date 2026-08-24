@@ -19,7 +19,7 @@ export function EmptyState({
   return (
     <div
       className={classNames(
-        "flex min-h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-app-border bg-surface px-5 py-8 text-center",
+        "flex min-h-48 flex-col items-center justify-center rounded-[var(--radius-surface)] border border-dashed border-app-border bg-surface/65 px-5 py-9 text-center",
         className,
       )}
     >

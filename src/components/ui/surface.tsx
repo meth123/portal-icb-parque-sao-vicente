@@ -6,7 +6,7 @@ type SurfaceProps = HTMLAttributes<HTMLDivElement> & {
 };
 
 const toneClasses = {
-  default: "border-app-border bg-surface",
+  default: "border-app-border bg-surface shadow-[var(--shadow-subtle)]",
   muted: "border-transparent bg-surface-muted",
   theme: "border-theme-primary-border bg-theme-primary-subtle",
 };
@@ -19,7 +19,7 @@ export function Surface({
   return (
     <div
       className={classNames(
-        "rounded-2xl border p-4 sm:p-5",
+        "rounded-[var(--radius-surface)] border p-5 sm:p-6",
         toneClasses[tone],
         className,
       )}

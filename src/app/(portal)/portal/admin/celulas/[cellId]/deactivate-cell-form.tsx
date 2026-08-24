@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { BrazilianDateInput } from "@/components/ui/brazilian-date-input";
 import { Button } from "@/components/ui/button";
+import { dangerControlClassName } from "@/components/ui/control-styles";
 import { deactivateCell, type DeactivateCellState } from "./actions";
 
 const initialState: DeactivateCellState = { message: "" };
@@ -71,7 +72,7 @@ export function DeactivateCellForm({
             min={minimumDate}
             max={defaultDate}
             required
-            className="mt-2 min-h-12 w-full rounded-xl border border-app-border bg-surface px-4 text-base text-app-foreground outline-none focus:border-danger focus:ring-2 focus:ring-danger-soft"
+            className={`mt-2 ${dangerControlClassName}`}
           />
         </label>
 
@@ -85,6 +86,7 @@ export function DeactivateCellForm({
           type="submit"
           variant="danger"
           disabled={pending}
+          aria-busy={pending}
           className="mt-5 w-full sm:w-auto"
         >
           {pending ? "Desativando..." : "Confirmar desativação"}

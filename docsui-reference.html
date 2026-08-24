@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#72158F" />
+  <title>ICB Conecta — Home V2</title>
+  <style>
+    :root{
+      --brand:#72158F;
+      --brand-2:#8A21A8;
+      --brand-soft:#F4EAF7;
+      --brand-soft-2:#FBF7FC;
+      --ink:#231D27;
+      --muted:#736A77;
+      --muted-2:#9A929C;
+      --line:#E8E2EA;
+      --surface:#FFFFFF;
+      --bg:#F8F6F9;
+      --success:#18845A;
+      --success-bg:#EAF7F1;
+      --warning:#9B6A00;
+      --warning-bg:#FFF5D9;
+      --danger:#AD3747;
+      --danger-bg:#FDECEF;
+      --shadow:0 14px 40px rgba(41,24,47,.08);
+    }
+
+    *{box-sizing:border-box}
+    html,body{
+      margin:0;
+      min-height:100%;
+      background:#ece7ee;
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color:var(--ink);
+    }
+    body{display:flex;justify-content:center;align-items:flex-start}
+
+    .phone{
+      width:min(100%,430px);
+      min-height:100dvh;
+      background:var(--bg);
+      position:relative;
+      padding-bottom:92px;
+      overflow:hidden;
+    }
+
+    .topline{
+      height:8px;
+      background:var(--brand);
+    }
+
+    header{
+      height:68px;
+      padding:0 20px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      background:rgba(255,255,255,.94);
+      backdrop-filter:blur(14px);
+      border-bottom:1px solid var(--line);
+      position:sticky;
+      top:0;
+      z-index:20;
+    }
+
+    .brand{display:flex;align-items:center;gap:11px}
+    .brand-logo{
+      width:38px;height:38px;border-radius:50%;
+      background:#111;color:white;
+      display:grid;place-items:center;
+      font-size:10px;font-weight:900;letter-spacing:-.4px;
+      border:3px solid #fff;
+      box-shadow:0 0 0 1px #d9d4da;
+    }
+    .brand-text strong{display:block;font-size:14px}
+    .brand-text span{display:block;font-size:10.5px;color:var(--muted);margin-top:1px}
+
+    .avatar{
+      width:36px;height:36px;border-radius:50%;
+      display:grid;place-items:center;
+      background:var(--brand-soft);
+      border:1px solid #E8D4EE;
+      color:var(--brand);
+      font-size:12px;font-weight:800;
+    }
+
+    main{padding:22px 20px 26px}
+
+    .greeting{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:18px;
+    }
+    .greeting h1{font-size:25px;line-height:1.1;margin:0;letter-spacing:-.6px}
+    .greeting p{font-size:12px;color:var(--muted);margin:5px 0 0}
+    .role{
+      flex:0 0 auto;
+      font-size:10.5px;
+      color:var(--brand);
+      font-weight:800;
+      background:var(--brand-soft);
+      padding:7px 9px;
+      border-radius:999px;
+      border:1px solid #EAD7F0;
+    }
+
+    .summary{
+      border-radius:24px;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(255,255,255,.13), transparent 25%),
+        linear-gradient(145deg,#67117D,#74158F 55%,#8722A4);
+      color:white;
+      padding:18px 18px 16px;
+      box-shadow:0 16px 36px rgba(114,21,143,.20);
+      overflow:hidden;
+      position:relative;
+    }
+
+    .summary-top{
+      display:flex;align-items:center;justify-content:space-between;gap:14px;
+      margin-bottom:14px;
+    }
+    .summary-month{font-size:12px;color:#E8D8ED;font-weight:700}
+    .summary-chip{
+      font-size:10.5px;
+      padding:6px 8px;
+      border-radius:999px;
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.12);
+      color:#F7ECFA;
+    }
+
+    .summary-main{
+      display:flex;align-items:center;justify-content:space-between;gap:18px;
+    }
+    .metric-line{display:flex;align-items:baseline;gap:9px}
+    .metric{font-size:49px;line-height:.9;font-weight:850;letter-spacing:-1.5px}
+    .metric-copy{font-size:13px;font-weight:800;max-width:115px;line-height:1.15}
+    .metric-sub{font-size:11.5px;color:#E7D9EB;margin-top:8px}
+    .summary-icon{
+      width:54px;height:54px;border-radius:18px;
+      display:grid;place-items:center;
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.10);
+    }
+
+    .summary-foot{
+      margin-top:16px;padding-top:13px;
+      border-top:1px solid rgba(255,255,255,.13);
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      font-size:10.8px;color:#E7D9EB;
+    }
+    .trend{display:flex;align-items:center;gap:6px;color:#fff;font-weight:750}
+
+    .attention{
+      margin-top:14px;
+      border-radius:18px;
+      padding:14px 15px;
+      background:#FFF;
+      border:1px solid var(--line);
+      display:flex;align-items:flex-start;gap:12px;
+      box-shadow:0 7px 22px rgba(42,28,47,.04);
+    }
+    .attention-icon{
+      width:34px;height:34px;border-radius:11px;
+      background:var(--warning-bg);color:var(--warning);
+      display:grid;place-items:center;flex:0 0 auto;
+    }
+    .attention strong{font-size:13px;display:block}
+    .attention p{font-size:11.5px;color:var(--muted);margin:4px 0 0;line-height:1.4}
+    .attention-arrow{margin-left:auto;color:var(--brand);align-self:center}
+
+    .section-head{
+      margin:26px 0 12px;
+      display:flex;align-items:end;justify-content:space-between;gap:12px;
+    }
+    .section-head h2{font-size:18px;margin:0;letter-spacing:-.3px}
+    .section-head p{font-size:11.5px;color:var(--muted);margin:4px 0 0}
+    .section-head a{font-size:11.5px;text-decoration:none;color:var(--brand);font-weight:800}
+
+    .task{
+      border-radius:21px;
+      padding:16px;
+      background:var(--surface);
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+    }
+    .task-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    .task-id{display:flex;align-items:center;gap:11px}
+    .iconbox{
+      width:40px;height:40px;border-radius:13px;
+      display:grid;place-items:center;
+      color:var(--brand);background:var(--brand-soft);
+      flex:0 0 auto;
+    }
+    .task h3{font-size:14px;margin:0 0 4px}
+    .task p{font-size:11.5px;color:var(--muted);margin:0}
+    .status{
+      font-size:10px;font-weight:850;border-radius:999px;padding:6px 8px;white-space:nowrap;
+      background:var(--success-bg);color:var(--success);
+    }
+
+    .task-info{
+      margin-top:15px;
+      padding-top:13px;
+      border-top:1px solid #F1EDF2;
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+    }
+    .task-info-left{font-size:11.5px;color:var(--muted)}
+    .task-info-left strong{display:block;color:var(--ink);font-size:11.5px;margin-bottom:2px}
+    .button-link{
+      display:flex;align-items:center;gap:6px;
+      color:var(--brand);font-weight:800;font-size:11.5px;
+    }
+
+    .feature-list{
+      display:grid;
+      gap:9px;
+    }
+    .feature{
+      padding:13px 14px;
+      border-radius:17px;
+      background:white;
+      border:1px solid var(--line);
+      display:flex;align-items:center;gap:12px;
+      text-decoration:none;color:inherit;
+    }
+    .feature .iconbox{width:36px;height:36px;border-radius:12px}
+    .feature-body{min-width:0;flex:1}
+    .feature h3{font-size:13px;margin:0 0 3px}
+    .feature p{font-size:10.8px;color:var(--muted);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .feature > svg{color:var(--brand);width:18px;height:18px}
+
+    .week-card{
+      border-radius:20px;
+      background:white;
+      border:1px solid var(--line);
+      padding:15px;
+    }
+    .week-top{
+      display:flex;align-items:center;justify-content:space-between;
+      margin-bottom:13px;
+    }
+    .week-top strong{font-size:13px}
+    .week-top span{font-size:10.5px;color:var(--muted)}
+    .days{
+      display:grid;grid-template-columns:repeat(4,1fr);gap:7px;
+    }
+    .day{
+      border:1px solid #EFE9F0;
+      border-radius:13px;padding:10px 4px;text-align:center;
+      background:#FCFAFC;
+    }
+    .day span{display:block;font-size:9.5px;color:var(--muted);font-weight:800}
+    .day b{display:block;font-size:13px;margin-top:4px}
+    .day.active{
+      background:var(--brand-soft);
+      border-color:#E2C7EA;
+      color:var(--brand);
+    }
+    .event{
+      margin-top:12px;
+      border-radius:13px;
+      padding:11px 12px;
+      background:var(--brand-soft-2);
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+    }
+    .event strong{display:block;font-size:12px}
+    .event span{display:block;font-size:10.5px;color:var(--muted);margin-top:3px}
+    .event > svg{color:var(--brand)}
+
+    .profile-switch{
+      position:fixed;
+      right:14px;
+      bottom:89px;
+      z-index:60;
+      border:1px solid #DFD6E1;
+      background:#fff;
+      box-shadow:0 8px 22px rgba(40,28,44,.12);
+      border-radius:999px;
+      padding:5px;
+      display:flex;
+      gap:4px;
+    }
+    .profile-switch button{
+      border:0;background:transparent;
+      border-radius:999px;
+      padding:7px 10px;
+      font-size:10.5px;font-weight:850;color:var(--muted);
+      cursor:pointer;
+    }
+    .profile-switch button.active{
+      color:white;background:var(--brand);
+    }
+
+    nav{
+      position:fixed;
+      left:50%;bottom:0;transform:translateX(-50%);
+      width:min(100%,430px);
+      height:72px;
+      display:grid;grid-template-columns:repeat(3,1fr);
+      background:rgba(255,255,255,.95);
+      backdrop-filter:blur(16px);
+      border-top:1px solid var(--line);
+      padding:6px 18px max(8px, env(safe-area-inset-bottom));
+      z-index:50;
+    }
+    .nav-item{
+      display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;
+      color:#766F79;text-decoration:none;font-size:10.5px;font-weight:650;
+    }
+    .nav-icon{width:30px;height:28px;display:grid;place-items:center;border-radius:10px}
+    .nav-item.active{color:var(--brand);font-weight:850}
+    .nav-item.active .nav-icon{background:var(--brand-soft)}
+
+    svg{
+      width:21px;height:21px;
+      fill:none;stroke:currentColor;stroke-width:1.9;
+      stroke-linecap:round;stroke-linejoin:round;
+    }
+
+    [data-only="admin"]{display:flex}
+    .admin-only-block{display:block}
+
+    body.vice [data-only="admin"]{display:none !important}
+    body.vice .admin-only-block{display:none}
+    body.vice .summary-chip{display:none}
+    body.vice .metric{font-size:42px}
+    body.vice .summary-main .metric-copy{max-width:150px}
+
+    @media (min-width:700px){
+      body{padding:28px 0}
+      .phone{
+        min-height:860px;
+        border:8px solid #171319;
+        border-radius:34px;
+        box-shadow:0 30px 80px rgba(33,24,37,.20);
+      }
+      nav{position:absolute;border-radius:0 0 26px 26px}
+      .profile-switch{position:absolute}
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="topline"></div>
+
+    <header>
+      <div class="brand">
+        <div class="brand-logo">ICB</div>
+        <div class="brand-text">
+          <strong>ICB Conecta</strong>
+          <span>Parque São Vicente</span>
+        </div>
+      </div>
+      <div class="avatar">MT</div>
+    </header>
+
+    <main>
+      <section class="greeting">
+        <div>
+          <h1>Boa tarde, Mateus 👋</h1>
+          <p id="contextText">Visão geral da igreja hoje</p>
+        </div>
+        <span class="role" id="roleText">Administrador</span>
+      </section>
+
+      <section class="summary">
+        <div class="summary-top">
+          <span class="summary-month">Agosto de 2026</span>
+          <span class="summary-chip">Resumo mensal</span>
+        </div>
+
+        <div class="summary-main">
+          <div>
+            <div class="metric-line">
+              <span class="metric" id="metricValue">4</span>
+              <span class="metric-copy" id="metricCopy">novos convidados</span>
+            </div>
+            <div class="metric-sub" id="metricSub">Primeira participação nas células</div>
+          </div>
+
+          <div class="summary-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="summary-foot">
+          <span id="trendText">Comparado ao mês passado</span>
+          <div class="trend" id="trendValue">
+            <svg viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg>
+            +2 convidados
+          </div>
+        </div>
+      </section>
+
+      <section class="attention" data-only="admin">
+        <div class="attention-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 2.8 1.8 17.5A2 2 0 0 0 3.5 20h17a2 2 0 0 0 1.7-2.5L13.7 2.8a2 2 0 0 0-3.4 0Z"/></svg>
+        </div>
+        <div>
+          <strong>Precisa da sua atenção</strong>
+          <p>3 células ainda não enviaram o checklist desta semana.</p>
+        </div>
+        <div class="attention-arrow">
+          <svg viewBox="0 0 24 24"><path d="M9 18 15 12 9 6"/></svg>
+        </div>
+      </section>
+
+      <div class="section-head">
+        <div>
+          <h2>Para você</h2>
+          <p id="sectionSubtitle">Ações mais importantes agora</p>
+        </div>
+      </div>
+
+      <section class="task">
+        <div class="task-row">
+          <div class="task-id">
+            <div class="iconbox">
+              <svg viewBox="0 0 24 24">
+                <rect x="6" y="4" width="12" height="16" rx="2"/>
+                <path d="M9 4.5V3h6v1.5"/>
+                <path d="m9 12 2 2 4-4"/>
+              </svg>
+            </div>
+            <div>
+              <h3>Checklist semanal</h3>
+              <p id="checklistCopy">Acompanhar respostas das células</p>
+            </div>
+          </div>
+          <span class="status">Em dia</span>
+        </div>
+
+        <div class="task-info">
+          <div class="task-info-left">
+            <strong id="checklistStatus">12 de 15 células responderam</strong>
+            <span id="checklistHint">Fechamento hoje às 23:59</span>
+          </div>
+          <div class="button-link">
+            Abrir
+            <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+          </div>
+        </div>
+      </section>
+
+      <div class="section-head">
+        <div>
+          <h2>Acessos rápidos</h2>
+          <p>Sem encher a tela de cards</p>
+        </div>
+      </div>
+
+      <section class="feature-list">
+        <a class="feature" href="#">
+          <div class="iconbox">
+            <svg viewBox="0 0 24 24">
+              <rect x="5" y="3" width="14" height="18" rx="2"/>
+              <path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h4"/>
+            </svg>
+          </div>
+          <div class="feature-body">
+            <h3>Fichas</h3>
+            <p>Cadastros e acompanhamento de pessoas</p>
+          </div>
+          <svg viewBox="0 0 24 24"><path d="M9 18 15 12 9 6"/></svg>
+        </a>
+
+        <a class="feature" href="#" data-only="admin">
+          <div class="iconbox">
+            <svg viewBox="0 0 24 24">
+              <path d="M4 19V9"/><path d="M9 19V5"/><path d="M14 19v-7"/><path d="M19 19V3"/>
+              <path d="m4 13 5-4 5 2 5-6"/>
+            </svg>
+          </div>
+          <div class="feature-body">
+            <h3>Painel pastoral</h3>
+            <p>Visão de células, líderes e acompanhamento</p>
+          </div>
+          <svg viewBox="0 0 24 24"><path d="M9 18 15 12 9 6"/></svg>
+        </a>
+
+        <a class="feature" href="#">
+          <div class="iconbox">
+            <svg viewBox="0 0 24 24">
+              <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/>
+              <path d="M8 9h8"/><path d="M8 13h5"/>
+            </svg>
+          </div>
+          <div class="feature-body">
+            <h3>Testemunhos</h3>
+            <p>Compartilhe o que Deus tem feito</p>
+          </div>
+          <svg viewBox="0 0 24 24"><path d="M9 18 15 12 9 6"/></svg>
+        </a>
+      </section>
+
+      <div class="section-head">
+        <div>
+          <h2>Esta semana</h2>
+          <p>Próximos compromissos</p>
+        </div>
+        <a href="#">Agenda</a>
+      </div>
+
+      <section class="week-card">
+        <div class="week-top">
+          <strong>24 — 30 ago</strong>
+          <span>Semana atual</span>
+        </div>
+
+        <div class="days">
+          <div class="day"><span>SEG</span><b>24</b></div>
+          <div class="day"><span>QUA</span><b>26</b></div>
+          <div class="day active"><span>SEX</span><b>28</b></div>
+          <div class="day"><span>DOM</span><b>30</b></div>
+        </div>
+
+        <div class="event">
+          <div>
+            <strong>Célula Emanuel</strong>
+            <span>Sexta-feira • 20:00</span>
+          </div>
+          <svg viewBox="0 0 24 24"><path d="M9 18 15 12 9 6"/></svg>
+        </div>
+      </section>
+    </main>
+
+    <div class="profile-switch">
+      <button class="active" data-profile="admin">ADM</button>
+      <button data-profile="vice">VICE</button>
+    </div>
+
+    <nav>
+      <a href="#" class="nav-item active">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
+        </div>
+        Início
+      </a>
+      <a href="#" class="nav-item">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h4"/></svg>
+        </div>
+        Fichas
+      </a>
+      <a href="#" class="nav-item">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
+        </div>
+        Mais
+      </a>
+    </nav>
+  </div>
+
+  <script>
+    const buttons = document.querySelectorAll('.profile-switch button');
+
+    const roleText = document.querySelector('#roleText');
+    const contextText = document.querySelector('#contextText');
+    const metricValue = document.querySelector('#metricValue');
+    const metricCopy = document.querySelector('#metricCopy');
+    const metricSub = document.querySelector('#metricSub');
+    const trendText = document.querySelector('#trendText');
+    const trendValue = document.querySelector('#trendValue');
+    const sectionSubtitle = document.querySelector('#sectionSubtitle');
+    const checklistCopy = document.querySelector('#checklistCopy');
+    const checklistStatus = document.querySelector('#checklistStatus');
+    const checklistHint = document.querySelector('#checklistHint');
+
+    function setProfile(profile){
+      document.body.classList.toggle('vice', profile === 'vice');
+
+      buttons.forEach(btn => btn.classList.toggle('active', btn.dataset.profile === profile));
+
+      if(profile === 'vice'){
+        roleText.textContent = 'Vice-líder';
+        contextText.textContent = 'Célula Emanuel • sua semana';
+        metricValue.textContent = '12';
+        metricCopy.textContent = 'participantes na última célula';
+        metricSub.textContent = '2 convidados participaram pela primeira vez';
+        trendText.textContent = 'Sua célula neste mês';
+        trendValue.innerHTML = `
+          <svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          2 convidados
+        `;
+        sectionSubtitle.textContent = 'O que você precisa acompanhar';
+        checklistCopy.textContent = 'Resposta da sua célula nesta semana';
+        checklistStatus.textContent = 'Checklist da célula enviado';
+        checklistHint.textContent = 'Você está em dia';
+      }else{
+        roleText.textContent = 'Administrador';
+        contextText.textContent = 'Visão geral da igreja hoje';
+        metricValue.textContent = '4';
+        metricCopy.textContent = 'novos convidados';
+        metricSub.textContent = 'Primeira participação nas células';
+        trendText.textContent = 'Comparado ao mês passado';
+        trendValue.innerHTML = `
+          <svg viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg>
+          +2 convidados
+        `;
+        sectionSubtitle.textContent = 'Ações mais importantes agora';
+        checklistCopy.textContent = 'Acompanhar respostas das células';
+        checklistStatus.textContent = '12 de 15 células responderam';
+        checklistHint.textContent = 'Fechamento hoje às 23:59';
+      }
+    }
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => setProfile(btn.dataset.profile));
+    });
+  </script>
+</body>
+</html>

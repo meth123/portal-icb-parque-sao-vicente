@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { buttonClassName } from "@/components/ui/button";
+import { compactControlClassName } from "@/components/ui/control-styles";
 import { PageContainer } from "@/components/ui/page-container";
 import { PageHeader } from "@/components/ui/page-header";
 import { SectionHeader } from "@/components/ui/section-header";
@@ -165,7 +166,7 @@ export default async function CellDetailsPage({
                   name="mes"
                   type="month"
                   defaultValue={dashboard.month}
-                  className="min-h-11 w-full rounded-xl border border-app-border bg-surface px-3 text-base text-app-foreground outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-soft"
+                  className={compactControlClassName}
                 />
               </label>
               <label className="min-w-0">
@@ -175,7 +176,7 @@ export default async function CellDetailsPage({
                 <select
                   name="historico"
                   defaultValue={String(dashboard.historyMonths)}
-                  className="min-h-11 w-full rounded-xl border border-app-border bg-surface px-3 text-base text-app-foreground outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-soft"
+                  className={compactControlClassName}
                 >
                   <option value="3">3 meses</option>
                   <option value="6">6 meses</option>

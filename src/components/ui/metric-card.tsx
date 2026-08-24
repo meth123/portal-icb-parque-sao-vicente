@@ -28,7 +28,7 @@ export function MetricCard({
   return (
     <div
       className={classNames(
-        "min-w-0 rounded-2xl border p-4",
+        "min-w-0 rounded-[1.125rem] border p-4 shadow-[var(--shadow-subtle)] sm:p-5",
         toneClasses[tone],
         className,
       )}
@@ -44,7 +44,7 @@ export function MetricCard({
           </span>
         ) : null}
       </div>
-      <dd className="mt-2 text-2xl font-semibold text-app-foreground">{value}</dd>
+      <dd className="mt-2 text-2xl font-semibold tracking-[-0.025em] text-app-foreground">{value}</dd>
       {note ? <p className="mt-1 text-xs text-app-secondary">{note}</p> : null}
     </div>
   );

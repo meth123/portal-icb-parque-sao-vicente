@@ -18,7 +18,13 @@ export function SubmitButton({
   const { pending } = useFormStatus();
 
   return (
-    <Button type="submit" disabled={pending || disabled} {...props}>
+    <Button
+      type="submit"
+      disabled={pending || disabled}
+      aria-busy={pending}
+      data-state={pending ? "loading" : "idle"}
+      {...props}
+    >
       {pending ? (
         <>
           <LoaderCircle
