@@ -6,6 +6,7 @@ export type PortalNavigationIcon =
   | "library"
   | "organization"
   | "pastoral"
+  | "attendance"
   | "administration"
   | "profile";
 

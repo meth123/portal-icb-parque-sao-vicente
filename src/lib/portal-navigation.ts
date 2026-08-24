@@ -71,6 +71,12 @@ export function buildPortalNavigation({
             href: "/portal/supervisao",
             label: "Painel pastoral",
             icon: "pastoral" as const,
+            exact: true,
+          },
+          {
+            href: "/portal/supervisao/chamada",
+            label: "Chamada da Supervisão",
+            icon: "attendance" as const,
           },
         ]
       : []),

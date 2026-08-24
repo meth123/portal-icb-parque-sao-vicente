@@ -109,3 +109,14 @@ export function canAccessPastoralDashboard(user: CurrentUser) {
       user.isSupervisor)
   );
 }
+
+export function canManageSupervisionAttendance(user: CurrentUser) {
+  return (
+    user.isActive &&
+    !user.mustChangePassword &&
+    (user.globalRole === "administrator" ||
+      user.globalRole === "pastor" ||
+      user.isSupervisor ||
+      user.currentLeadershipRole === "leader")
+  );
+}

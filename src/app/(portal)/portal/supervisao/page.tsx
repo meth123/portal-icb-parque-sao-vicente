@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import {
   AlertTriangle,
   CheckCircle2,
+  ClipboardCheck,
   FileCheck2,
   Files,
   House,
@@ -150,8 +151,15 @@ export default async function SupervisionPage({
           actions={
             <>
               <Link
-                href="/portal/relatorios"
+                href="/portal/supervisao/chamada"
                 className={buttonClassName({ size: "compact" })}
+              >
+                <ClipboardCheck aria-hidden="true" className="size-4" />
+                Chamada da Supervisão
+              </Link>
+              <Link
+                href="/portal/relatorios"
+                className={buttonClassName({ variant: "secondary", size: "compact" })}
               >
                 <Files aria-hidden="true" className="size-4" />
                 Consultar Fichas

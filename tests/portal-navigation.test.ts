@@ -49,6 +49,7 @@ test("acesso pastoral e administrativo libera somente os módulos correspondente
     "/portal/documentos",
     "/portal/organizacao",
     "/portal/supervisao",
+    "/portal/supervisao/chamada",
     "/portal/admin",
   ]);
   assert.ok(hrefs(navigation.primaryItems).includes("/portal/relatorios"));

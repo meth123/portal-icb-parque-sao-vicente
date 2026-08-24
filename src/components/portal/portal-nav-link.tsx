@@ -3,6 +3,7 @@
 import {
   BookOpen,
   ChartNoAxesCombined,
+  ClipboardCheck,
   ClipboardList,
   House,
   HouseHeart,
@@ -28,6 +29,7 @@ const navigationIcons: Record<PortalNavigationIcon, LucideIcon> = {
   library: BookOpen,
   organization: Network,
   pastoral: ChartNoAxesCombined,
+  attendance: ClipboardCheck,
   administration: Settings,
   profile: UserRound,
 };

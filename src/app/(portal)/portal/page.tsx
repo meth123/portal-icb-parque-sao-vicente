@@ -20,6 +20,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { SubmitButton } from "@/components/ui/submit-button";
 import {
   canAccessPastoralDashboard,
+  canManageSupervisionAttendance,
   getCurrentUser,
 } from "@/lib/auth/current-user";
 import { getCellReportDraftKey } from "@/lib/cell-report-draft";
@@ -96,6 +97,7 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
   );
   const firstName = user.fullName?.trim().split(/\s+/)[0] ?? "usuário";
   const canViewPastoralDashboard = canAccessPastoralDashboard(user);
+  const canViewSupervisionAttendance = canManageSupervisionAttendance(user);
   const pastoralViewLabel =
     user.globalRole === "pastor"
       ? "Visão Pastoral"
@@ -223,7 +225,7 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
               title="Para você"
               description="Ações disponíveis para o seu perfil."
             />
-            {checklistIsVisible || reportContext || canViewPastoralDashboard ? (
+            {checklistIsVisible || reportContext || canViewPastoralDashboard || canViewSupervisionAttendance ? (
               <div className="mt-4 space-y-3">
                 {checklistIsVisible && weeklyChecklist ? (
                   <ActionCard
@@ -278,6 +280,16 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
                         </StatusBadge>
                       ) : null
                     }
+                  />
+                ) : null}
+
+                {canViewSupervisionAttendance ? (
+                  <ActionCard
+                    href="/portal/supervisao/chamada"
+                    title="Chamada da Supervisão"
+                    description="Marcar presença em RJ ou HM"
+                    icon={<ClipboardCheck size={22} strokeWidth={1.8} />}
+                    layout="list"
                   />
                 ) : null}
 
