@@ -26,7 +26,7 @@ test("garante uma publicação por pessoa e semana de São Paulo", () => {
 });
 
 test("protege conteúdo, reações e exclusão no banco", () => {
-  assert.match(migration, /char_length\(content\) between 1 and 2000/);
+  assert.match(migration, /char_length\(content\) between 1 and 400/);
   assert.match(
     migration,
     /unique \(testimony_id, user_id, reaction_type\)/,

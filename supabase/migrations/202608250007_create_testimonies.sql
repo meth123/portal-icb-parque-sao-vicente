@@ -56,7 +56,7 @@ create table public.testimonies (
   created_at timestamptz not null default statement_timestamp(),
   constraint testimonies_content_check check (
     content = btrim(content)
-    and char_length(content) between 1 and 2000
+    and char_length(content) between 1 and 400
   ),
   constraint testimonies_author_week_unique unique (author_id, week_start)
 );

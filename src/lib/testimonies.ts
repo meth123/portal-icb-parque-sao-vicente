@@ -1,4 +1,4 @@
-export const TESTIMONY_MAX_LENGTH = 2_000;
+export const TESTIMONY_MAX_LENGTH = 400;
 
 export type TestimonyReactionType = "amen" | "like";
 
