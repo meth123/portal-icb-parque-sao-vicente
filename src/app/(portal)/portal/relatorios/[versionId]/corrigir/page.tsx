@@ -146,6 +146,7 @@ export default async function CorrectCellReportPage({
             leader={leader}
             viceLeaders={viceLeaders}
             leadership={detail.leadership}
+            leadershipHistory={detail.leadershipHistory}
             initialData={initialData}
             correctionSourceVersionId={detail.id}
           />

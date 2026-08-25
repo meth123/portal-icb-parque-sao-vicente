@@ -6,7 +6,6 @@ import {
   canManageCellAdministration,
   getCurrentUser,
 } from "@/lib/auth/current-user";
-import { getSaoPauloDate } from "@/lib/dates/sao-paulo";
 import { createClient } from "@/lib/supabase/server";
 
 export type CreateCellState = {
@@ -38,7 +37,6 @@ export async function createCell(
   const neighborhoodId = readString(formData, "neighborhoodId");
   const leaderProfileId = readString(formData, "leaderProfileId");
   const startedOn = readString(formData, "startedOn");
-  const leadershipStartsOn = readString(formData, "leadershipStartsOn");
   const meetingTime = readString(formData, "meetingTime");
   const weekdayValue = readString(formData, "weekday");
   const weekday = Number(weekdayValue);
@@ -50,8 +48,6 @@ export async function createCell(
         .filter((value) => uuidPattern.test(value)),
     ),
   ];
-  const hasInitialLeadership = Boolean(leaderProfileId || viceProfileIds.length);
-
   if (name.length < 2 || name.length > 120) {
     return { message: "Informe um nome entre 2 e 120 caracteres." };
   }
@@ -74,24 +70,6 @@ export async function createCell(
     return { message: "Informe uma data de início válida." };
   }
 
-  const parsedLeadershipStartsOn = new Date(
-    `${leadershipStartsOn}T00:00:00Z`,
-  );
-  if (
-    hasInitialLeadership &&
-    (!datePattern.test(leadershipStartsOn) ||
-      Number.isNaN(parsedLeadershipStartsOn.getTime()) ||
-      parsedLeadershipStartsOn.toISOString().slice(0, 10) !==
-        leadershipStartsOn ||
-      leadershipStartsOn < startedOn ||
-      leadershipStartsOn > getSaoPauloDate())
-  ) {
-    return {
-      message:
-        "Informe quando as pessoas selecionadas iniciaram os vínculos nesta célula.",
-    };
-  }
-
   if (!Number.isInteger(weekday) || ![4, 5, 6].includes(weekday)) {
     return { message: "Selecione quinta-feira, sexta-feira ou sábado." };
   }
@@ -111,9 +89,7 @@ export async function createCell(
     target_weekday: weekday,
     target_meeting_time: meetingTime,
     target_started_on: startedOn,
-    target_leadership_starts_on: hasInitialLeadership
-      ? leadershipStartsOn
-      : null,
+    target_leadership_starts_on: null,
     target_neighborhood_id: neighborhoodId,
     target_leader_profile_id: leaderProfileId || null,
     target_vice_profile_ids: viceProfileIds,
@@ -157,6 +133,12 @@ export async function createCell(
       "A mesma pessoa",
       "Um ou mais vice-líderes",
     ];
+    if (error.message === "CELL_LEADERSHIP_START_DATE_REQUIRED") {
+      return {
+        message:
+          "Cadastre primeiro a data de início na liderança de cada líder ou vice-líder selecionado.",
+      };
+    }
     const safeMessage = expectedMessages.some((message) =>
       error.message.startsWith(message),
     )

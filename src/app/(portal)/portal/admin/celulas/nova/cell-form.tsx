@@ -157,22 +157,8 @@ export function CellForm({
 
       <FormSection
         title="Liderança"
-        description="Líder e Vice-líderes são opcionais e podem ser definidos depois."
+        description="Líder e vice-líderes são opcionais. A data “Início na liderança” de cada pessoa será usada no histórico."
       >
-        <FormField
-          id="leadershipStartsOn"
-          label="Início dos vínculos"
-          hint="Se selecionar alguém abaixo, informe quando essa pessoa assumiu a função nesta célula. Esta data é independente do início da célula."
-        >
-          <BrazilianDateInput
-            id="leadershipStartsOn"
-            name="leadershipStartsOn"
-            defaultValue={defaultDate}
-            max={defaultDate}
-            className={fieldClassName}
-          />
-        </FormField>
-
         <FormField id="leaderProfileId" label="Líder">
           <select
             id="leaderProfileId"

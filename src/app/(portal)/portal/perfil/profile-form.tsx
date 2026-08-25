@@ -31,6 +31,7 @@ type ProfileFormProps = {
   initialFullName: string;
   initialBirthDate: string;
   initialLeadershipStartedOn: string;
+  canEditLeadershipStartedOn: boolean;
   currentDate: string;
   initialAvatarPath: string | null;
   initialAvatarUrl: string | null;
@@ -42,6 +43,7 @@ export function ProfileForm({
   initialFullName,
   initialBirthDate,
   initialLeadershipStartedOn,
+  canEditLeadershipStartedOn,
   currentDate,
   initialAvatarPath,
   initialAvatarUrl,
@@ -121,7 +123,7 @@ export function ProfileForm({
     }
 
     if (leadershipStartedOn && leadershipStartedOn > currentDate) {
-      showError("Informe uma data de início na liderança válida.");
+      showError("Informe uma data de entrada na liderança válida.");
       return;
     }
 
@@ -155,16 +157,32 @@ export function ProfileForm({
         full_name: normalizedName,
         avatar_path: nextAvatarPath,
         birth_date: birthDate || null,
-        leadership_started_on: leadershipStartedOn || null,
       })
       .eq("id", userId)
-      .select("full_name, avatar_path, birth_date, leadership_started_on")
+      .select("full_name, avatar_path, birth_date")
       .maybeSingle();
 
     if (error || !data) {
       setPending(false);
       showError("Não foi possível atualizar o perfil. Tente novamente.");
       return;
+    }
+
+    if (canEditLeadershipStartedOn) {
+      const { error: leadershipError } = await supabase.rpc(
+        "update_own_leadership_started_on",
+        {
+          target_leadership_started_on: leadershipStartedOn || null,
+        },
+      );
+
+      if (leadershipError) {
+        setPending(false);
+        showError(
+          "Não foi possível atualizar a data de entrada na liderança. Tente novamente.",
+        );
+        return;
+      }
     }
 
     setFullName(data.full_name ?? normalizedName);
@@ -325,19 +343,26 @@ export function ProfileForm({
         />
       </FormField>
 
-      <FormField
-        id="leadershipStartedOn"
-        label="Início na liderança (opcional)"
-      >
-        <BrazilianDateInput
+      {canEditLeadershipStartedOn ? (
+        <FormField
           id="leadershipStartedOn"
-          name="leadershipStartedOn"
-          defaultValue={initialLeadershipStartedOn}
-          max={currentDate}
-          disabled={pending}
-          className={controlClassName}
-        />
-      </FormField>
+          label="Entrada na liderança"
+        >
+          <BrazilianDateInput
+            id="leadershipStartedOn"
+            name="leadershipStartedOn"
+            defaultValue={initialLeadershipStartedOn}
+            max={currentDate}
+            disabled={pending}
+            className={controlClassName}
+          />
+        </FormField>
+      ) : initialLeadershipStartedOn ? (
+        <div className="rounded-xl border border-app-border bg-surface-muted p-4 text-sm leading-6 text-app-secondary">
+          Início na liderança registrado em {initialLeadershipStartedOn}. Essa
+          data é histórica e não pode ser alterada por esta tela.
+        </div>
+      ) : null}
 
       <div className="flex justify-end border-t border-app-border pt-6">
         <Button

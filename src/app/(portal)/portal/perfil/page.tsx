@@ -33,6 +33,10 @@ export default async function ProfilePage() {
             initialFullName={user.fullName ?? ""}
             initialBirthDate={user.birthDate ?? ""}
             initialLeadershipStartedOn={user.leadershipStartedOn ?? ""}
+            canEditLeadershipStartedOn={
+              user.currentLeadershipRole === "leader" ||
+              user.currentLeadershipRole === "vice_leader"
+            }
             currentDate={getSaoPauloDate()}
             initialAvatarPath={avatarPath}
             initialAvatarUrl={avatarUrl}

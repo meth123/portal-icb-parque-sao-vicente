@@ -92,6 +92,15 @@ export type CellReportVersionDetail = {
     leadershipId: string;
     name: string;
     role: "leader" | "vice_leader";
+    startsOn?: string;
+    endsOn?: string | null;
+  }>;
+  leadershipHistory?: Array<{
+    leadershipId: string;
+    name: string;
+    role: "leader" | "vice_leader";
+    startsOn: string;
+    endsOn: string | null;
   }>;
   members: Array<{ position: number; name: string }>;
   guests: Array<{
@@ -184,6 +193,21 @@ export const getCellReportVersionDetail = cache(
 
         return first.name.localeCompare(second.name, "pt-BR");
       });
+    const leadershipHistory = cellLeaderships
+      .map((leadership) => ({
+        leadershipId: leadership.id,
+        name: getLeadershipName(leadership.id),
+        role: leadership.role,
+        startsOn: leadership.starts_on,
+        endsOn: leadership.ends_on,
+      }))
+      .sort((first, second) => {
+        if (first.role !== second.role) {
+          return first.role === "leader" ? -1 : 1;
+        }
+
+        return first.startsOn.localeCompare(second.startsOn);
+      });
 
     return {
       id: version.id,
@@ -206,6 +230,7 @@ export const getCellReportVersionDetail = cache(
       submittedAt: version.submitted_at,
       isCurrent: version.is_current,
       leadership: leadershipAtMeeting,
+      leadershipHistory,
       members: bundle.members.map((member) => ({
         position: member.position,
         name: member.name,

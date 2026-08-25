@@ -12,6 +12,8 @@ export type CellReportLeadershipOption = {
   leadershipId: string;
   name: string;
   role: "leader" | "vice_leader";
+  startsOn?: string;
+  endsOn?: string | null;
 };
 
 export type CellReportFormContext = {
@@ -22,6 +24,7 @@ export type CellReportFormContext = {
   leader: CellReportLeadershipOption;
   viceLeaders: CellReportLeadershipOption[];
   leadership: CellReportLeadershipOption[];
+  leadershipHistory: CellReportLeadershipOption[];
 };
 
 type RawCellReportFormContext = {
@@ -32,6 +35,14 @@ type RawCellReportFormContext = {
   leadership_id: string;
   leadership_name: string;
   leadership_role: "leader" | "vice_leader";
+};
+
+type RawCellReportLeadershipHistory = {
+  leadership_id: string;
+  leadership_name: string;
+  leadership_role: "leader" | "vice_leader";
+  starts_on: string;
+  ends_on: string | null;
 };
 
 export const getCellReportFormContext = cache(
@@ -73,6 +84,20 @@ export const getCellReportFormContext = cache(
     const viceLeaders = leadershipOptions.filter(
       (item) => item.role === "vice_leader",
     );
+    const { data: historyData, error: historyError } = await supabase.rpc(
+      "get_cell_report_leadership_history",
+    );
+    const leadershipHistory = historyError
+      ? leadershipOptions
+      : ((historyData ?? []) as RawCellReportLeadershipHistory[]).map(
+          (row) => ({
+            leadershipId: row.leadership_id,
+            name: row.leadership_name,
+            role: row.leadership_role,
+            startsOn: row.starts_on,
+            endsOn: row.ends_on,
+          }),
+        );
 
     return {
       cellId: firstRow.cell_id,
@@ -82,6 +107,7 @@ export const getCellReportFormContext = cache(
       leader,
       viceLeaders,
       leadership: leadershipOptions,
+      leadershipHistory,
     };
   },
 );

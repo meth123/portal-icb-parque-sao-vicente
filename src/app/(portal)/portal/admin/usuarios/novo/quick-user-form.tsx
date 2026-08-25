@@ -260,7 +260,7 @@ export function QuickUserForm({
         <FormField
           id="leadershipStartedOn"
           label="Início na liderança"
-          hint="Informe quando a pessoa começou a atuar na liderança, mesmo que tenha sido em outra célula."
+          hint="Registro histórico informativo. Se souber, informe quando a pessoa começou a atuar na liderança da igreja."
         >
           <BrazilianDateInput
             id="leadershipStartedOn"

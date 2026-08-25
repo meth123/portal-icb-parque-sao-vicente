@@ -329,6 +329,16 @@ begin
       raise exception 'QUICK_REGISTRATION_CELL_DATE_INVALID';
     end if;
 
+    if target_leadership_started_on is null
+      or target_leadership_started_on > current_local_date
+      or (
+        target_cell_started_on is not null
+        and target_leadership_started_on < target_cell_started_on
+      )
+    then
+      raise exception 'QUICK_REGISTRATION_CELL_LEADERSHIP_DATE_INVALID';
+    end if;
+
     select leadership.profile_id, leader_profile.full_name
     into current_leader_profile_id, current_leader_name
     from public.cell_leaderships as leadership
@@ -364,14 +374,14 @@ begin
     if target_leadership_role = 'leader' then
       leadership_result := public.replace_current_cell_leadership(
         target_cell_id,
-        current_local_date,
+        target_leadership_started_on,
         target_profile_id,
         current_vice_profile_ids
       );
     else
       leadership_result := public.replace_current_cell_leadership(
         target_cell_id,
-        current_local_date,
+        target_leadership_started_on,
         current_leader_profile_id,
         array_append(current_vice_profile_ids, target_profile_id)
       );
@@ -391,7 +401,7 @@ begin
       'cell_id', target_cell_id,
       'leadership_role', target_leadership_role,
       'relationship_starts_on',
-        case when target_cell_id is null then null else current_local_date end,
+         case when target_cell_id is null then null else target_leadership_started_on end,
       'replaced_leader_profile_id',
         case
           when target_leadership_role = 'leader'
@@ -409,7 +419,7 @@ begin
     'cell_id', target_cell_id,
     'leadership_role', target_leadership_role,
     'relationship_starts_on',
-      case when target_cell_id is null then null else current_local_date end,
+      case when target_cell_id is null then null else target_leadership_started_on end,
     'leadership_changed',
       coalesce((leadership_result ->> 'changed')::boolean, false)
   );

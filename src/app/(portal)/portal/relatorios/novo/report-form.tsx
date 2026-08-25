@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import {
   ArrowLeft,
@@ -66,9 +66,23 @@ type ReportFormProps = {
   leader: CellReportLeadershipOption;
   viceLeaders: CellReportLeadershipOption[];
   leadership: CellReportLeadershipOption[];
+  leadershipHistory?: CellReportLeadershipOption[];
   initialData?: CellReportInitialData;
   correctionSourceVersionId?: string;
 };
+
+function isValidIsoDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+function leadershipOptionsForForm(options: CellReportLeadershipOption[]) {
+  return options;
+}
 
 function formatBrazilianDate(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -272,9 +286,9 @@ export function ReportForm({
   cellId,
   defaultDate,
   draftKey,
-  leader,
-  viceLeaders,
-  leadership,
+  leader: initialLeader,
+  leadership: initialLeadership,
+  leadershipHistory,
   initialData,
   correctionSourceVersionId,
 }: ReportFormProps) {
@@ -283,8 +297,17 @@ export function ReportForm({
     initialState,
   );
   const formRef = useRef<HTMLFormElement>(null);
+  const initialLeadershipForDate = initialData
+    ? leadershipHistory?.length
+      ? leadershipHistory
+      : initialLeadership
+    : initialLeadership;
   const [initialSeed] = useState(() =>
-    createInitialSeed(initialData, defaultDate, viceLeaders.length > 0),
+    createInitialSeed(
+      initialData,
+      defaultDate,
+      initialLeadershipForDate.some((person) => person.role === "vice_leader"),
+    ),
   );
   const nextLocalKey = useRef(initialSeed.maxKey);
   const pendingEvangelismScrollKey = useRef<number | null>(null);
@@ -332,6 +355,25 @@ export function ReportForm({
     number | null
   >(null);
   const [submissionConfirmed, setSubmissionConfirmed] = useState(false);
+  const leadershipOptions = initialData
+    ? leadershipHistory?.length
+      ? leadershipHistory
+      : initialLeadership
+    : initialLeadership;
+  const leadership = useMemo(
+    () => leadershipOptionsForForm(leadershipOptions),
+    [leadershipOptions],
+  );
+  const leader =
+    leadership.find((person) => person.role === "leader") ?? initialLeader;
+  const viceLeaders = useMemo(
+    () => leadership.filter((person) => person.role === "vice_leader"),
+    [leadership],
+  );
+
+  function handleMeetingOnChange(nextMeetingOn: string) {
+    setMeetingOn(nextMeetingOn);
+  }
 
   useEffect(() => {
     const recordKey = pendingEvangelismScrollKey.current;
@@ -391,12 +433,16 @@ export function ReportForm({
           throw new Error("invalid-draft-version");
         }
 
-        if (
+        const restoredMeetingOn =
           typeof draft.meetingOn === "string" &&
-          /^\d{4}-\d{2}-\d{2}$/.test(draft.meetingOn)
-        ) {
-          setMeetingOn(draft.meetingOn);
-        }
+          isValidIsoDate(draft.meetingOn)
+            ? draft.meetingOn
+            : defaultDate;
+        setMeetingOn(restoredMeetingOn);
+        const restoredLeadership = leadershipOptionsForForm(leadershipOptions);
+        const restoredViceLeaders = restoredLeadership.filter(
+          (person) => person.role === "vice_leader",
+        );
 
         if (
           draft.meetingFormat === "in_person" ||
@@ -413,7 +459,7 @@ export function ReportForm({
         }
 
         const validViceIds = new Set(
-          viceLeaders.map((viceLeader) => viceLeader.leadershipId),
+          restoredViceLeaders.map((viceLeader) => viceLeader.leadershipId),
         );
         const restoredViceIds = Array.isArray(draft.selectedViceIds)
           ? draft.selectedViceIds.filter(
@@ -423,7 +469,7 @@ export function ReportForm({
           : [];
         setSelectedViceIds([...new Set(restoredViceIds)]);
         setNoViceWasPresent(
-          viceLeaders.length === 0 ||
+          restoredViceLeaders.length === 0 ||
             (restoredViceIds.length === 0 && draft.noViceWasPresent === true),
         );
 
@@ -439,7 +485,7 @@ export function ReportForm({
           : [];
         setMembers(restoredMembers);
         const validLeadershipIds = new Set(
-          leadership.map((person) => person.leadershipId),
+          restoredLeadership.map((person) => person.leadershipId),
         );
         let restoredGuestGroups: GuestGroup[] = [];
         let restoredEvangelismRecords: EvangelismRecordDraft[] = [];
@@ -573,7 +619,7 @@ export function ReportForm({
             typeof legacyDraft.evangelism === "object" &&
             !Array.isArray(legacyDraft.evangelism)
           ) {
-            for (const person of leadership) {
+            for (const person of restoredLeadership) {
               const legacyEntry =
                 legacyDraft.evangelism[person.leadershipId];
 
@@ -684,7 +730,7 @@ export function ReportForm({
     }, 0);
 
     return () => window.clearTimeout(restoreTimeoutId);
-  }, [correctionSourceVersionId, draftKey, leadership, viceLeaders]);
+  }, [correctionSourceVersionId, defaultDate, draftKey, leadershipOptions]);
 
   useEffect(() => {
     if (!draftReady) {
@@ -1276,7 +1322,7 @@ export function ReportForm({
               <BrazilianDateInput
                 id="meetingOnUi"
                 value={meetingOn}
-                onChange={setMeetingOn}
+                onChange={handleMeetingOnChange}
                 disabled={pending}
               />
             </div>

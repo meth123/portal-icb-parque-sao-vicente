@@ -27,6 +27,8 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { TrendBars } from "@/components/ui/trend-bars";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getCellDashboard } from "@/lib/data/cell-dashboard";
+import { getSaoPauloDate } from "@/lib/dates/sao-paulo";
+import { CellInaugurationDateForm } from "./cell-inauguration-date-form";
 
 function formatDate(date: string) {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -77,6 +79,11 @@ export default async function CellDetailsPage({
   if (!cell || !dashboard) {
     notFound();
   }
+
+  const canEditCellInauguration =
+    user.currentCellId === cell.id &&
+    (user.currentLeadershipRole === "leader" ||
+      user.currentLeadershipRole === "vice_leader");
 
   const metrics = dashboard.metrics;
   const highestAverage = Math.max(
@@ -502,7 +509,7 @@ export default async function CellDetailsPage({
                 [<Network key="network" className="size-4" />, "Rede e tipo", cell.classification],
                 [<Clock3 key="clock" className="size-4" />, "Encontro", cell.schedule],
                 [<MapPin key="pin" className="size-4" />, "Localidade", cell.location],
-                [<CalendarRange key="calendar" className="size-4" />, "Início", cell.startedOn ?? "Não informado"],
+                [<CalendarRange key="calendar" className="size-4" />, "Inauguração da célula", cell.startedOn ?? "Não informado"],
               ].map(([icon, label, value]) => (
                 <div key={String(label)} className="min-w-0">
                   <dt className="flex items-center gap-2 text-xs font-medium text-app-secondary">
@@ -513,6 +520,14 @@ export default async function CellDetailsPage({
                 </div>
               ))}
             </dl>
+
+            {canEditCellInauguration ? (
+              <CellInaugurationDateForm
+                cellId={cell.id}
+                startedOn={cell.startedOnIso ?? ""}
+                maximumDate={getSaoPauloDate()}
+              />
+            ) : null}
 
             <section className="mt-6 border-t border-app-border pt-6">
               <h3 className="font-semibold text-app-foreground">Liderança atual</h3>
@@ -529,7 +544,7 @@ export default async function CellDetailsPage({
                       <div className="min-w-0">
                         <p className="truncate font-semibold text-app-foreground">{leadership.name}</p>
                         <p className="mt-0.5 text-xs text-app-secondary">
-                          {leadership.role} · desde {leadership.startsOn}
+                          {leadership.role}
                         </p>
                       </div>
                     </li>

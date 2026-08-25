@@ -393,11 +393,13 @@ export async function submitCellReport(
       "A versão escolhida",
       "Já existe outra Ficha",
     ];
-    const safeMessage = safeMessagePrefixes.some((prefix) =>
-      error.message.startsWith(prefix),
+    const safeMessage = error.message.startsWith(
+      "Um participante vinculado",
     )
-      ? error.message
-      : "Não foi possível enviar a Ficha. Revise os dados e tente novamente.";
+      ? "Há uma pessoa da liderança marcada na Equipe da missão que não estava vinculada à sua célula na Data da Célula. Abra o registro, revise a Equipe da missão e marque somente quem pertencia à célula nessa data. O rascunho continua salvo."
+      : safeMessagePrefixes.some((prefix) => error.message.startsWith(prefix))
+        ? error.message
+        : "Não foi possível enviar a Ficha. Revise os dados e tente novamente.";
 
     return { message: safeMessage };
   }

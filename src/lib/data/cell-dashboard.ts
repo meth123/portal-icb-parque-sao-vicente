@@ -124,7 +124,6 @@ function toCellDetails(
         ? (user.fullName ?? user.email ?? "Conta atual")
         : "Nome protegido"),
     role: leadership.role === "leader" ? ("Líder" as const) : ("Vice-líder" as const),
-    startsOn: formatBrazilianDate(leadership.starts_on),
   }));
 
   return {
@@ -132,6 +131,7 @@ function toCellDetails(
     name: cell.name,
     isActive: cell.is_active,
     startedOn: cell.started_on ? formatBrazilianDate(cell.started_on) : null,
+    startedOnIso: cell.started_on,
     classification: cell.classification
       ? `${cell.classification.network_code} — ${cell.classification.cell_type_name}`
       : "Não informada",

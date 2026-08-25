@@ -61,6 +61,7 @@ export default async function NewCellReportPage() {
             leader={reportContext.leader}
             viceLeaders={reportContext.viceLeaders}
             leadership={reportContext.leadership}
+            leadershipHistory={reportContext.leadershipHistory}
           />
         </Surface>
 

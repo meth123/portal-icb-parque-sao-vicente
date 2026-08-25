@@ -122,7 +122,7 @@ export async function createQuickUser(
     const [cellResult, leadershipResult, directoryResult] = await Promise.all([
       supabase
         .from("cells")
-        .select("id, is_active")
+        .select("id, is_active, started_on")
         .eq("id", cellId)
         .maybeSingle(),
       supabase
@@ -241,6 +241,8 @@ export async function createQuickUser(
         "A célula selecionada não está mais ativa.",
       QUICK_REGISTRATION_CELL_DATE_INVALID:
         "A célula selecionada possui uma data de início futura.",
+      QUICK_REGISTRATION_CELL_LEADERSHIP_DATE_INVALID:
+        "A data de início na liderança deve estar entre o início da célula e hoje.",
       QUICK_REGISTRATION_LEADER_REPLACEMENT_REQUIRED:
         `Esta célula já possui um líder ativo${currentLeaderName ? `: ${currentLeaderName}` : ""}. Confirme a substituição para continuar.`,
       CELL_PROFILE_ASSIGNED_ELSEWHERE:

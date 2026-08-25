@@ -45,11 +45,11 @@ export type CellLeadershipOverview = {
   profileId: string;
   name: string;
   role: "Líder" | "Vice-líder";
-  startsOn: string;
 };
 
 export type CellDetails = CellOverview & {
   startedOn: string | null;
+  startedOnIso: string | null;
   leaderships: CellLeadershipOverview[];
   hasError: boolean;
 };
