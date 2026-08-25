@@ -2,17 +2,14 @@
 
 import { useOptimistic, useState, useTransition } from "react";
 import { classNames } from "@/lib/ui/class-names";
-import type { TestimonyReactionType } from "@/lib/testimonies";
+import {
+  applyOptimisticTestimonyReaction,
+  type TestimonyReactionState,
+  type TestimonyReactionType,
+} from "@/lib/testimonies";
 import { toggleTestimonyReaction } from "./actions";
 
-type ReactionState = {
-  amenCount: number;
-  likeCount: number;
-  viewerAmen: boolean;
-  viewerLike: boolean;
-};
-
-type TestimonyReactionsProps = ReactionState & {
+type TestimonyReactionsProps = TestimonyReactionState & {
   testimonyId: string;
 };
 
@@ -26,31 +23,11 @@ export function TestimonyReactions({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
   const [optimistic, updateOptimistic] = useOptimistic<
-    ReactionState,
+    TestimonyReactionState,
     TestimonyReactionType
   >(
     { amenCount, likeCount, viewerAmen, viewerLike },
-    (current, reactionType) => {
-      if (reactionType === "amen") {
-        return {
-          ...current,
-          amenCount: Math.max(
-            0,
-            current.amenCount + (current.viewerAmen ? -1 : 1),
-          ),
-          viewerAmen: !current.viewerAmen,
-        };
-      }
-
-      return {
-        ...current,
-        likeCount: Math.max(
-          0,
-          current.likeCount + (current.viewerLike ? -1 : 1),
-        ),
-        viewerLike: !current.viewerLike,
-      };
-    },
+    applyOptimisticTestimonyReaction,
   );
 
   function toggle(reactionType: TestimonyReactionType) {

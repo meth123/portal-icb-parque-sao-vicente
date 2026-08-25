@@ -9,6 +9,13 @@ const migration = readFileSync(
   ),
   "utf8",
 ).toLowerCase();
+const exclusiveReactionMigration = readFileSync(
+  new URL(
+    "../supabase/migrations/202608250008_make_testimony_reactions_exclusive.sql",
+    import.meta.url,
+  ),
+  "utf8",
+).toLowerCase();
 
 test("garante uma publicação por pessoa e semana de São Paulo", () => {
   assert.match(migration, /time zone 'america\/sao_paulo'/);
@@ -28,6 +35,10 @@ test("garante uma publicação por pessoa e semana de São Paulo", () => {
 test("protege conteúdo, reações e exclusão no banco", () => {
   assert.match(migration, /char_length\(content\) between 1 and 400/);
   assert.match(
+    migration,
+    /unique \(testimony_id, user_id\)/,
+  );
+  assert.doesNotMatch(
     migration,
     /unique \(testimony_id, user_id, reaction_type\)/,
   );
@@ -56,12 +67,18 @@ test("feed agrega reações e usa paginação por cursor em uma RPC", () => {
   assert.doesNotMatch(migration, /realtime/);
 });
 
-test("toggle de reação é atômico e mantém os dois tipos independentes", () => {
+test("toggle de reação é atômico e mantém apenas Amém ou Curtir", () => {
   assert.match(migration, /create function public\.toggle_testimony_reaction/);
   assert.match(migration, /target_reaction_type not in \('amen', 'like'\)/);
   assert.match(migration, /delete from public\.testimony_reactions/);
   assert.match(
     migration,
-    /on conflict \(testimony_id, user_id, reaction_type\) do nothing/,
+    /on conflict \(testimony_id, user_id\) do update/,
+  );
+  assert.match(exclusiveReactionMigration, /row_number\(\) over/);
+  assert.match(exclusiveReactionMigration, /reaction_position > 1/);
+  assert.match(
+    exclusiveReactionMigration,
+    /add constraint testimony_reactions_unique[\s\S]*unique \(testimony_id, user_id\)/,
   );
 });

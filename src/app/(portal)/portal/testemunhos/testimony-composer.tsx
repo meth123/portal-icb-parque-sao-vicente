@@ -36,8 +36,7 @@ export function TestimonyComposer({ canPublish }: { canPublish: boolean }) {
           Compartilhe seu testemunho
         </h2>
         <p className="mt-1 text-sm leading-6 text-app-secondary">
-          Registre, em poucas palavras, o que Deus fez. Cada pessoa pode enviar
-          uma vez por semana.
+          Compartilhe um testemunho que sua célula tem vivenciado.
         </p>
       </div>
 
@@ -58,7 +57,19 @@ export function TestimonyComposer({ canPublish }: { canPublish: boolean }) {
           </Alert>
         ) : null
       ) : (
-        <form action={formAction} className="mt-5">
+        <form
+          action={formAction}
+          className="mt-5"
+          onSubmit={(event) => {
+            if (
+              !window.confirm(
+                "Enviar este testemunho? Você poderá compartilhar apenas um testemunho nesta semana.",
+              )
+            ) {
+              event.preventDefault();
+            }
+          }}
+        >
           <FormField
             id="testimony-content"
             label="Seu testemunho"

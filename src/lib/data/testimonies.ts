@@ -86,6 +86,7 @@ function emptyFeed(hasError: boolean): TestimonyFeedPage {
 
 export async function getTestimonyFeed(
   cursorValue?: string,
+  pageSize = TESTIMONY_PAGE_SIZE,
 ): Promise<TestimonyFeedPage | null> {
   const user = await getCurrentUser();
   if (!user?.isActive) return null;
@@ -95,7 +96,7 @@ export async function getTestimonyFeed(
   const { data, error } = await supabase.rpc("get_testimonies_feed", {
     target_cursor_created_at: cursor?.createdAt ?? null,
     target_cursor_id: cursor?.id ?? null,
-    target_page_size: TESTIMONY_PAGE_SIZE,
+    target_page_size: pageSize,
   });
 
   if (error || !data || typeof data !== "object" || Array.isArray(data)) {
@@ -124,6 +125,16 @@ export async function getTestimonyFeed(
     hasMore,
     nextCursor,
     hasError: false,
+  };
+}
+
+export async function getLatestTestimonyPreview() {
+  const feed = await getTestimonyFeed(undefined, 1);
+  if (!feed) return null;
+
+  return {
+    testimony: feed.items[0] ?? null,
+    hasError: feed.hasError,
   };
 }
 

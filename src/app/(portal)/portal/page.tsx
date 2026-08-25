@@ -5,6 +5,7 @@ import {
   ClipboardCheck,
   FilePlus2,
   HeartHandshake,
+  Quote,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
@@ -28,6 +29,8 @@ import {
   getCellReportFormContext,
 } from "@/lib/data/cell-reports";
 import { getPortalHomeSummary } from "@/lib/data/portal-home";
+import { getLatestTestimonyPreview } from "@/lib/data/testimonies";
+import { summarizeTestimony } from "@/lib/testimonies";
 import { logout } from "./actions";
 import { AnimatedNumber } from "./animated-number";
 import { ClearCellReportDraft } from "./clear-cell-report-draft";
@@ -70,15 +73,20 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
   const [
     reportContext,
     homeSummary,
+    latestTestimonyPreview,
     resolvedSearchParams,
   ] = await Promise.all([
     getCellReportFormContext(),
     getPortalHomeSummary(),
+    getLatestTestimonyPreview(),
     searchParams,
   ]);
   const monthlyResponsibility = homeSummary?.monthlyResponsibility ?? null;
   const institutionIndicator = homeSummary?.institutionIndicator ?? null;
   const weeklyChecklist = homeSummary?.weeklyChecklist ?? null;
+  const latestTestimony = latestTestimonyPreview?.hasError
+    ? null
+    : latestTestimonyPreview?.testimony;
   const reportWasSubmitted = resolvedSearchParams.status === "ficha-enviada";
   const checklistIsVisible = Boolean(
     weeklyChecklist &&
@@ -160,6 +168,54 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
               Ficha de Organização enviada com sucesso.
             </Alert>
           </div>
+        ) : null}
+
+        {latestTestimony ? (
+          <section aria-labelledby="latest-testimony-title" className="mt-7">
+            <Link
+              href="/portal/testemunhos"
+              className="group block rounded-[var(--radius-surface)] border border-theme-primary-border bg-theme-primary-subtle p-5 shadow-[var(--shadow-subtle)] transition-[background-color,border-color,box-shadow,transform] duration-150 hover:bg-theme-primary-soft hover:shadow-[var(--shadow-raised)] active:scale-[0.99] active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus motion-reduce:transform-none sm:p-6"
+            >
+              <div className="flex items-start gap-3">
+                <span
+                  aria-hidden="true"
+                  className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface text-theme-primary-active"
+                >
+                  <Quote size={20} strokeWidth={1.8} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-theme-primary">
+                    Testemunho mais recente
+                  </p>
+                  <h2
+                    id="latest-testimony-title"
+                    className="mt-1 break-words font-semibold text-app-foreground"
+                  >
+                    {latestTestimony.authorName}
+                  </h2>
+                  <p className="mt-0.5 break-words text-sm text-app-secondary">
+                    {latestTestimony.authorCellName
+                      ? `${latestTestimony.authorRoleLabel} • ${latestTestimony.authorCellName}`
+                      : latestTestimony.authorRoleLabel}
+                  </p>
+                </div>
+              </div>
+
+              <p className="mt-4 text-[0.9375rem] leading-6 text-app-foreground sm:text-base">
+                “{summarizeTestimony(latestTestimony.content)}”
+              </p>
+
+              <div className="mt-4 flex items-center justify-between gap-4 border-t border-theme-primary-border pt-3 text-sm font-semibold text-theme-primary-active">
+                <span>Ver todos os testemunhos</span>
+                <ArrowRight
+                  aria-hidden="true"
+                  className="shrink-0 transition-transform group-hover:translate-x-1 group-active:translate-x-1.5 motion-reduce:transform-none"
+                  size={18}
+                  strokeWidth={1.8}
+                />
+              </div>
+            </Link>
+          </section>
         ) : null}
 
         <div className="mt-7 grid items-start gap-8 xl:grid-cols-[minmax(22rem,0.9fr)_minmax(28rem,1.1fr)] xl:gap-10">

@@ -73,7 +73,7 @@ create table public.testimony_reactions (
     check (reaction_type in ('amen', 'like')),
   created_at timestamptz not null default statement_timestamp(),
   constraint testimony_reactions_unique
-    unique (testimony_id, user_id, reaction_type)
+    unique (testimony_id, user_id)
 );
 
 create index testimony_reactions_counts_idx
@@ -186,7 +186,10 @@ begin
     (select auth.uid()),
     target_reaction_type
   )
-  on conflict (testimony_id, user_id, reaction_type) do nothing;
+  on conflict (testimony_id, user_id) do update
+  set
+    reaction_type = excluded.reaction_type,
+    created_at = statement_timestamp();
 
   return true;
 end;
@@ -371,7 +374,7 @@ to authenticated;
 comment on table public.testimonies is
   'Simple weekly testimony records. Author identity and current organization are read through relations.';
 comment on table public.testimony_reactions is
-  'Independent Amen and like reactions, limited to one of each type per user and testimony.';
+  'Exclusive Amen or like reaction, limited to one reaction per user and testimony.';
 comment on function public.get_testimonies_feed(timestamptz, uuid, integer) is
   'Returns one cursor-paginated testimony page with relational author context, aggregate counts and viewer reactions.';
 comment on function public.toggle_testimony_reaction(uuid, text) is
