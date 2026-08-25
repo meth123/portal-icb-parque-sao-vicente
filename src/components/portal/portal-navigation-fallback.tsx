@@ -1,7 +1,6 @@
 import {
   BookOpen,
   ChartNoAxesCombined,
-  ClipboardCheck,
   ClipboardList,
   Ellipsis,
   HeartHandshake,
@@ -11,6 +10,7 @@ import {
   Network,
   Settings,
   UserRound,
+  UserRoundCheck,
   LogOut,
   type LucideIcon,
 } from "lucide-react";
@@ -32,7 +32,7 @@ const icons: Record<PortalNavigationIcon, LucideIcon> = {
   library: BookOpen,
   organization: Network,
   pastoral: ChartNoAxesCombined,
-  attendance: ClipboardCheck,
+  attendance: UserRoundCheck,
   administration: Settings,
   testimonies: HeartHandshake,
   profile: UserRound,

@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronRight, ClipboardCheck, Users } from "lucide-react";
+import { CalendarDays, ChevronRight, UserRoundCheck, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -53,7 +53,7 @@ export default async function SupervisionAttendancePage() {
             <Surface tone="theme">
               <div className="mb-5 flex items-center gap-3">
                 <span className="flex size-11 items-center justify-center rounded-xl bg-theme-primary-soft text-theme-primary-active">
-                  <ClipboardCheck aria-hidden="true" className="size-6" />
+                  <UserRoundCheck aria-hidden="true" className="size-6" />
                 </span>
                 <div>
                   <h2 className="text-lg font-semibold text-app-foreground">Nova chamada</h2>
@@ -103,7 +103,7 @@ export default async function SupervisionAttendancePage() {
                 </div>
               ) : (
                 <EmptyState
-                  icon={<ClipboardCheck className="size-8" />}
+                  icon={<UserRoundCheck className="size-8" />}
                   title="Nenhuma chamada registrada"
                   description="Inicie a primeira chamada usando RJ ou HM."
                 />

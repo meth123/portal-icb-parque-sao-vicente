@@ -95,8 +95,12 @@ test("envio confirma a regra semanal e a home mostra o último testemunho", () =
   assert.match(portalHomeSource, /getLatestTestimonyPreview/);
   assert.match(portalHomeSource, /Testemunho mais recente/);
   assert.match(portalHomeSource, /summarizeTestimony/);
-  assert.ok(
-    portalHomeSource.indexOf("Testemunho mais recente") >
-      portalHomeSource.lastIndexOf("ReportTutorialCard"),
+  const testimonyPreviewPosition = portalHomeSource.indexOf(
+    "<LatestTestimonyCard",
   );
+  const checklistPosition = portalHomeSource.indexOf(
+    "{checklistIsVisible && weeklyChecklist ?",
+  );
+  assert.ok(testimonyPreviewPosition > -1);
+  assert.ok(testimonyPreviewPosition < checklistPosition);
 });

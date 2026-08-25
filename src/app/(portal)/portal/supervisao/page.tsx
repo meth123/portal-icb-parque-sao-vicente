@@ -4,13 +4,13 @@ import { redirect } from "next/navigation";
 import {
   AlertTriangle,
   CheckCircle2,
-  ClipboardCheck,
   FileCheck2,
   Files,
   House,
   Search,
   Send,
   UserRoundPlus,
+  UserRoundCheck,
   Users,
   X,
 } from "lucide-react";
@@ -154,7 +154,7 @@ export default async function SupervisionPage({
                 href="/portal/supervisao/chamada"
                 className={buttonClassName({ size: "compact" })}
               >
-                <ClipboardCheck aria-hidden="true" className="size-4" />
+                <UserRoundCheck aria-hidden="true" className="size-4" />
                 Chamada da Supervisão
               </Link>
               <Link

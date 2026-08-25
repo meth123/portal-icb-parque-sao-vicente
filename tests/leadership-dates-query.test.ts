@@ -30,6 +30,21 @@ const informationalDatesMigration = readFileSync(
   ),
   "utf8",
 );
+const inaugurationPermissionMigration = readFileSync(
+  new URL(
+    "../supabase/migrations/20260825195958_restrict_cell_inauguration_date_editing.sql",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const cellPage = readFileSync(
+  new URL("../src/app/(portal)/portal/celulas/[id]/page.tsx", import.meta.url),
+  "utf8",
+);
+const cellActions = readFileSync(
+  new URL("../src/app/(portal)/portal/celulas/[id]/actions.ts", import.meta.url),
+  "utf8",
+);
 
 test("cadastro de pessoa preserva a data informativa sem travar o vínculo", () => {
   assert.match(
@@ -104,4 +119,35 @@ test("lideres editam somente as proprias datas informativas", () => {
     /drop constraint if exists cells_reporting_starts_after_foundation_check/i,
   );
   assert.doesNotMatch(informationalDatesMigration, /earliest_related_on/i);
+});
+
+test("vice não altera inauguração; líder e acesso pastoral alteram", () => {
+  assert.match(
+    inaugurationPermissionMigration,
+    /profile\.global_role in \('administrator', 'pastor'\)/i,
+  );
+  assert.match(
+    inaugurationPermissionMigration,
+    /profile\.is_supervisor = true/i,
+  );
+  assert.match(
+    inaugurationPermissionMigration,
+    /leadership\.role = 'leader'/i,
+  );
+  assert.doesNotMatch(
+    inaugurationPermissionMigration,
+    /leadership\.role\s*=\s*'vice_leader'/i,
+  );
+  assert.match(cellPage, /canAccessPastoralDashboard\(user\)/);
+  assert.match(cellPage, /user\.currentLeadershipRole === "leader"/);
+  assert.doesNotMatch(
+    cellPage,
+    /user\.currentLeadershipRole === "vice_leader"/,
+  );
+  assert.match(cellActions, /canAccessPastoralDashboard\(user\)/);
+  assert.match(cellActions, /user\.currentLeadershipRole !== "leader"/);
+  assert.doesNotMatch(
+    cellActions,
+    /user\.currentLeadershipRole !== "vice_leader"/,
+  );
 });

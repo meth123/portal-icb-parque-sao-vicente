@@ -8,6 +8,7 @@ import {
   Quote,
   ShieldCheck,
   Sparkles,
+  UserRoundCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -29,7 +30,10 @@ import {
   getCellReportFormContext,
 } from "@/lib/data/cell-reports";
 import { getPortalHomeSummary } from "@/lib/data/portal-home";
-import { getLatestTestimonyPreview } from "@/lib/data/testimonies";
+import {
+  getLatestTestimonyPreview,
+  type TestimonyFeedItem,
+} from "@/lib/data/testimonies";
 import { summarizeTestimony } from "@/lib/testimonies";
 import { logout } from "./actions";
 import { AnimatedNumber } from "./animated-number";
@@ -106,6 +110,12 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
   const firstName = user.fullName?.trim().split(/\s+/)[0] ?? "usuário";
   const canViewPastoralDashboard = canAccessPastoralDashboard(user);
   const canViewSupervisionAttendance = canManageSupervisionAttendance(user);
+  const hasPortalActions = Boolean(
+    checklistIsVisible ||
+      reportContext ||
+      canViewPastoralDashboard ||
+      canViewSupervisionAttendance,
+  );
   const pastoralViewLabel =
     user.globalRole === "pastor"
       ? "Visão Pastoral"
@@ -233,8 +243,12 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
               title="Para você"
               description="Ações disponíveis para o seu perfil."
             />
-            {checklistIsVisible || reportContext || canViewPastoralDashboard || canViewSupervisionAttendance ? (
+            {hasPortalActions ? (
               <div className="mt-4 space-y-3">
+                {latestTestimony ? (
+                  <LatestTestimonyCard testimony={latestTestimony} />
+                ) : null}
+
                 {checklistIsVisible && weeklyChecklist ? (
                   <ActionCard
                     href="/portal/checklist"
@@ -296,7 +310,7 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
                     href="/portal/supervisao/chamada"
                     title="Chamada da Supervisão"
                     description="Marcar presença em RJ ou HM"
-                    icon={<ClipboardCheck size={22} strokeWidth={1.8} />}
+                    icon={<UserRoundCheck size={22} strokeWidth={1.8} />}
                     layout="list"
                   />
                 ) : null}
@@ -317,66 +331,76 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
                 ) : null}
               </div>
             ) : (
-              <EmptyState
-                className="mt-4"
-                icon={<Check size={28} strokeWidth={1.8} />}
-                title="Tudo certo por agora"
-                description="Você não tem nenhuma pendência."
-              />
+              <div className="mt-4 space-y-4">
+                <EmptyState
+                  icon={<Check size={28} strokeWidth={1.8} />}
+                  title="Tudo certo por agora"
+                  description="Você não tem nenhuma pendência."
+                />
+                {latestTestimony ? (
+                  <LatestTestimonyCard testimony={latestTestimony} />
+                ) : null}
+              </div>
             )}
           </section>
         </div>
 
         {reportContext ? <ReportTutorialCard /> : null}
-
-        {latestTestimony ? (
-          <section aria-labelledby="latest-testimony-title" className="mt-10">
-            <Link
-              href="/portal/testemunhos"
-              className="group block rounded-[var(--radius-surface)] border border-theme-primary-border bg-theme-primary-subtle p-5 shadow-[var(--shadow-subtle)] transition-[background-color,border-color,box-shadow,transform] duration-150 hover:bg-theme-primary-soft hover:shadow-[var(--shadow-raised)] active:scale-[0.99] active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus motion-reduce:transform-none sm:p-6"
-            >
-              <div className="flex items-start gap-3">
-                <span
-                  aria-hidden="true"
-                  className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface text-theme-primary-active"
-                >
-                  <Quote size={20} strokeWidth={1.8} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-theme-primary">
-                    Testemunho mais recente
-                  </p>
-                  <h2
-                    id="latest-testimony-title"
-                    className="mt-1 break-words font-semibold text-app-foreground"
-                  >
-                    {latestTestimony.authorName}
-                  </h2>
-                  <p className="mt-0.5 break-words text-sm text-app-secondary">
-                    {latestTestimony.authorCellName
-                      ? `${latestTestimony.authorRoleLabel} • ${latestTestimony.authorCellName}`
-                      : latestTestimony.authorRoleLabel}
-                  </p>
-                </div>
-              </div>
-
-              <p className="mt-4 text-[0.9375rem] leading-6 text-app-foreground sm:text-base">
-                “{summarizeTestimony(latestTestimony.content)}”
-              </p>
-
-              <div className="mt-4 flex items-center justify-between gap-4 border-t border-theme-primary-border pt-3 text-sm font-semibold text-theme-primary-active">
-                <span>Ver todos os testemunhos</span>
-                <ArrowRight
-                  aria-hidden="true"
-                  className="shrink-0 transition-transform group-hover:translate-x-1 group-active:translate-x-1.5 motion-reduce:transform-none"
-                  size={18}
-                  strokeWidth={1.8}
-                />
-              </div>
-            </Link>
-          </section>
-        ) : null}
       </PageContainer>
     </main>
+  );
+}
+
+function LatestTestimonyCard({
+  testimony,
+}: {
+  testimony: TestimonyFeedItem;
+}) {
+  return (
+    <section aria-labelledby="latest-testimony-title">
+      <Link
+        href="/portal/testemunhos"
+        className="group block rounded-[var(--radius-surface)] border border-theme-primary-border bg-theme-primary-subtle p-5 shadow-[var(--shadow-subtle)] transition-[background-color,border-color,box-shadow,transform] duration-150 hover:bg-theme-primary-soft hover:shadow-[var(--shadow-raised)] active:scale-[0.99] active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus motion-reduce:transform-none sm:p-6"
+      >
+        <div className="flex items-start gap-3">
+          <span
+            aria-hidden="true"
+            className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface text-theme-primary-active"
+          >
+            <Quote size={20} strokeWidth={1.8} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold uppercase tracking-[0.12em] text-theme-primary">
+              Testemunho mais recente
+            </p>
+            <h2
+              id="latest-testimony-title"
+              className="mt-1 break-words font-semibold text-app-foreground"
+            >
+              {testimony.authorName}
+            </h2>
+            <p className="mt-0.5 break-words text-sm text-app-secondary">
+              {testimony.authorCellName
+                ? `${testimony.authorRoleLabel} • ${testimony.authorCellName}`
+                : testimony.authorRoleLabel}
+            </p>
+          </div>
+        </div>
+
+        <p className="mt-4 text-[0.9375rem] leading-6 text-app-foreground sm:text-base">
+          “{summarizeTestimony(testimony.content)}”
+        </p>
+
+        <div className="mt-4 flex items-center justify-between gap-4 border-t border-theme-primary-border pt-3 text-sm font-semibold text-theme-primary-active">
+          <span>Ver todos os testemunhos</span>
+          <ArrowRight
+            aria-hidden="true"
+            className="shrink-0 transition-transform group-hover:translate-x-1 group-active:translate-x-1.5 motion-reduce:transform-none"
+            size={18}
+            strokeWidth={1.8}
+          />
+        </div>
+      </Link>
+    </section>
   );
 }

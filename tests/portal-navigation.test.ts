@@ -1,6 +1,16 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { buildPortalNavigation } from "../src/lib/portal-navigation.ts";
+
+const portalNavigationSource = readFileSync(
+  new URL("../src/components/portal/portal-nav-link.tsx", import.meta.url),
+  "utf8",
+);
+const portalHomeSource = readFileSync(
+  new URL("../src/app/(portal)/portal/page.tsx", import.meta.url),
+  "utf8",
+);
 
 function hrefs(items: ReturnType<typeof buildPortalNavigation>["moreItems"]) {
   return items.map((item) => item.href);
@@ -63,4 +73,12 @@ test("acesso pastoral e administrativo libera somente os módulos correspondente
   ]);
   assert.ok(hrefs(navigation.primaryItems).includes("/portal/relatorios"));
   assert.ok(!hrefs(navigation.primaryItems).some((href) => href.includes("/celulas/")));
+});
+
+test("chamada da supervisão usa ícone próprio de presença", () => {
+  assert.match(portalNavigationSource, /attendance: UserRoundCheck/);
+  assert.match(
+    portalHomeSource,
+    /title="Chamada da Supervisão"[\s\S]*icon={<UserRoundCheck/,
+  );
 });

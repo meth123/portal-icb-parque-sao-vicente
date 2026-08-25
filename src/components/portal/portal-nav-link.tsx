@@ -3,7 +3,6 @@
 import {
   BookOpen,
   ChartNoAxesCombined,
-  ClipboardCheck,
   ClipboardList,
   HeartHandshake,
   House,
@@ -12,6 +11,7 @@ import {
   Network,
   Settings,
   UserRound,
+  UserRoundCheck,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -30,7 +30,7 @@ const navigationIcons: Record<PortalNavigationIcon, LucideIcon> = {
   library: BookOpen,
   organization: Network,
   pastoral: ChartNoAxesCombined,
-  attendance: ClipboardCheck,
+  attendance: UserRoundCheck,
   administration: Settings,
   testimonies: HeartHandshake,
   profile: UserRound,

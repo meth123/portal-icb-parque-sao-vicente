@@ -25,7 +25,10 @@ import { PageHeader } from "@/components/ui/page-header";
 import { SectionHeader } from "@/components/ui/section-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { TrendBars } from "@/components/ui/trend-bars";
-import { getCurrentUser } from "@/lib/auth/current-user";
+import {
+  canAccessPastoralDashboard,
+  getCurrentUser,
+} from "@/lib/auth/current-user";
 import { getCellDashboard } from "@/lib/data/cell-dashboard";
 import { getSaoPauloDate } from "@/lib/dates/sao-paulo";
 import { CellInaugurationDateForm } from "./cell-inauguration-date-form";
@@ -81,9 +84,9 @@ export default async function CellDetailsPage({
   }
 
   const canEditCellInauguration =
-    user.currentCellId === cell.id &&
-    (user.currentLeadershipRole === "leader" ||
-      user.currentLeadershipRole === "vice_leader");
+    canAccessPastoralDashboard(user) ||
+    (user.currentCellId === cell.id &&
+      user.currentLeadershipRole === "leader");
 
   const metrics = dashboard.metrics;
   const highestAverage = Math.max(

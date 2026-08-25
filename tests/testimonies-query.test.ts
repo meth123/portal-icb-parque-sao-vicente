@@ -16,6 +16,13 @@ const exclusiveReactionMigration = readFileSync(
   ),
   "utf8",
 ).toLowerCase();
+const monthlyResetMigration = readFileSync(
+  new URL(
+    "../supabase/migrations/20260825183348_reset_testimonies_monthly.sql",
+    import.meta.url,
+  ),
+  "utf8",
+).toLowerCase();
 
 test("garante uma publicação por pessoa e semana de São Paulo", () => {
   assert.match(migration, /time zone 'america\/sao_paulo'/);
@@ -30,6 +37,27 @@ test("garante uma publicação por pessoa e semana de São Paulo", () => {
     migration,
     /author_id = \(select auth\.uid\(\)\)[\s\S]*week_start = \(select public\.current_sao_paulo_week_start\(\)\)/,
   );
+  assert.match(
+    monthlyResetMigration,
+    /unique \(author_id, week_start, month_start\)/,
+  );
+});
+
+test("feed e limite semanal reiniciam no mês de São Paulo", () => {
+  assert.match(monthlyResetMigration, /month_bounds as materialized/);
+  assert.match(
+    monthlyResetMigration,
+    /testimonies\.created_at >= month_bounds\.starts_at/,
+  );
+  assert.match(
+    monthlyResetMigration,
+    /testimonies\.created_at < month_bounds\.ends_before/,
+  );
+  assert.match(
+    monthlyResetMigration,
+    /testimonies\.month_start = month_bounds\.starts_on/,
+  );
+  assert.match(monthlyResetMigration, /time zone 'america\/sao_paulo'/);
 });
 
 test("protege conteúdo, reações e exclusão no banco", () => {

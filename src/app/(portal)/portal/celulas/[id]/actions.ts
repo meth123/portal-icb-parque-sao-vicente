@@ -1,7 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentUser } from "@/lib/auth/current-user";
+import {
+  canAccessPastoralDashboard,
+  getCurrentUser,
+} from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
 
 export type UpdateCellInaugurationState = {
@@ -37,12 +40,13 @@ export async function updateOwnCellInauguration(
 
   if (
     !user?.isActive ||
-    user.currentCellId !== cellId ||
-    (user.currentLeadershipRole !== "leader" &&
-      user.currentLeadershipRole !== "vice_leader")
+    (!canAccessPastoralDashboard(user) &&
+      (user.currentCellId !== cellId ||
+        user.currentLeadershipRole !== "leader"))
   ) {
     return {
-      message: "Somente o líder ou vice-líder atual desta célula pode alterar essa data.",
+      message:
+        "Somente o líder atual, supervisor, pastor ou administrador pode alterar essa data.",
     };
   }
 
@@ -59,7 +63,7 @@ export async function updateOwnCellInauguration(
   if (error) {
     const messages: Record<string, string> = {
       CELL_INAUGURATION_DATE_FORBIDDEN:
-        "Somente o líder ou vice-líder atual desta célula pode alterar essa data.",
+        "Somente o líder atual, supervisor, pastor ou administrador pode alterar essa data.",
       CELL_INAUGURATION_DATE_INVALID:
         "A data de inauguração não pode estar no futuro.",
     };
