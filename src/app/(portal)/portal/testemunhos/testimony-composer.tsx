@@ -33,11 +33,8 @@ export function TestimonyComposer({ canPublish }: { canPublish: boolean }) {
     <Surface className="mt-7">
       <div className="max-w-2xl">
         <h2 className="text-lg font-semibold text-app-foreground">
-          Compartilhe seu testemunho
+          Compartilhe o que sua célula tem vivenciado
         </h2>
-        <p className="mt-1 text-sm leading-6 text-app-secondary">
-          Compartilhe um testemunho que sua célula tem vivenciado.
-        </p>
       </div>
 
       {state.message ? (
@@ -72,7 +69,8 @@ export function TestimonyComposer({ canPublish }: { canPublish: boolean }) {
         >
           <FormField
             id="testimony-content"
-            label="Seu testemunho"
+            label="Testemunho"
+            hideLabel
             error={state.fieldError}
             required
             labelAction={
@@ -110,7 +108,7 @@ export function TestimonyComposer({ canPublish }: { canPublish: boolean }) {
                 }
               }}
               className={`${controlClassName} min-h-36 resize-y py-3 leading-6`}
-              placeholder="Conte seu testemunho..."
+              placeholder="Escreva aqui..."
             />
           </FormField>
 

@@ -9,6 +9,7 @@ type FormFieldProps = {
   error?: string;
   labelAction?: ReactNode;
   required?: boolean;
+  hideLabel?: boolean;
   className?: string;
 };
 
@@ -20,12 +21,19 @@ export function FormField({
   error,
   labelAction,
   required,
+  hideLabel,
   className,
 }: FormFieldProps) {
   return (
     <div className={classNames("min-w-0", className)}>
       <div className="flex items-baseline justify-between gap-4">
-        <label htmlFor={id} className="block text-sm font-semibold text-app-foreground sm:text-[0.9375rem]">
+        <label
+          htmlFor={id}
+          className={classNames(
+            "block text-sm font-semibold text-app-foreground sm:text-[0.9375rem]",
+            hideLabel && "sr-only",
+          )}
+        >
           {label}
           {required ? (
             <span className="ml-1 text-danger" aria-hidden="true">

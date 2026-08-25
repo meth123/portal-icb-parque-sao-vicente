@@ -85,8 +85,11 @@ test("Amém e Curtir são mutuamente exclusivos na atualização otimista", () =
 test("envio confirma a regra semanal e a home mostra o último testemunho", () => {
   assert.match(
     composerSource,
-    /Compartilhe um testemunho que sua célula tem vivenciado\./,
+    /Compartilhe o que sua célula tem vivenciado/,
   );
+  assert.match(composerSource, /label="Testemunho"/);
+  assert.match(composerSource, /hideLabel/);
+  assert.match(composerSource, /placeholder="Escreva aqui\.\.\."/);
   assert.match(composerSource, /window\.confirm/);
   assert.match(composerSource, /apenas um testemunho nesta semana/);
   assert.match(portalHomeSource, /getLatestTestimonyPreview/);
