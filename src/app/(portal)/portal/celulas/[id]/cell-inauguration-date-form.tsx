@@ -35,8 +35,7 @@ export function CellInaugurationDateForm({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <FormField
           id="cellInaugurationDate"
-          label="Corrigir data de inauguração"
-          hint="Informação histórica. Não altera o acompanhamento nem o envio de Fichas."
+          label="Data de inauguração"
         >
           <BrazilianDateInput
             id="cellInaugurationDate"

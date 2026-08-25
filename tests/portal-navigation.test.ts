@@ -6,7 +6,7 @@ function hrefs(items: ReturnType<typeof buildPortalNavigation>["moreItems"]) {
   return items.map((item) => item.href);
 }
 
-test("usuário sem vínculo recebe somente início e perfil", () => {
+test("usuário sem vínculo recebe início, testemunhos e perfil", () => {
   const navigation = buildPortalNavigation({
     cellId: null,
     hasDocumentLibraryAccess: false,
@@ -16,7 +16,11 @@ test("usuário sem vínculo recebe somente início e perfil", () => {
 
   assert.deepEqual(hrefs(navigation.primaryItems), ["/portal"]);
   assert.deepEqual(hrefs(navigation.bottomItems), ["/portal"]);
-  assert.deepEqual(hrefs(navigation.moreItems), ["/portal/perfil"]);
+  assert.deepEqual(hrefs(navigation.secondaryItems), ["/portal/testemunhos"]);
+  assert.deepEqual(hrefs(navigation.moreItems), [
+    "/portal/testemunhos",
+    "/portal/perfil",
+  ]);
 });
 
 test("liderança recebe somente os recursos vinculados à própria célula", () => {
@@ -33,7 +37,11 @@ test("liderança recebe somente os recursos vinculados à própria célula", () 
     "/portal/celulas/cell-1",
     "/portal/checklist",
   ]);
-  assert.deepEqual(hrefs(navigation.secondaryItems), ["/portal/documentos"]);
+  assert.deepEqual(hrefs(navigation.secondaryItems), [
+    "/portal/testemunhos",
+    "/portal/documentos",
+  ]);
+  assert.ok(!hrefs(navigation.bottomItems).includes("/portal/testemunhos"));
   assert.ok(!hrefs(navigation.moreItems).includes("/portal/admin"));
 });
 
@@ -46,6 +54,7 @@ test("acesso pastoral e administrativo libera somente os módulos correspondente
   });
 
   assert.deepEqual(hrefs(navigation.secondaryItems), [
+    "/portal/testemunhos",
     "/portal/documentos",
     "/portal/organizacao",
     "/portal/supervisao",

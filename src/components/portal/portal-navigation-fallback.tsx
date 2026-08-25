@@ -4,6 +4,7 @@ import {
   ClipboardCheck,
   ClipboardList,
   Ellipsis,
+  HeartHandshake,
   House,
   HouseHeart,
   ListChecks,
@@ -33,6 +34,7 @@ const icons: Record<PortalNavigationIcon, LucideIcon> = {
   pastoral: ChartNoAxesCombined,
   attendance: ClipboardCheck,
   administration: Settings,
+  testimonies: HeartHandshake,
   profile: UserRound,
 };
 

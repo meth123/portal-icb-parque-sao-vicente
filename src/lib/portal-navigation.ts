@@ -41,6 +41,11 @@ export function buildPortalNavigation({
     label: "Meu perfil",
     icon: "profile",
   };
+  const testimoniesItem: PortalNavigationItem = {
+    href: "/portal/testemunhos",
+    label: "Testemunhos",
+    icon: "testimonies",
+  };
   const hasReportsAccess = Boolean(cellId) || hasPastoralAccess;
   const hasChecklistAccess = Boolean(cellId) || hasPastoralAccess;
 
@@ -51,6 +56,7 @@ export function buildPortalNavigation({
     ...(hasChecklistAccess ? [checklistItem] : []),
   ];
   const secondaryItems: PortalNavigationItem[] = [
+    testimoniesItem,
     ...(hasDocumentLibraryAccess
       ? [
           {

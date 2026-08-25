@@ -8,6 +8,7 @@ export type PortalNavigationIcon =
   | "pastoral"
   | "attendance"
   | "administration"
+  | "testimonies"
   | "profile";
 
 export type PortalNavigationItem = {

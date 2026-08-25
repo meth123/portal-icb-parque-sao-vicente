@@ -5,6 +5,7 @@ import {
   ChartNoAxesCombined,
   ClipboardCheck,
   ClipboardList,
+  HeartHandshake,
   House,
   HouseHeart,
   ListChecks,
@@ -31,6 +32,7 @@ const navigationIcons: Record<PortalNavigationIcon, LucideIcon> = {
   pastoral: ChartNoAxesCombined,
   attendance: ClipboardCheck,
   administration: Settings,
+  testimonies: HeartHandshake,
   profile: UserRound,
 };
 
