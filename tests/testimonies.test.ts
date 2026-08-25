@@ -95,4 +95,8 @@ test("envio confirma a regra semanal e a home mostra o último testemunho", () =
   assert.match(portalHomeSource, /getLatestTestimonyPreview/);
   assert.match(portalHomeSource, /Testemunho mais recente/);
   assert.match(portalHomeSource, /summarizeTestimony/);
+  assert.ok(
+    portalHomeSource.indexOf("Testemunho mais recente") >
+      portalHomeSource.lastIndexOf("ReportTutorialCard"),
+  );
 });
