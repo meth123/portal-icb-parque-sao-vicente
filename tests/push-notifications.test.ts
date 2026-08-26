@@ -17,6 +17,9 @@ const subscriptionMigration = read(
 const eventMigration = read(
   "../supabase/migrations/20260826170454_create_push_notification_events.sql",
 );
+const serviceProfileGrantMigration = read(
+  "../supabase/migrations/20260826183101_grant_push_service_profile_read.sql",
+);
 const eventSource = read("../src/lib/push/events.ts");
 const weeklyJobSource = read("../src/lib/push/weekly-job.ts");
 const cronSource = read("../src/app/api/cron/push-weekly/route.ts");
@@ -114,6 +117,10 @@ test("RLS isola subscriptions e endpoint não pode duplicar", () => {
   assert.match(subscriptionMigration, /to authenticated[\s\S]*auth\.uid\(\).*user_id/i);
   assert.match(subscriptionMigration, /references public\.profiles \(id\)/i);
   assert.match(subscriptionMigration, /is_active boolean not null default true/i);
+  assert.match(
+    serviceProfileGrantMigration,
+    /grant select on table public\.profiles to service_role/i,
+  );
 });
 
 test("reserva idempotência persistida antes de enviar", () => {
