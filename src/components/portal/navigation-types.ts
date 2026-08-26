@@ -8,6 +8,7 @@ export type PortalNavigationIcon =
   | "pastoral"
   | "attendance"
   | "administration"
+  | "member-card"
   | "testimonies"
   | "profile";
 

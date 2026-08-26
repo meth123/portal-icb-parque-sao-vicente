@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   applyOptimisticTestimonyReaction,
   countTestimonyCharacters,
+  normalizeTestimonyAuthorRoleLabel,
   summarizeTestimony,
   TESTIMONY_MAX_LENGTH,
   validateTestimonyContent,
@@ -54,6 +55,21 @@ test("resume o testemunho mais recente sem cortar no meio da palavra", () => {
 
   assert.equal(summary, "Deus tem feito algo muito especial em nossa célula e...");
   assert.ok(countTestimonyCharacters(summary) <= 60);
+});
+
+test("corrige o rótulo de liderança recebido com mojibake", () => {
+  assert.equal(
+    normalizeTestimonyAuthorRoleLabel("Vice-l\u00c3\u00adder"),
+    "Vice-líder",
+  );
+  assert.equal(
+    normalizeTestimonyAuthorRoleLabel("Vice-l\u00c3der"),
+    "Vice-líder",
+  );
+  assert.equal(
+    normalizeTestimonyAuthorRoleLabel("Vice-líder"),
+    "Vice-líder",
+  );
 });
 
 test("Amém e Curtir são mutuamente exclusivos na atualização otimista", () => {

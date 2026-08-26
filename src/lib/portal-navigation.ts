@@ -24,6 +24,16 @@ export function buildPortalNavigation({
     label: "Fichas",
     icon: "reports",
   };
+  const memberRegistrationItem: PortalNavigationItem = {
+    href: "/portal/ficha-de-membro",
+    label: "Ficha de Membro",
+    icon: "member-card",
+  };
+  const libraryItem: PortalNavigationItem = {
+    href: "/portal/documentos",
+    label: "Biblioteca",
+    icon: "library",
+  };
   const cellItem: PortalNavigationItem | null = cellId
     ? {
         href: `/portal/celulas/${cellId}`,
@@ -56,16 +66,9 @@ export function buildPortalNavigation({
     ...(hasChecklistAccess ? [checklistItem] : []),
   ];
   const secondaryItems: PortalNavigationItem[] = [
+    memberRegistrationItem,
     testimoniesItem,
-    ...(hasDocumentLibraryAccess
-      ? [
-          {
-            href: "/portal/documentos",
-            label: "Biblioteca",
-            icon: "library" as const,
-          },
-        ]
-      : []),
+    ...(hasDocumentLibraryAccess ? [libraryItem] : []),
     ...(hasPastoralAccess
       ? [
           {
@@ -100,10 +103,18 @@ export function buildPortalNavigation({
     homeItem,
     ...(hasReportsAccess ? [reportsItem] : []),
     ...(cellItem ? [cellItem] : []),
+    ...(hasDocumentLibraryAccess ? [libraryItem] : []),
   ];
   const moreItems = [
     ...(hasChecklistAccess ? [checklistItem] : []),
-    ...secondaryItems,
+    memberRegistrationItem,
+    testimoniesItem,
+    ...secondaryItems.filter(
+      (item) =>
+        item.href !== memberRegistrationItem.href &&
+        item.href !== testimoniesItem.href &&
+        item.href !== libraryItem.href,
+    ),
     profileItem,
   ];
 

@@ -2,6 +2,7 @@ import "server-only";
 
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
+import { normalizeTestimonyAuthorRoleLabel } from "@/lib/testimonies";
 
 const TESTIMONY_PAGE_SIZE = 12;
 const uuidPattern =
@@ -117,7 +118,14 @@ export async function getTestimonyFeed(
       : null;
 
   return {
-    items: Array.isArray(raw.items) ? raw.items : [],
+    items: Array.isArray(raw.items)
+      ? raw.items.map((item) => ({
+          ...item,
+          authorRoleLabel: normalizeTestimonyAuthorRoleLabel(
+            item.authorRoleLabel,
+          ),
+        }))
+      : [],
     canPublish: raw.canPublish === true,
     canModerate: raw.canModerate === true,
     currentWeekStart:

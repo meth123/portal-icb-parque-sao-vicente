@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+export const CELL_REPORT_HISTORY_LIMIT = 5;
 
 type RawReport = {
   id: string;
@@ -171,7 +172,7 @@ export async function getCellReportHistory(
     .from("cell_reports")
     .select("id, cell_id, meeting_on")
     .order("meeting_on", { ascending: false })
-    .limit(100);
+    .limit(CELL_REPORT_HISTORY_LIMIT);
 
   if (filters.cellId && uuidPattern.test(filters.cellId) && allowedCellIds.has(filters.cellId)) {
     reportsQuery = reportsQuery.eq("cell_id", filters.cellId);

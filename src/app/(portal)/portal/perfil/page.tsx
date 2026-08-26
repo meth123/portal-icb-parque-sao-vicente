@@ -5,6 +5,7 @@ import { Surface } from "@/components/ui/surface";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getProfileAvatarUrl } from "@/lib/data/profile-avatar";
 import { getSaoPauloDate } from "@/lib/dates/sao-paulo";
+import { NotificationSettings } from "./notification-settings";
 import { PasswordChangeForm } from "./password-change-form";
 import { ProfileForm } from "./profile-form";
 
@@ -41,6 +42,10 @@ export default async function ProfilePage() {
             initialAvatarPath={avatarPath}
             initialAvatarUrl={avatarUrl}
           />
+        </Surface>
+
+        <Surface className="mt-6 p-5 sm:p-8">
+          <NotificationSettings />
         </Surface>
 
         <Surface className="mt-6 p-5 sm:p-8">

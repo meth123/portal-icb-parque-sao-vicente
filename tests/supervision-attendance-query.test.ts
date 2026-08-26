@@ -9,6 +9,13 @@ const migration = readFileSync(
   ),
   "utf8",
 );
+const authorizationMigration = readFileSync(
+  new URL(
+    "../supabase/migrations/202608260001_restrict_supervision_attendance_access.sql",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("migration cria sessões e roster sem duplicar chamadas ou perfis", () => {
   assert.match(migration, /create table public\.supervision_attendance_sessions/i);
@@ -22,9 +29,10 @@ test("RLS e RPCs exigem perfil autorizado no servidor", () => {
   assert.match(migration, /enable row level security/i);
   assert.match(migration, /grant select on table public\.supervision_attendance_sessions to authenticated/i);
   assert.doesNotMatch(migration, /grant (?:insert|update|delete).*supervision_attendance_sessions/i);
-  assert.match(migration, /profiles\.global_role in \('administrator', 'pastor'\)/i);
-  assert.match(migration, /profiles\.is_supervisor = true/i);
-  assert.match(migration, /cell_leaderships\.role = 'leader'/i);
+  assert.match(authorizationMigration, /create or replace function public\.can_manage_supervision_attendance/i);
+  assert.match(authorizationMigration, /profiles\.global_role in \('administrator', 'pastor'\)/i);
+  assert.match(authorizationMigration, /profiles\.is_supervisor = true/i);
+  assert.doesNotMatch(authorizationMigration, /cell_leaderships|role = 'leader'/i);
   assert.ok(
     (migration.match(/can_manage_supervision_attendance\(\)/gi)?.length ?? 0) >= 8,
   );

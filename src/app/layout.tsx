@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { CSSProperties } from "react";
+import { ServiceWorkerRegistration } from "@/components/pwa/service-worker-registration";
 import { annualTheme } from "@/config/annual-theme";
 import "./globals.css";
 
@@ -18,6 +19,32 @@ export const metadata: Metadata = {
   title: "ICB Conecta | Parque São Vicente",
   description: "Acesso e gestão da ICB Parque São Vicente.",
   applicationName: "ICB Conecta",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "ICB Conecta",
+  },
+  icons: {
+    icon: [
+      {
+        url: "/icons/icon-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
+      },
+      {
+        url: "/icons/icon-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
+      },
+    ],
+    apple: [
+      {
+        url: "/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+  },
 };
 
 export const viewport: Viewport = {
@@ -60,7 +87,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       style={themeStyle}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        {children}
+        <ServiceWorkerRegistration />
+      </body>
     </html>
   );
 }

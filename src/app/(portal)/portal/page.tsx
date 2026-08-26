@@ -4,10 +4,7 @@ import {
   Check,
   ClipboardCheck,
   FilePlus2,
-  HeartHandshake,
   Quote,
-  ShieldCheck,
-  Sparkles,
   UserRoundCheck,
 } from "lucide-react";
 import Link from "next/link";
@@ -116,12 +113,6 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
       canViewPastoralDashboard ||
       canViewSupervisionAttendance,
   );
-  const pastoralViewLabel =
-    user.globalRole === "pastor"
-      ? "Visão Pastoral"
-      : user.isSupervisor
-        ? "Visão de Supervisor"
-        : null;
   const highlightedAction = checklistNeedsAnswer
     ? "checklist"
     : reportContext
@@ -133,39 +124,7 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
   return (
     <main>
       <PageContainer width="wide" className="py-5 sm:py-8 lg:py-10">
-        <PageHeader
-          title={`Olá, ${firstName}`}
-          description="Veja o que merece sua atenção e continue de onde parou."
-          actions={
-            pastoralViewLabel ? (
-              <div className="inline-flex min-h-14 w-fit items-center gap-3 rounded-2xl border border-white/10 bg-theme-primary-active px-3 py-2.5 text-theme-primary-foreground shadow-[0_10px_26px_rgba(84,16,103,0.2)]">
-                <span
-                  aria-hidden="true"
-                  className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/15"
-                >
-                  {user.globalRole === "pastor" ? (
-                    <HeartHandshake size={20} strokeWidth={1.9} />
-                  ) : (
-                    <ShieldCheck size={20} strokeWidth={1.9} />
-                  )}
-                </span>
-                <span className="text-left">
-                  <span className="block text-[0.625rem] font-bold uppercase tracking-[0.13em] text-white/65">
-                    Acesso pastoral
-                  </span>
-                  <span className="mt-0.5 block text-sm font-semibold text-white">
-                    {pastoralViewLabel}
-                  </span>
-                </span>
-                <Sparkles
-                  aria-hidden="true"
-                  className="ml-1 size-4 shrink-0 text-white/65"
-                  strokeWidth={1.8}
-                />
-              </div>
-            ) : null
-          }
-        />
+        <PageHeader title={`Olá, ${firstName}`} />
 
         {reportWasSubmitted ? (
           <div className="mt-6">
@@ -177,6 +136,12 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
             <Alert tone="success">
               Ficha de Organização enviada com sucesso.
             </Alert>
+          </div>
+        ) : null}
+
+        {latestTestimony ? (
+          <div className="mt-6">
+            <LatestTestimonyCard testimony={latestTestimony} />
           </div>
         ) : null}
 
@@ -245,10 +210,6 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
             />
             {hasPortalActions ? (
               <div className="mt-4 space-y-3">
-                {latestTestimony ? (
-                  <LatestTestimonyCard testimony={latestTestimony} />
-                ) : null}
-
                 {checklistIsVisible && weeklyChecklist ? (
                   <ActionCard
                     href="/portal/checklist"
@@ -337,9 +298,6 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
                   title="Tudo certo por agora"
                   description="Você não tem nenhuma pendência."
                 />
-                {latestTestimony ? (
-                  <LatestTestimonyCard testimony={latestTestimony} />
-                ) : null}
               </div>
             )}
           </section>
@@ -360,46 +318,41 @@ function LatestTestimonyCard({
     <section aria-labelledby="latest-testimony-title">
       <Link
         href="/portal/testemunhos"
-        className="group block rounded-[var(--radius-surface)] border border-theme-primary-border bg-theme-primary-subtle p-5 shadow-[var(--shadow-subtle)] transition-[background-color,border-color,box-shadow,transform] duration-150 hover:bg-theme-primary-soft hover:shadow-[var(--shadow-raised)] active:scale-[0.99] active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus motion-reduce:transform-none sm:p-6"
+        aria-label={`Abrir Testemunhos. Mais recente: ${testimony.authorName}`}
+        className="group flex items-center gap-3 rounded-[var(--radius-surface)] border border-theme-primary-border bg-theme-primary-subtle p-4 shadow-[var(--shadow-subtle)] transition-[background-color,border-color,box-shadow,transform] duration-150 hover:border-theme-primary hover:bg-theme-primary-soft hover:shadow-[var(--shadow-raised)] active:scale-[0.99] active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-focus motion-reduce:transform-none sm:gap-4 sm:px-5"
       >
-        <div className="flex items-start gap-3">
-          <span
-            aria-hidden="true"
-            className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface text-theme-primary-active"
-          >
-            <Quote size={20} strokeWidth={1.8} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold uppercase tracking-[0.12em] text-theme-primary">
-              Testemunho mais recente
-            </p>
+        <span
+          aria-hidden="true"
+          className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-surface text-theme-primary-active sm:size-10"
+        >
+          <Quote size={19} strokeWidth={1.8} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-theme-primary">
+            Testemunho mais recente
+          </p>
+          <div className="mt-0.5 flex min-w-0 flex-wrap items-baseline gap-x-2">
             <h2
               id="latest-testimony-title"
-              className="mt-1 break-words font-semibold text-app-foreground"
+              className="truncate font-semibold text-app-foreground"
             >
               {testimony.authorName}
             </h2>
-            <p className="mt-0.5 break-words text-sm text-app-secondary">
+            <span className="truncate text-xs text-app-secondary sm:text-sm">
               {testimony.authorCellName
                 ? `${testimony.authorRoleLabel} • ${testimony.authorCellName}`
                 : testimony.authorRoleLabel}
-            </p>
+            </span>
           </div>
+          <p className="mt-1.5 line-clamp-2 text-sm leading-5 text-app-foreground">
+            “{summarizeTestimony(testimony.content)}”
+          </p>
         </div>
-
-        <p className="mt-4 text-[0.9375rem] leading-6 text-app-foreground sm:text-base">
-          “{summarizeTestimony(testimony.content)}”
-        </p>
-
-        <div className="mt-4 flex items-center justify-between gap-4 border-t border-theme-primary-border pt-3 text-sm font-semibold text-theme-primary-active">
-          <span>Ver todos os testemunhos</span>
-          <ArrowRight
-            aria-hidden="true"
-            className="shrink-0 transition-transform group-hover:translate-x-1 group-active:translate-x-1.5 motion-reduce:transform-none"
-            size={18}
-            strokeWidth={1.8}
-          />
-        </div>
+        <ArrowRight
+          aria-hidden="true"
+          className="size-5 shrink-0 text-theme-primary-active transition-transform group-hover:translate-x-1 group-active:translate-x-1.5 motion-reduce:transform-none"
+          strokeWidth={1.8}
+        />
       </Link>
     </section>
   );

@@ -80,7 +80,8 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     currentCellId: profile.currentCellId,
     currentLeadershipRole: profile.currentLeadershipRole,
     hasDocumentLibraryAccess: profile.hasDocumentLibraryAccess,
-    canManageDocumentLibrary: profile.canManageDocumentLibrary,
+    canManageDocumentLibrary:
+      profile.canManageDocumentLibrary || profile.isSupervisor,
   };
 });
 
@@ -88,7 +89,9 @@ export function canAccessAdministration(user: CurrentUser) {
   return (
     user.isActive &&
     !user.mustChangePassword &&
-    (user.globalRole === "administrator" || user.globalRole === "pastor")
+    (user.globalRole === "administrator" ||
+      user.globalRole === "pastor" ||
+      user.isSupervisor)
   );
 }
 
@@ -96,7 +99,9 @@ export function canManageCellAdministration(user: CurrentUser) {
   return (
     user.isActive &&
     !user.mustChangePassword &&
-    (user.globalRole === "administrator" || user.globalRole === "pastor")
+    (user.globalRole === "administrator" ||
+      user.globalRole === "pastor" ||
+      user.isSupervisor)
   );
 }
 
@@ -116,7 +121,6 @@ export function canManageSupervisionAttendance(user: CurrentUser) {
     !user.mustChangePassword &&
     (user.globalRole === "administrator" ||
       user.globalRole === "pastor" ||
-      user.isSupervisor ||
-      user.currentLeadershipRole === "leader")
+      user.isSupervisor)
   );
 }

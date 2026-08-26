@@ -47,6 +47,14 @@ export function isTestimonyReactionType(
   return value === "amen" || value === "like";
 }
 
+export function normalizeTestimonyAuthorRoleLabel(value: string) {
+  return value
+    .replace(/L\u00c3\u00adder/g, "Líder")
+    .replace(/l\u00c3\u00adder/g, "líder")
+    .replace(/L\u00c3der/g, "Líder")
+    .replace(/l\u00c3der/g, "líder");
+}
+
 export function applyOptimisticTestimonyReaction(
   current: TestimonyReactionState,
   reactionType: TestimonyReactionType,

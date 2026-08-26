@@ -53,7 +53,8 @@ export default async function AdminAccessPage() {
   const administrativeAccessCount = activeProfiles.filter(
     (profile) =>
       profile.global_role === "administrator" ||
-      profile.global_role === "pastor",
+      profile.global_role === "pastor" ||
+      profile.is_supervisor,
   ).length;
   const inactiveCount = overview.profiles.length - activeProfiles.length;
 
@@ -96,7 +97,7 @@ export default async function AdminAccessPage() {
             <MetricCard
               label="Acessos"
               value={administrativeAccessCount}
-              note="Pastores e administradores"
+              note="Supervisores, pastores e administradores"
               icon={<ShieldCheck className="size-5" />}
             />
           </dl>

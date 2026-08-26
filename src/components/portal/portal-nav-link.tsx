@@ -7,6 +7,7 @@ import {
   HeartHandshake,
   House,
   HouseHeart,
+  IdCard,
   ListChecks,
   Network,
   Settings,
@@ -32,6 +33,7 @@ const navigationIcons: Record<PortalNavigationIcon, LucideIcon> = {
   pastoral: ChartNoAxesCombined,
   attendance: UserRoundCheck,
   administration: Settings,
+  "member-card": IdCard,
   testimonies: HeartHandshake,
   profile: UserRound,
 };

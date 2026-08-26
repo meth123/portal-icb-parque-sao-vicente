@@ -2,7 +2,6 @@ import "server-only";
 
 import {
   calculateOverdueCellWeeks,
-  calculateEvangelismHistory,
   calculateMonthlyEvangelismParticipation,
   calculatePastoralDashboardMetrics,
   calculatePersonalEvangelismSummary,
@@ -233,7 +232,6 @@ export async function getCellDashboard(
       historyMonths: historyMonthsCount,
       metrics: emptyMetrics,
       history: emptyHistory,
-      evangelismHistory: [],
       evangelismParticipation: {
         accompanied: 0,
         evangelized: 0,
@@ -256,7 +254,6 @@ export async function getCellDashboard(
       historyMonths: historyMonthsCount,
       metrics: emptyMetrics,
       history: emptyHistory,
-      evangelismHistory: [],
       evangelismParticipation: {
         accompanied: 0,
         evangelized: 0,
@@ -312,20 +309,6 @@ export async function getCellDashboard(
     (participant) =>
       evangelismEntryIdSet.has(participant.evangelism_entry_id),
   );
-  const evangelismHistory = calculateEvangelismHistory(
-    selectedVersions.map((version) => ({
-      versionId: version.id,
-      meetingOn: version.meeting_on,
-    })),
-    positiveEvangelismEntries.map((entry) => ({
-      id: entry.id,
-      versionId: entry.report_version_id,
-    })),
-    leadershipParticipants.map((participant) => ({
-      entryId: participant.evangelism_entry_id,
-      leadershipId: participant.cell_leadership_id,
-    })),
-  );
   const evangelismParticipation = calculateMonthlyEvangelismParticipation(
     evangelismEntries.map((entry) => ({
       didEvangelize: entry.did_evangelize,
@@ -372,7 +355,6 @@ export async function getCellDashboard(
     historyMonths: historyMonthsCount,
     metrics: selectedMonth?.metrics ?? emptyMetrics,
     history,
-    evangelismHistory,
     evangelismParticipation,
     personalSummary,
     viceSummaries,

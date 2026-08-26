@@ -229,7 +229,7 @@ export default async function CellReportsPage({
             <SectionHeader
               id="reports-heading"
               title="Fichas encontradas"
-              description={`${history.reports.length} ${history.reports.length === 1 ? "registro" : "registros"}`}
+              description={`${history.reports.length} ${history.reports.length === 1 ? "registro recente" : "registros recentes"}`}
             />
             <ul className="mt-4 grid gap-4 xl:grid-cols-2">
               {history.reports.map((report) => (

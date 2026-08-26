@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:unit": "node --experimental-strip-types --test tests/cell-dashboard.test.ts tests/cell-report-form.test.ts tests/cell-report-pdf.test.ts tests/checklist-results.test.ts tests/checklist-results-pdf.test.ts tests/checklist-results-query.test.ts tests/document-file-name.test.ts tests/first-time-guests-history-query.test.ts tests/leadership-dates-query.test.ts tests/report-submission-safety.test.ts tests/passwords.test.ts tests/portal-navigation.test.ts tests/sao-paulo-date.test.ts tests/supervision-attendance.test.ts tests/supervision-attendance-pdf.test.ts tests/supervision-attendance-query.test.ts tests/testimonies.test.ts tests/testimonies-query.test.ts tests/weekly-checklist.test.ts"
+    "test:unit": "node --experimental-strip-types --test tests/cell-dashboard.test.ts tests/cell-report-form.test.ts tests/cell-report-pdf.test.ts tests/checklist-results.test.ts tests/checklist-results-pdf.test.ts tests/checklist-results-query.test.ts tests/document-file-name.test.ts tests/first-time-guests-history-query.test.ts tests/leadership-dates-query.test.ts tests/report-submission-safety.test.ts tests/passwords.test.ts tests/portal-home-and-access.test.ts tests/portal-navigation.test.ts tests/sao-paulo-date.test.ts tests/supervision-attendance.test.ts tests/supervision-attendance-pdf.test.ts tests/supervision-attendance-query.test.ts tests/testimonies.test.ts tests/testimonies-query.test.ts tests/member-registration.test.ts tests/weekly-checklist.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

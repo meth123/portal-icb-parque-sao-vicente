@@ -8,7 +8,6 @@ import {
   CircleAlert,
   ClockAlert,
   Clock3,
-  FileCheck2,
   House,
   MapPin,
   Network,
@@ -447,54 +446,6 @@ export default async function CellDetailsPage({
             </div>
           </div>
 
-          {dashboard.evangelismHistory.length > 0 ? (
-            <ul className="mt-4 divide-y divide-app-border rounded-2xl border border-app-border bg-surface px-5 sm:px-6">
-              {dashboard.evangelismHistory.map((item) => {
-                const hasEvangelism = item.records > 0;
-
-                return (
-                  <li
-                    key={item.versionId}
-                    className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl ${hasEvangelism ? "bg-success-soft text-success" : "bg-surface-muted text-app-secondary"}`}>
-                        {hasEvangelism ? (
-                          <CheckCircle2 aria-hidden="true" className="size-5" />
-                        ) : (
-                          <FileCheck2 aria-hidden="true" className="size-5" />
-                        )}
-                      </span>
-                      <div>
-                        <p className="font-semibold text-app-foreground">
-                          {formatDate(item.meetingOn)}
-                        </p>
-                        <p className="mt-1 text-sm text-app-secondary">
-                          {hasEvangelism
-                            ? `${item.records} ${item.records === 1 ? "relato" : "relatos"} com ${item.leadershipParticipants} ${item.leadershipParticipants === 1 ? "líder" : "líderes"}.`
-                            : "Nenhum evangelismo registrado."}
-                        </p>
-                      </div>
-                    </div>
-                    <Link
-                      href={`/portal/relatorios/${item.versionId}`}
-                      className={buttonClassName({
-                        variant: "secondary",
-                        size: "compact",
-                        className: "w-full sm:w-auto",
-                      })}
-                    >
-                      Ver Ficha
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p className="mt-4 text-sm text-app-secondary">
-              Nenhuma Ficha enviada neste período.
-            </p>
-          )}
         </section>
 
         <details className="group overflow-hidden rounded-2xl border border-app-border bg-surface">
