@@ -11,6 +11,16 @@ function read(relativePath: string) {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8");
 }
 
+function readPngMetadata(relativePath: string) {
+  const image = readFileSync(new URL(relativePath, import.meta.url));
+
+  return {
+    width: image.readUInt32BE(16),
+    height: image.readUInt32BE(20),
+    colorType: image[25],
+  };
+}
+
 const subscriptionMigration = read(
   "../supabase/migrations/20260826170451_create_push_subscriptions.sql",
 );
@@ -146,4 +156,23 @@ test("Cron e cliente mantêm segredos e permissão protegidos", () => {
   );
   assert.doesNotMatch(settingsSource, /VAPID_PRIVATE_KEY|CRON_SECRET|SECRET_KEY/);
   assert.doesNotMatch(serviceWorkerSource, /addEventListener\("fetch"|caches\./);
+});
+
+test("usa assets específicos para o ícone e o badge Android", () => {
+  assert.match(
+    serviceWorkerSource,
+    /icon: "\/icons\/notification-icon-192x192\.png"/,
+  );
+  assert.match(
+    serviceWorkerSource,
+    /badge: "\/icons\/notification-badge-96x96\.png"/,
+  );
+  assert.deepEqual(
+    readPngMetadata("../public/icons/notification-icon-192x192.png"),
+    { width: 192, height: 192, colorType: 6 },
+  );
+  assert.deepEqual(
+    readPngMetadata("../public/icons/notification-badge-96x96.png"),
+    { width: 96, height: 96, colorType: 6 },
+  );
 });
