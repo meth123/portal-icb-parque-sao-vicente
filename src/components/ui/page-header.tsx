@@ -6,6 +6,7 @@ type PageHeaderProps = {
   description?: string;
   eyebrow?: string;
   actions?: ReactNode;
+  actionsClassName?: string;
   className?: string;
 };
 
@@ -14,6 +15,7 @@ export function PageHeader({
   description,
   eyebrow,
   actions,
+  actionsClassName,
   className,
 }: PageHeaderProps) {
   return (
@@ -39,7 +41,12 @@ export function PageHeader({
         ) : null}
       </div>
       {actions ? (
-        <div className="flex w-full shrink-0 flex-wrap items-center gap-2.5 sm:w-auto sm:justify-end">
+        <div
+          className={classNames(
+            "flex shrink-0 flex-wrap items-center gap-2.5 sm:w-auto sm:justify-end",
+            actionsClassName ?? "w-full",
+          )}
+        >
           {actions}
         </div>
       ) : null}

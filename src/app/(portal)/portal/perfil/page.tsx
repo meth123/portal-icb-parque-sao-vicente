@@ -44,7 +44,7 @@ export default async function ProfilePage() {
           />
         </Surface>
 
-        <Surface className="mt-6 p-5 sm:p-8">
+        <Surface id="notificacoes" className="mt-6 p-5 sm:p-8">
           <NotificationSettings />
         </Surface>
 

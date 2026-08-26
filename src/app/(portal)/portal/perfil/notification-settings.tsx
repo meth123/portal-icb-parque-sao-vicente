@@ -1,7 +1,13 @@
 "use client";
 
-import { BellRing, CheckCircle2, Share } from "lucide-react";
-import { useState, useSyncExternalStore } from "react";
+import {
+  BellOff,
+  BellRing,
+  CheckCircle2,
+  Send,
+  Share,
+} from "lucide-react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { registerServiceWorker } from "@/lib/pwa/register-service-worker";
@@ -15,6 +21,9 @@ type Capability = {
   push: boolean;
   serviceWorker: boolean;
 };
+
+type SubscriptionState = "checking" | "active" | "inactive";
+type Operation = "enabling" | "disabling" | "testing" | null;
 
 const initialCapability: Capability = {
   checked: false,
@@ -62,6 +71,46 @@ function detectCapability(): Capability {
   };
 }
 
+function urlBase64ToUint8Array(value: string) {
+  const padding = "=".repeat((4 - (value.length % 4)) % 4);
+  const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = window.atob(base64);
+
+  return Uint8Array.from(raw, (character) => character.charCodeAt(0));
+}
+
+function serializeSubscription(subscription: PushSubscription) {
+  const serialized = subscription.toJSON();
+  const p256dh = serialized.keys?.p256dh;
+  const auth = serialized.keys?.auth;
+
+  if (!p256dh || !auth) {
+    throw new Error("PUSH_KEYS_MISSING");
+  }
+
+  return { endpoint: subscription.endpoint, p256dh, auth };
+}
+
+async function saveSubscription(subscription: PushSubscription) {
+  const response = await fetch("/api/push/subscriptions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(serializeSubscription(subscription)),
+  });
+
+  if (!response.ok) throw new Error("SUBSCRIPTION_SAVE_FAILED");
+}
+
+async function removeSubscription(subscription: PushSubscription) {
+  const response = await fetch("/api/push/subscriptions", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ endpoint: subscription.endpoint }),
+  });
+
+  if (!response.ok) throw new Error("SUBSCRIPTION_DELETE_FAILED");
+}
+
 export function NotificationSettings() {
   const isClientReady = useSyncExternalStore(
     subscribeToClientReady,
@@ -72,7 +121,9 @@ export function NotificationSettings() {
   const [permission, setPermission] = useState<NotificationPermission | null>(
     null,
   );
-  const [pending, setPending] = useState(false);
+  const [subscriptionState, setSubscriptionState] =
+    useState<SubscriptionState>("checking");
+  const [operation, setOperation] = useState<Operation>(null);
   const [message, setMessage] = useState("");
   const [messageTone, setMessageTone] = useState<
     "info" | "success" | "warning" | "danger"
@@ -83,23 +134,58 @@ export function NotificationSettings() {
     (capability.checked && capability.notifications
       ? Notification.permission
       : null);
-
   const fullySupported =
     capability.isSecure &&
     capability.notifications &&
     capability.push &&
     capability.serviceWorker;
   const needsIOSInstallation = capability.isIOS && !capability.isStandalone;
-  const permissionGranted = currentPermission === "granted";
   const permissionDenied = currentPermission === "denied";
+  const isSubscribed = subscriptionState === "active";
+  const isPending = operation !== null;
 
-  async function enableNotifications() {
+  useEffect(() => {
+    if (!isClientReady || !fullySupported || needsIOSInstallation) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function inspectSubscription() {
+      try {
+        const registration = await registerServiceWorker();
+        const subscription = await registration?.pushManager.getSubscription();
+
+        const subscriptionIsActive = Boolean(
+          subscription && Notification.permission === "granted",
+        );
+
+        if (subscriptionIsActive && subscription) {
+          await saveSubscription(subscription);
+        }
+
+        if (!cancelled) {
+          setSubscriptionState(subscriptionIsActive ? "active" : "inactive");
+        }
+      } catch (error) {
+        console.warn("Não foi possível verificar a subscription Push.", error);
+        if (!cancelled) setSubscriptionState("inactive");
+      }
+    }
+
+    void inspectSubscription();
+    return () => {
+      cancelled = true;
+    };
+  }, [fullySupported, isClientReady, needsIOSInstallation]);
+
+  function showCompatibilityMessage() {
     if (needsIOSInstallation) {
       setMessageTone("info");
       setMessage(
         "No iPhone, abra este portal no Safari, toque em Compartilhar e depois em Adicionar à Tela de Início. Abra o ICB Conecta instalado e volte a esta opção.",
       );
-      return;
+      return true;
     }
 
     if (!fullySupported) {
@@ -107,7 +193,7 @@ export function NotificationSettings() {
       setMessage(
         "Este navegador ou dispositivo ainda não oferece todos os recursos necessários para notificações.",
       );
-      return;
+      return true;
     }
 
     if (permissionDenied) {
@@ -115,38 +201,132 @@ export function NotificationSettings() {
       setMessage(
         "As notificações estão bloqueadas. Libere a permissão nas configurações do navegador ou do dispositivo e tente novamente.",
       );
+      return true;
+    }
+
+    return false;
+  }
+
+  async function enableNotifications() {
+    if (showCompatibilityMessage()) return;
+
+    const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+
+    if (!vapidPublicKey) {
+      setMessageTone("danger");
+      setMessage("O Web Push ainda não foi configurado neste ambiente.");
       return;
     }
 
-    setPending(true);
+    setOperation("enabling");
     setMessage("");
+    let createdSubscription: PushSubscription | null = null;
 
     try {
       const nextPermission = await Notification.requestPermission();
       setPermission(nextPermission);
 
-      if (nextPermission === "granted") {
-        await registerServiceWorker();
-        setMessageTone("success");
-        setMessage(
-          "Permissão concedida neste dispositivo. O recebimento será habilitado quando o envio de notificações for integrado.",
-        );
-      } else {
+      if (nextPermission !== "granted") {
         setMessageTone("warning");
         setMessage(
           "A permissão não foi concedida. Você pode alterar essa escolha nas configurações do navegador.",
         );
+        return;
       }
+
+      const registration = await registerServiceWorker();
+
+      if (!registration) throw new Error("SERVICE_WORKER_UNAVAILABLE");
+
+      let subscription = await registration.pushManager.getSubscription();
+
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+        });
+        createdSubscription = subscription;
+      }
+
+      await saveSubscription(subscription);
+      setSubscriptionState("active");
+      setMessageTone("success");
+      setMessage("Notificações ativadas neste dispositivo.");
     } catch (error) {
-      console.warn("Não foi possível preparar as notificações.", error);
+      if (createdSubscription) {
+        await createdSubscription.unsubscribe().catch(() => false);
+      }
+      console.warn("Não foi possível ativar as notificações.", error);
+      setSubscriptionState("inactive");
       setMessageTone("danger");
       setMessage(
-        "Não foi possível preparar as notificações agora. Tente novamente mais tarde.",
+        "Não foi possível ativar as notificações agora. Tente novamente mais tarde.",
       );
     } finally {
-      setPending(false);
+      setOperation(null);
     }
   }
+
+  async function disableNotifications() {
+    setOperation("disabling");
+    setMessage("");
+
+    try {
+      const registration = await registerServiceWorker();
+      const subscription = await registration?.pushManager.getSubscription();
+
+      if (subscription) {
+        await removeSubscription(subscription);
+        await subscription.unsubscribe();
+      }
+
+      setSubscriptionState("inactive");
+      setMessageTone("success");
+      setMessage("Notificações desativadas neste dispositivo.");
+    } catch (error) {
+      console.warn("Não foi possível desativar as notificações.", error);
+      setMessageTone("danger");
+      setMessage(
+        "Não foi possível desativar as notificações agora. Tente novamente.",
+      );
+    } finally {
+      setOperation(null);
+    }
+  }
+
+  async function sendTestNotification() {
+    setOperation("testing");
+    setMessage("");
+
+    try {
+      const response = await fetch("/api/push/test", { method: "POST" });
+
+      if (!response.ok) throw new Error("PUSH_TEST_FAILED");
+
+      setMessageTone("success");
+      setMessage("Notificação de teste enviada aos seus dispositivos ativos.");
+    } catch (error) {
+      console.warn("Não foi possível enviar a notificação de teste.", error);
+      setMessageTone("danger");
+      setMessage("Não foi possível enviar a notificação de teste.");
+    } finally {
+      setOperation(null);
+    }
+  }
+
+  const statusText = !capability.checked
+    ? "Verificando compatibilidade..."
+    : needsIOSInstallation
+      ? "No iPhone, instale o app antes de ativar o Push."
+      : !fullySupported
+        ? "Recurso indisponível neste navegador."
+        : subscriptionState === "checking"
+          ? "Verificando este dispositivo..."
+          : isSubscribed
+            ? "Notificações ativas neste dispositivo."
+            : currentPermission === "granted"
+              ? "Push desativado neste dispositivo."
+              : "Este dispositivo é compatível.";
 
   return (
     <div>
@@ -159,7 +339,7 @@ export function NotificationSettings() {
             Notificações
           </h2>
           <p className="mt-1 text-sm leading-6 text-app-secondary">
-            Prepare este aparelho para receber avisos do ICB Conecta. Nenhuma
+            Receba os lembretes semanais do ICB Conecta neste aparelho. Nenhuma
             permissão será solicitada sem o seu toque no botão abaixo.
           </p>
         </div>
@@ -178,38 +358,60 @@ export function NotificationSettings() {
         </Alert>
       ) : null}
 
-      <div className="mt-5 flex flex-col gap-3 border-t border-app-border pt-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-5 border-t border-app-border pt-5">
         <p className="text-sm text-app-secondary" aria-live="polite">
-          {!capability.checked
-            ? "Verificando compatibilidade..."
-            : permissionGranted
-              ? "Permissão concedida neste dispositivo."
-              : needsIOSInstallation
-                ? "No iPhone, instale o app antes de ativar o Push."
-                : fullySupported
-                  ? "Este dispositivo é compatível."
-                  : "Recurso indisponível neste navegador."}
+          {statusText}
         </p>
 
-        <Button
-          type="button"
-          variant="secondary"
-          size="compact"
-          disabled={!capability.checked || pending || permissionGranted}
-          onClick={enableNotifications}
-          className="w-full shrink-0 sm:w-auto"
-        >
-          {permissionGranted ? (
-            <CheckCircle2 aria-hidden="true" size={18} strokeWidth={1.8} />
-          ) : (
-            <BellRing aria-hidden="true" size={18} strokeWidth={1.8} />
-          )}
-          {pending
-            ? "Ativando..."
-            : permissionGranted
-              ? "Notificações permitidas"
-              : "Ativar notificações neste dispositivo"}
-        </Button>
+        <div className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
+          <Button
+            type="button"
+            variant={isSubscribed ? "ghost" : "secondary"}
+            size="compact"
+            disabled={
+              !capability.checked ||
+              isPending ||
+              (subscriptionState === "checking" &&
+                fullySupported &&
+                !needsIOSInstallation)
+            }
+            onClick={
+              isSubscribed ? disableNotifications : enableNotifications
+            }
+            className="w-full sm:w-auto"
+          >
+            {isSubscribed ? (
+              <BellOff aria-hidden="true" size={18} strokeWidth={1.8} />
+            ) : (
+              <BellRing aria-hidden="true" size={18} strokeWidth={1.8} />
+            )}
+            {operation === "enabling"
+              ? "Ativando..."
+              : operation === "disabling"
+                ? "Desativando..."
+                : isSubscribed
+                  ? "Desativar neste dispositivo"
+                  : "Ativar notificações neste dispositivo"}
+          </Button>
+
+          {isSubscribed ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="compact"
+              disabled={isPending}
+              onClick={sendTestNotification}
+              className="w-full sm:w-auto"
+            >
+              {operation === "testing" ? (
+                <CheckCircle2 aria-hidden="true" size={18} strokeWidth={1.8} />
+              ) : (
+                <Send aria-hidden="true" size={18} strokeWidth={1.8} />
+              )}
+              {operation === "testing" ? "Enviando..." : "Enviar teste"}
+            </Button>
+          ) : null}
+        </div>
       </div>
     </div>
   );

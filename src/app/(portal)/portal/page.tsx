@@ -1,5 +1,6 @@
 import {
   ArrowRight,
+  BellRing,
   ChartNoAxesCombined,
   Check,
   ClipboardCheck,
@@ -124,7 +125,21 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
   return (
     <main>
       <PageContainer width="wide" className="py-5 sm:py-8 lg:py-10">
-        <PageHeader title={`Olá, ${firstName}`} />
+        <PageHeader
+          title={`Olá, ${firstName}`}
+          className="relative pr-14 sm:pr-0"
+          actionsClassName="absolute right-0 top-0 w-auto sm:static sm:w-auto"
+          actions={
+            <Link
+              href="/portal/perfil#notificacoes"
+              aria-label="Abrir configurações de notificações"
+              title="Configurar notificações"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-[0.875rem] border border-app-border bg-surface text-app-foreground transition-[background-color,border-color,color,box-shadow,transform] duration-150 hover:border-theme-primary-border hover:bg-theme-primary-subtle hover:text-theme-primary-active active:scale-[0.96] active:bg-theme-primary-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transform-none"
+            >
+              <BellRing aria-hidden="true" size={21} strokeWidth={1.8} />
+            </Link>
+          }
+        />
 
         {reportWasSubmitted ? (
           <div className="mt-6">

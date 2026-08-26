@@ -45,6 +45,10 @@ self.addEventListener("push", (event) => {
       : "ICB Conecta";
   const body =
     typeof notificationData.body === "string" ? notificationData.body : "";
+  const tag =
+    typeof notificationData.tag === "string"
+      ? notificationData.tag.slice(0, 80)
+      : undefined;
   const targetUrl = getInternalUrl(notificationData.url);
 
   event.waitUntil(
@@ -52,6 +56,8 @@ self.addEventListener("push", (event) => {
       body,
       icon: "/icons/icon-192x192.png",
       badge: "/icons/icon-192x192.png",
+      tag,
+      renotify: false,
       data: {
         url: `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`,
       },
