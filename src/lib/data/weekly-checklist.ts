@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { getSaoPauloDate } from "@/lib/dates/sao-paulo";
 import {
   formatWeeklyChecklistRange,
   getWeeklyChecklistPeriod,
@@ -9,6 +10,8 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 const avatarBucket = "profile-avatars";
+const temporaryLateResponseUserId =
+  "2391d8cb-7a0a-4075-a2fd-22597912ac53";
 
 type RawWeeklyChecklistRow = {
   profile_id: string;
@@ -56,7 +59,15 @@ export async function getWeeklyChecklistData(options?: {
 
   if (!user?.isActive) return null;
 
-  const period = getWeeklyChecklistPeriod();
+  const currentSaoPauloDate = getSaoPauloDate();
+  const temporaryLateResponseIsOpen =
+    user.id === temporaryLateResponseUserId &&
+    currentSaoPauloDate >= "2026-08-27" &&
+    currentSaoPauloDate <= "2026-08-30";
+  const period = getWeeklyChecklistPeriod(new Date(), {
+    // Temporary production test exception; remove after 2026-08-30.
+    allowLateResponse: temporaryLateResponseIsOpen,
+  });
   const supabase = await createClient();
   const { data, error } = await supabase.rpc(
     "get_weekly_leadership_checklist",
