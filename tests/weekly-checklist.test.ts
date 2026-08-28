@@ -38,16 +38,6 @@ test("fecha na quinta-feira sem avançar para uma semana incompleta", () => {
   assert.equal(period.weekEndsOn, "2026-08-16");
 });
 
-test("permite uma abertura temporária fora do prazo", () => {
-  const period = getWeeklyChecklistPeriod(
-    new Date("2026-08-20T09:00:00-03:00"),
-    { allowLateResponse: true },
-  );
-
-  assert.equal(period.isOpen, true);
-  assert.equal(period.weekStartsOn, "2026-08-10");
-});
-
 test("respeita a virada do dia no horário de São Paulo", () => {
   const beforeMidnight = getWeeklyChecklistPeriod(
     new Date("2026-08-20T02:59:00Z"),

@@ -22,10 +22,7 @@ function addDays(date: Date, days: number) {
   return result;
 }
 
-export function getWeeklyChecklistPeriod(
-  date = new Date(),
-  options?: { allowLateResponse?: boolean },
-): WeeklyChecklistPeriod {
+export function getWeeklyChecklistPeriod(date = new Date()): WeeklyChecklistPeriod {
   const localDate = getSaoPauloDate(date);
   const today = parseDate(localDate);
   const isoWeekday = today.getUTCDay() === 0 ? 7 : today.getUTCDay();
@@ -39,9 +36,7 @@ export function getWeeklyChecklistPeriod(
     weekEndsOn: formatDate(weekEndsOn),
     opensOn: formatDate(currentMonday),
     closesOn: formatDate(closesOn),
-    isOpen:
-      (today >= currentMonday && today <= closesOn) === true ||
-      options?.allowLateResponse === true,
+    isOpen: today >= currentMonday && today <= closesOn,
   };
 }
 
